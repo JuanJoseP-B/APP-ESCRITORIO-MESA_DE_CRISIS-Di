@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del repositorio
 
-Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora (Fase 1): monorepo, config TS/ESLint/Vitest y el paquete `@argos/shared`. Pendiente: Supabase/RLS, `apps/desktop` (Tauri), `apps/web` (Vite), auth.
+Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora: monorepo, config TS/ESLint/Vitest, `@argos/shared` (Fase 1) y el frontend de `apps/desktop` (Fase 2: servicio Supabase, MapLibre, panel Mesa de Crisis, dibujo de polígonos con Terra Draw y suscripción Realtime; sin credenciales usa `servicioDemo`). Pendiente: `apps/desktop/src-tauri` (requiere instalar Rust; `npx tauri init`), Supabase/RLS, `apps/web` (Vite), auth, persistir el polígono trazado.
 
 ## Comandos
 
