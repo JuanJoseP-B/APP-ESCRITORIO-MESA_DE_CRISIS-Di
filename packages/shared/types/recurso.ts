@@ -11,3 +11,35 @@ export interface Recurso {
   readonly estado_actual: EstadoRecurso;
   readonly incidente_asignado_id: string | null;
 }
+
+export const TRANSICIONES_RECURSO: Record<EstadoRecurso, readonly EstadoRecurso[]> = {
+  Disponible: ['Despachado', 'Inoperativo'],
+  Despachado: ['En Escena', 'Disponible', 'Inoperativo'],
+  'En Escena': ['Disponible', 'Inoperativo'],
+  Inoperativo: ['Disponible'],
+};
+
+export function puedeTransicionar(desde: EstadoRecurso, hacia: EstadoRecurso): boolean {
+  return TRANSICIONES_RECURSO[desde].includes(hacia);
+}
+
+/** Aplica una transición validada sin mutar. Despachar exige `incidenteId`. */
+export function transicionarRecurso(
+  recurso: Recurso,
+  hacia: EstadoRecurso,
+  incidenteId?: string,
+): Recurso {
+  if (!puedeTransicionar(recurso.estado_actual, hacia)) {
+    throw new Error(`Transición inválida: ${recurso.estado_actual} → ${hacia}`);
+  }
+  if (hacia === 'Despachado') {
+    if (!incidenteId) throw new Error('Despachar un recurso exige un incidente asignado');
+    return { ...recurso, estado_actual: hacia, incidente_asignado_id: incidenteId };
+  }
+  const conserva = hacia === 'En Escena';
+  return {
+    ...recurso,
+    estado_actual: hacia,
+    incidente_asignado_id: conserva ? recurso.incidente_asignado_id : null,
+  };
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { aplicarCambio, type CambioRealtime } from '../domain/realtime';
 import type { ServicioMesa } from '../services/supabaseClient';
-import type { Incidente, Reporte } from '@argos/shared';
+import type { Incidente, Recurso, Reporte } from '@argos/shared';
 
 export interface EstadoLista<T> {
   readonly datos: readonly T[];
@@ -58,3 +58,6 @@ export const useIncidentesRealtime = (s: ServicioMesa): EstadoLista<Incidente> =
 
 export const useReportesRealtime = (s: ServicioMesa): EstadoLista<Reporte> =>
   useListaRealtime(s.listarReportes, s.suscribirReportes);
+
+export const useRecursosRealtime = (s: ServicioMesa): EstadoLista<Recurso> =>
+  useListaRealtime(s.listarRecursos, s.suscribirRecursos);

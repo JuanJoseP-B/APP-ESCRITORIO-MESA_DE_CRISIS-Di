@@ -60,4 +60,33 @@ describe('crearServicioMesa', () => {
     cancelar();
     expect(removeChannel).toHaveBeenCalledWith(canal);
   });
+
+  it('lista recursos desde recursos_operativos', async () => {
+    const select = vi.fn().mockResolvedValue({ data: [], error: null });
+    const from = vi.fn().mockReturnValue({ select });
+    await crearServicioMesa({ from } as unknown as SupabaseClient).listarRecursos();
+    expect(from).toHaveBeenCalledWith('recursos_operativos');
+  });
+
+  it('cambia el estado de un recurso con update().eq()', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq });
+    const from = vi.fn().mockReturnValue({ update });
+    const servicio = crearServicioMesa({ from } as unknown as SupabaseClient);
+
+    await servicio.cambiarEstadoRecurso('r1', 'Despachado', 'inc-1');
+
+    expect(from).toHaveBeenCalledWith('recursos_operativos');
+    expect(update).toHaveBeenCalledWith({ estado_actual: 'Despachado', incidente_asignado_id: 'inc-1' });
+    expect(eq).toHaveBeenCalledWith('id', 'r1');
+  });
+
+  it('propaga errores al cambiar el estado', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: { message: 'denegado' } });
+    const servicio = crearServicioMesa({
+      from: () => ({ update: () => ({ eq }) }),
+    } as unknown as SupabaseClient);
+
+    await expect(servicio.cambiarEstadoRecurso('r1', 'Disponible', null)).rejects.toThrow('denegado');
+  });
 });

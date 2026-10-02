@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { NIVELES_CRITICIDAD, type Incidente, type Reporte } from '@argos/shared';
 import { COLOR_CRITICIDAD } from '../domain/geojson';
 
@@ -8,6 +9,8 @@ interface Props {
   readonly onSeleccionar: (id: string) => void;
   readonly dibujando: boolean;
   readonly onAlternarDibujo: () => void;
+  /** Secciones adicionales (p. ej. recursos) entre la lista de incidentes y el timeline. */
+  readonly children?: ReactNode;
 }
 
 /** Más crítico primero; a igual criticidad, los no resueltos antes. */
@@ -29,6 +32,7 @@ export function PanelMesa({
   onSeleccionar,
   dibujando,
   onAlternarDibujo,
+  children,
 }: Props) {
   const ordenados = ordenarIncidentes(incidentes);
   const seleccionado = incidentes.find((i) => i.id === seleccionadoId);
@@ -89,6 +93,8 @@ export function PanelMesa({
           </li>
         ))}
       </ul>
+
+      {children}
 
       {seleccionado && (
         <section aria-label="Timeline" className="max-h-64 overflow-y-auto border-t border-linea px-3 py-2">

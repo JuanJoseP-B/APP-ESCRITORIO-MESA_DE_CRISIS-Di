@@ -1,5 +1,5 @@
 import { createClient, type RealtimePostgresChangesPayload, type SupabaseClient } from '@supabase/supabase-js';
-import type { Incidente, Reporte } from '@argos/shared';
+import type { EstadoRecurso, Incidente, Recurso, Reporte } from '@argos/shared';
 import type { CambioRealtime } from '../domain/realtime';
 
 /**
@@ -12,6 +12,10 @@ export interface ServicioMesa {
   /** Devuelve la función para cancelar la suscripción. */
   suscribirIncidentes(alCambiar: (cambio: CambioRealtime<Incidente>) => void): () => void;
   suscribirReportes(alCambiar: (cambio: CambioRealtime<Reporte>) => void): () => void;
+  listarRecursos(): Promise<readonly Recurso[]>;
+  suscribirRecursos(alCambiar: (cambio: CambioRealtime<Recurso>) => void): () => void;
+  /** Persiste el cambio de estado; la validación de la transición la hace quien llama (UI/dominio). */
+  cambiarEstadoRecurso(id: string, estado: EstadoRecurso, incidenteId: string | null): Promise<void>;
 }
 
 type Fila = Record<string, unknown>;
@@ -53,6 +57,15 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
     listarReportes: () => listar<Reporte>('reportes_ciudadanos'),
     suscribirIncidentes: (cb) => suscribir<Incidente>('incidentes', cb),
     suscribirReportes: (cb) => suscribir<Reporte>('reportes_ciudadanos', cb),
+    listarRecursos: () => listar<Recurso>('recursos_operativos'),
+    suscribirRecursos: (cb) => suscribir<Recurso>('recursos_operativos', cb),
+    cambiarEstadoRecurso: async (id, estado, incidenteId) => {
+      const { error } = await client
+        .from('recursos_operativos')
+        .update({ estado_actual: estado, incidente_asignado_id: incidenteId })
+        .eq('id', id);
+      if (error) throw new Error(`No se pudo actualizar el recurso ${id}: ${error.message}`);
+    },
   };
 }
 
