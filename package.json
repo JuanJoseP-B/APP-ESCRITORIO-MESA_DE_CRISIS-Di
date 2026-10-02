@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/desktop",
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/desktop && tsc --noEmit -p apps/web",
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm run test"
   },

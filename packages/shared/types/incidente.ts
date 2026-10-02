@@ -21,3 +21,6 @@ export interface Incidente {
   readonly geometria: GeoJsonGeometry;
   readonly timeline: readonly EventoTimeline[];
 }
+
+/** Vista pública de un incidente: sin `timeline` ni datos tácticos. */
+export type ZonaRiesgo = Pick<Incidente, 'id' | 'titulo' | 'nivel_criticidad' | 'estado' | 'geometria'>;
