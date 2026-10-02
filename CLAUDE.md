@@ -4,13 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del repositorio
 
-Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora: monorepo, config TS/ESLint/Vitest, `@argos/shared` (Fase 1), el frontend de `apps/desktop` (Fase 2: servicio Supabase, MapLibre, panel Mesa de Crisis, dibujo de polígonos con Terra Draw y suscripción Realtime; sin credenciales usa `servicioDemo`) y el portal `apps/web` (Fase 3: mapa de solo lectura con zonas de riesgo y refugios, formulario Reporte Rápido con Geolocation y subida de foto a Storage; también con `servicioDemo`). Pendiente: `apps/desktop/src-tauri` (requiere instalar Rust; `npx tauri init`), Supabase/RLS/bucket `reportes` (el portal asume tablas `zonas_publicas`, `incidentes`, `reportes_ciudadanos`; idealmente una vista pública de incidentes sin `timeline`), auth, persistir el polígono trazado.
+Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora: monorepo, config TS/ESLint/Vitest, `@argos/shared` (Fase 1), el frontend de `apps/desktop` (Fase 2: servicio Supabase, MapLibre, panel Mesa de Crisis, dibujo de polígonos con Terra Draw y suscripción Realtime; sin credenciales usa `servicioDemo`) y el portal `apps/web` (Fase 3: mapa de solo lectura con zonas de riesgo y refugios, formulario Reporte Rápido con Geolocation y subida de foto a Storage; también con `servicioDemo`). Fase 4: máquina de estados de recursos (`transicionarRecurso` en shared, `PanelRecursos` en desktop), migración `supabase/migrations/0001_esquema_y_rls.sql` con RLS validada por `supabase/rls.test.ts` (el portal lee el espejo `zonas_riesgo`, sin `timeline`) y pruebas de carga Realtime en `apps/web/src/load`. Pendiente: `apps/desktop/src-tauri` (requiere instalar Rust; `npx tauri init`), aplicar la migración en un proyecto Supabase real y verificar con los `curl` de `supabase/README.md`, auth, persistir el polígono trazado.
 
 ## Comandos
 
 Ejecutar desde la raíz:
 - `npm run check`: lint + typecheck + tests. Definition of Done: debe terminar con 0 errores.
 - `npm run lint` / `npm run typecheck` / `npm run test` por separado.
+- `npm run test:load`: perfil pesado de carga Realtime (`*.load.test.ts`, excluido de `check`; `vitest.config.ts` lo omite).
 - Una sola prueba: `npx vitest run packages/shared/types/incidente.test.ts` (añade `-t "<nombre>"` para un caso concreto).
 
 `typecheck` cubre `packages/shared`, `apps/desktop` y `apps/web`; al crear una app nueva, añade su `tsc --noEmit -p apps/<app>` a ese script.
@@ -20,7 +21,7 @@ Ejecutar desde la raíz:
 - `tsconfig.base.json` (estricto, `noUncheckedIndexedAccess`) lo extienden todos los paquetes/apps.
 - `eslint.config.js` (flat config) impone `@typescript-eslint/no-explicit-any: error`, que es lo que hace cumplir la prohibición de `any`.
 - `packages/shared` (`@argos/shared`): tipos TS puros en `types/` (exporta `index.ts`). Cada enum del SPEC es una constante `as const` (p. ej. `NIVELES_CRITICIDAD`) más su tipo derivado. `geometria` es una unión discriminada por `type` (`Point` | `Polygon`). `Recurso` no tiene `lat`/`lng` a propósito; una prueba con `expectTypeOf` lo fija. Tipos públicos: `ZonaPublica` (con `nombre` y `geometria`), `ZonaRiesgo` (incidente sin `timeline`) y `NuevoReporte`.
-- `apps/web` (`@argos/web`): mismo patrón que desktop (`services/supabaseClient.ts` aislado + `servicioDemo`, hooks Realtime, dominio puro). Solo lee `zonas_publicas` e `incidentes` (columnas públicas) e inserta en `reportes_ciudadanos`; una prueba verifica que nunca toca `recursos_operativos`.
+- `apps/web` (`@argos/web`): mismo patrón que desktop (`services/supabaseClient.ts` aislado + `servicioDemo`, hooks Realtime, dominio puro). Solo lee `zonas_publicas` y `zonas_riesgo` (espejo de `incidentes` sin `timeline`, mantenido por trigger) e inserta en `reportes_ciudadanos`; una prueba verifica que nunca toca `recursos_operativos`.
 - Las pruebas viven junto al código (`*.test.ts`).
 
 ## Proyecto
