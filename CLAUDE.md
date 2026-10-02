@@ -4,7 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del repositorio
 
-Actualmente el repositorio (git, rama `main`, con remoto `origin`) solo contiene `SPEC.md` (la especificación del proyecto), un `README.md` de una línea ("Init") y `.gitignore`. No hay código ni `package.json` todavía. Todo lo descrito abajo proviene de `SPEC.md`; léelo antes de implementar y mantenlo como fuente de verdad. Los comandos de build/test aún no existen: se definirán en la Fase 1.
+Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora (Fase 1): monorepo, config TS/ESLint/Vitest y el paquete `@argos/shared`. Pendiente: Supabase/RLS, `apps/desktop` (Tauri), `apps/web` (Vite), auth.
+
+## Comandos
+
+Ejecutar desde la raíz:
+- `npm run check`: lint + typecheck + tests. Definition of Done: debe terminar con 0 errores.
+- `npm run lint` / `npm run typecheck` / `npm run test` por separado.
+- Una sola prueba: `npx vitest run packages/shared/types/incidente.test.ts` (añade `-t "<nombre>"` para un caso concreto).
+
+`typecheck` solo cubre `packages/shared`; al crear cada app, añade su `tsc --noEmit -p apps/<app>` a ese script.
+
+## Estructura
+
+- `tsconfig.base.json` (estricto, `noUncheckedIndexedAccess`) lo extienden todos los paquetes/apps.
+- `eslint.config.js` (flat config) impone `@typescript-eslint/no-explicit-any: error`, que es lo que hace cumplir la prohibición de `any`.
+- `packages/shared` (`@argos/shared`): tipos TS puros en `types/` (exporta `index.ts`). Cada enum del SPEC es una constante `as const` (p. ej. `NIVELES_CRITICIDAD`) más su tipo derivado. `geometria` es una unión discriminada por `type` (`Point` | `Polygon`). `Recurso` no tiene `lat`/`lng` a propósito; una prueba con `expectTypeOf` lo fija.
+- Las pruebas viven junto al código (`*.test.ts`).
+
 ## Proyecto
 
 "Mesa de Crisis": sistema C4I de respuesta a emergencias con dos aplicaciones sobre un mismo backend Supabase:
@@ -30,6 +47,5 @@ Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `time
 ## Verificación y flujo de trabajo
 
 - Cada hito lleva pruebas unitarias con **Vitest**.
-- Definition of Done: `npm run check` (linter + typecheck, p. ej. `npx tsc --noEmit`) debe terminar con 0 errores. Este script debe crearse en cada paquete/app.
+- Definition of Done: `npm run check` con 0 errores (ver Comandos).
 - Control de versiones: **GitFlow** y **Conventional Commits**.
-- La estructura (monorepo vs. repos separados para Tauri y Web) aún no está decidida; es una tarea de la Fase 1.
