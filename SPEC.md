@@ -94,3 +94,24 @@ El desarrollo debe seguir una estrategia de ramificación **GitFlow** y uso de *
 ## 9. Criterios de Verificación
 - Cada hito del roadmap debe acompañarse de pruebas unitarias implementadas en **Vitest**.
 - La tarea no se considera lista (Definition of Done) hasta que la ejecución de `npm run check` (que debe incluir linter y typecheck, ej. `npx tsc --noEmit`) retorne **0 errores**.
+
+## 10. Sistema de Diseño Visual y Estética (Mesa de Crisis ARGOS) ### ❌ LO QUE DEBES EVITAR (Prohibiciones de "AI Slop"): 
+- NO usar tipografías genéricas saturadas (Inter, Roboto, Arial, system-ui). - NO usar degradados violetas/púrpuras sobre fondo oscuro o blanco.
+- NO usar tarjetas flotantes con bordes brillantes exagerados (efectos Neumorphism o deslumbrantes). 
+- NO usar rejillas genéricas de 3 columnas de plantilla comercial. 
+- NO usar botones redondos tipo "píldora" en interfaces tácticas operativas. 
+
+### ✅ DIRECCIÓN VISUAL OPERATIVA (Mesa de Crisis de Alta Densidad):
+
+- Tipo de Interfaz: Centro de mando editorial y táctico de alta densidad de información (High Information Density). 
+- Tipografía: Fuera de lo común. Usa tipografías monoespaciadas tácticas para datos (JetBrains Mono, Fira Code) y tipografías limpias y de alto contraste para encabezados (Space Grotesk, Cabinet Grotesk o Lexend). 
+-Paleta De colores: 
+| Elemento | Modo Claro (Por Defecto) | Modo Oscuro Industrial | Rol en la Interfaz |
+| :--- | :--- | :--- | :--- |
+| **Fondo Base** | `#F1F5F9` (Gris Pizarra claro) | `#12161A` (Gris Carbón) | Lienzo principal (detrás del mapa y paneles). |
+| **Superficies** | `#FFFFFF` (Blanco puro) | `#1A2026` (Pizarra oscuro) | Tarjetas, panel lateral, modales. |
+| **Líneas (1px)** | `#E2E8F0` (Gris neutro suave) | `#2C353F` (Gris acero) | Divisiones de layout colapsable. |
+| **Texto Principal** | `#0F172A` (Casi negro) | `#F8FAFC` (Blanco humo) | Títulos y lectura narrativa. |
+| **Crítico (LED)** | `#E53935` (Rojo Carmesí) | `#E53935` (Rojo Carmesí) | Emergencia crítica, incidentes activos, acciones destructivas. |
+| **Advertencia** | `#FFB300` (Ámbar) | `#FFB300` (Ámbar) | Riesgos secundarios, fugas, rutas bloqueadas. |
+| **Activo / OK** | `#43A047` (Verde Esmeralda)| `#43A047` (Verde Esmeralda)| Recursos activos en escena, zonas seguras. |

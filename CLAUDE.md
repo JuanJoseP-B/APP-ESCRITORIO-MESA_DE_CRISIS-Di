@@ -5,9 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Estado del repositorio
 
 Actualmente el repositorio (git, rama `main`, con remoto `origin`) solo contiene `SPEC.md` (la especificación del proyecto), un `README.md` de una línea ("Init") y `.gitignore`. No hay código ni `package.json` todavía. Todo lo descrito abajo proviene de `SPEC.md`; léelo antes de implementar y mantenlo como fuente de verdad. Los comandos de build/test aún no existen: se definirán en la Fase 1.
-
-Nota: `.gitignore` excluye `SPEC.md`, `CLAUDE.md` y `.claude/`, así que estos archivos no se versionan ni llegan al remoto.
-
 ## Proyecto
 
 "Mesa de Crisis": sistema C4I de respuesta a emergencias con dos aplicaciones sobre un mismo backend Supabase:
