@@ -21,7 +21,7 @@ describe('crearServicioPortal', () => {
     const from = vi.fn().mockReturnValue({ select });
     await crearServicioPortal({ from } as unknown as SupabaseClient).listarZonasRiesgo();
 
-    expect(from).toHaveBeenCalledWith('incidentes');
+    expect(from).toHaveBeenCalledWith('zonas_riesgo');
     expect(select).toHaveBeenCalledWith('id,titulo,nivel_criticidad,estado,geometria');
     expect(neq).toHaveBeenCalledWith('estado', 'Resuelto');
   });
@@ -93,6 +93,7 @@ describe('crearServicioPortal', () => {
     const client = { from, channel: vi.fn().mockReturnValue(canal), removeChannel: vi.fn() };
     const s = crearServicioPortal(client as unknown as SupabaseClient);
 
+    await s.listarZonasPublicas();
     await s.listarZonasRiesgo();
     await s.enviarReporte({ tipo: 'Otro', lat: 0, lng: 0 });
     s.suscribirZonasPublicas(vi.fn());
@@ -103,6 +104,8 @@ describe('crearServicioPortal', () => {
       ...canal.on.mock.calls.map((c) => (c[1] as { table: string }).table),
     ];
     expect(tablas).not.toContain('recursos_operativos');
+    expect(tablas).not.toContain('incidentes');
+    expect(new Set(tablas)).toEqual(new Set(['zonas_publicas', 'zonas_riesgo', 'reportes_ciudadanos']));
   });
 });
 

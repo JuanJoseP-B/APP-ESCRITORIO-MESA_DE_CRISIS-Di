@@ -4,8 +4,8 @@ import type { CambioRealtime } from '../domain/realtime';
 
 /**
  * Único punto de acceso a Supabase del portal. La UI consume esta interfaz
- * (vía hooks) y nunca el cliente. Solo toca `zonas_publicas`, `incidentes`
- * (columnas públicas) y `reportes_ciudadanos` (INSERT); jamás `recursos_operativos`.
+ * (vía hooks) y nunca el cliente. Solo toca `zonas_publicas`, `zonas_riesgo`
+ * (espejo público de incidentes, sin `timeline`) y `reportes_ciudadanos` (INSERT); jamás `recursos_operativos`.
  */
 export interface ServicioPortal {
   listarZonasPublicas(): Promise<readonly ZonaPublica[]>;
@@ -72,7 +72,7 @@ export function crearServicioPortal(client: SupabaseClient): ServicioPortal {
     },
     async listarZonasRiesgo() {
       const { data, error } = await client
-        .from('incidentes')
+        .from('zonas_riesgo')
         .select(COLUMNAS_RIESGO)
         .neq('estado', 'Resuelto');
       if (error) throw new Error(`No se pudieron leer las zonas de riesgo: ${error.message}`);
@@ -80,7 +80,7 @@ export function crearServicioPortal(client: SupabaseClient): ServicioPortal {
     },
     suscribirZonasPublicas: (cb) => suscribir<ZonaPublica>('zonas_publicas', cb),
     suscribirZonasRiesgo: (cb) =>
-      suscribir<ZonaRiesgo>('incidentes', (cambio) => cb(aCambioZonaRiesgo(cambio))),
+      suscribir<ZonaRiesgo>('zonas_riesgo', (cambio) => cb(aCambioZonaRiesgo(cambio))),
     async enviarReporte(reporte, foto) {
       let imagenUrl: string | null = reporte.imagen_url ?? null;
       if (foto) {
