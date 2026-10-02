@@ -1,0 +1,10 @@
+{
+  "skillOverrides": {
+    "anthropic-skills:pptx": "name-only",
+    "anthropic-skills:xlsx": "name-only",
+    "anthropic-skills:pdf": "name-only",
+    "anthropic-skills:morning": "name-only",
+    "anthropic-skills:skill-creator": "name-only",
+    "anthropic-skills:import-memory": "name-only"
+  }
+}
