@@ -71,3 +71,37 @@ describe('PanelMesa', () => {
     expect(onAlternarDibujo).toHaveBeenCalledOnce();
   });
 });
+
+describe('PanelMesa (acciones del operador)', () => {
+  const reporte: Reporte = { id: 'r1', tipo: 'Incendio', lat: 1, lng: 2, imagen_url: null, estado_validacion: 'No confirmado' };
+
+  it('confirma y descarta reportes sin confirmar', async () => {
+    const onConfirmarReporte = vi.fn();
+    const onDescartarReporte = vi.fn();
+    render(<PanelMesa {...props} reportes={[reporte]} onConfirmarReporte={onConfirmarReporte} onDescartarReporte={onDescartarReporte} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar reporte r1' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Descartar reporte r1' }));
+    expect(onConfirmarReporte).toHaveBeenCalledWith(reporte);
+    expect(onDescartarReporte).toHaveBeenCalledWith(reporte);
+  });
+
+  it('cambia el estado del incidente seleccionado ofreciendo solo los otros estados', async () => {
+    const onCambiarEstadoIncidente = vi.fn();
+    render(<PanelMesa {...props} seleccionadoId="c" onCambiarEstadoIncidente={onCambiarEstadoIncidente} />);
+    const grupo = screen.getByRole('group', { name: 'Estado del incidente' });
+
+    expect(within(grupo).queryByRole('button', { name: 'Marcar Abierto' })).toBeNull();
+    await userEvent.click(within(grupo).getByRole('button', { name: 'Marcar Resuelto' }));
+    expect(onCambiarEstadoIncidente).toHaveBeenCalledWith(props.incidentes[1], 'Resuelto');
+  });
+
+  it('muestra Salir solo si hay manejador', async () => {
+    const onCerrarSesion = vi.fn();
+    const { rerender } = render(<PanelMesa {...props} />);
+    expect(screen.queryByRole('button', { name: 'Salir' })).toBeNull();
+    rerender(<PanelMesa {...props} onCerrarSesion={onCerrarSesion} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Salir' }));
+    expect(onCerrarSesion).toHaveBeenCalled();
+  });
+});

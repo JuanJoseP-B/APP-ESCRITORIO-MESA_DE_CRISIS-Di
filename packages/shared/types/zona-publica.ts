@@ -11,3 +11,8 @@ export interface ZonaPublica {
   readonly capacidad_actual: number;
   readonly capacidad_maxima: number;
 }
+
+/** Nueva ocupación tras sumar `delta`, acotada entre 0 y la capacidad máxima. */
+export function ajustarOcupacion(zona: Pick<ZonaPublica, 'capacidad_actual' | 'capacidad_maxima'>, delta: number): number {
+  return Math.min(zona.capacidad_maxima, Math.max(0, zona.capacidad_actual + delta));
+}
