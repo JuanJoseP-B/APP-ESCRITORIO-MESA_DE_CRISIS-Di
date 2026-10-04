@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Sistema de diseño ARGOS (SPEC §10) */
+@theme {
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-base: #f1f5f9;
+  --color-superficie: #ffffff;
+  --color-linea: #e2e8f0;
+  --color-texto: #0f172a;
+  --color-critico: #e53935;
+  --color-advertencia: #ffb300;
+  --color-ok: #43a047;
+}
+
+.dark {
+  --color-base: #12161a;
+  --color-superficie: #1a2026;
+  --color-linea: #2c353f;
+  --color-texto: #f8fafc;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-base);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+}

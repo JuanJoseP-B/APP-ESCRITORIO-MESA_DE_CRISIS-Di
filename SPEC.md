@@ -72,14 +72,14 @@ El desarrollo debe seguir una estrategia de ramificación **GitFlow** y uso de *
 - [ ] Implementar la suscripción en tiempo real a la tabla de `incidentes` y `reportes_ciudadanos`.
 
 ### Fase 3: Portal Ciudadano (Sprints 4)
-- [ ] Construir la interfaz pública (Mobile-first).
-- [ ] Integrar el mapa de solo lectura que consuma los polígonos de riesgo y refugios seguros.
-- [ ] Desarrollar el formulario de "Reporte Rápido" (Uso de API Geolocation del navegador).
+- [x] Construir la interfaz pública (Mobile-first).
+- [x] Integrar el mapa de solo lectura que consuma los polígonos de riesgo y refugios seguros.
+- [x] Desarrollar el formulario de "Reporte Rápido" (Uso de API Geolocation del navegador).
 
 ### Fase 4: Sincronización y Refinamiento (Sprints 5)
-- [ ] Desarrollar la Máquina de Estados para Recursos (Drag & Drop o botones para cambiar de "Disponible" a "Despachado").
-- [ ] Validar las políticas de seguridad (RLS) en Supabase para asegurar que el portal público no pueda hacer query a la tabla de recursos operativos.
-- [ ] Pruebas de carga de WebSockets simulando usuarios concurrentes recibiendo alertas.
+- [x] Desarrollar la Máquina de Estados para Recursos (Drag & Drop o botones para cambiar de "Disponible" a "Despachado").
+- [x] Validar las políticas de seguridad (RLS) en Supabase para asegurar que el portal público no pueda hacer query a la tabla de recursos operativos.
+- [x] Pruebas de carga de WebSockets simulando usuarios concurrentes recibiendo alertas.
 
 ## 7. Reglas de Estructura de Código
 - **Tipos Compartidos:** Crear un paquete/directorio `packages/shared/types` exportando las interfaces de `Incidente`, `Recurso` y `Reporte` para evitar duplicidad de contratos entre la App Web y la App de Escritorio.
