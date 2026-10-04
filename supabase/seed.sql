@@ -1,10 +1,10 @@
 -- Datos de ejemplo para desarrollo. Ejecutar DESPUÉS de la migración (como postgres, en el SQL Editor).
-insert into public.recursos_operativos (tipo, estado_actual) values
-  ('Bomberos', 'Disponible'),
-  ('Bomberos', 'Disponible'),
-  ('Ambulancia', 'Disponible'),
-  ('Ambulancia', 'Inoperativo'),
-  ('Policía', 'Disponible');
+insert into public.recursos_operativos (tipo, estado_actual, etiqueta) values
+  ('Bomberos', 'Disponible', 'U01'),
+  ('Bomberos', 'Disponible', 'U02'),
+  ('Ambulancia', 'Disponible', 'M11'),
+  ('Ambulancia', 'Inoperativo', 'M10'),
+  ('Policía', 'Disponible', 'P01');
 
 insert into public.zonas_publicas (tipo, nombre, geometria, capacidad_actual, capacidad_maxima) values
   ('Refugio', 'Coliseo Municipal', '{"type":"Point","coordinates":[-77.2830,1.2150]}', 45, 200),

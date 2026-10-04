@@ -10,6 +10,8 @@ export interface Recurso {
   readonly tipo: TipoRecurso;
   readonly estado_actual: EstadoRecurso;
   readonly incidente_asignado_id: string | null;
+  /** Código visible de la unidad (p. ej. "U01"). */
+  readonly etiqueta?: string | null;
 }
 
 export const TRANSICIONES_RECURSO: Record<EstadoRecurso, readonly EstadoRecurso[]> = {

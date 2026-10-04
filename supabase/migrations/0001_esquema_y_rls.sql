@@ -29,7 +29,8 @@ create table public.recursos_operativos (
   tipo text not null check (tipo in ('Bomberos', 'Ambulancia', 'Policía')),
   estado_actual text not null default 'Disponible'
     check (estado_actual in ('Disponible', 'Despachado', 'En Escena', 'Inoperativo')),
-  incidente_asignado_id uuid references public.incidentes (id) on delete set null
+  incidente_asignado_id uuid references public.incidentes (id) on delete set null,
+  etiqueta text
 );
 
 create table public.zonas_publicas (
@@ -117,12 +118,11 @@ create policy zonas_publicas_operador on public.zonas_publicas
 create policy zonas_riesgo_lectura on public.zonas_riesgo for select to anon, authenticated using (true);
 
 -- ---------------------------------------------------------------- storage (bucket de fotos)
-insert into storage.buckets (id, name, public) values ('reportes', 'reportes', true)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('reportes', 'reportes', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
   on conflict (id) do nothing;
 create policy reportes_fotos_subida on storage.objects
   for insert to anon, authenticated with check (bucket_id = 'reportes');
-create policy reportes_fotos_lectura on storage.objects
-  for select to anon, authenticated using (bucket_id = 'reportes');
 
 -- ---------------------------------------------------------------- realtime
 -- Nota: `incidentes` y `recursos_operativos` quedan publicadas para los operadores; al tener RLS,

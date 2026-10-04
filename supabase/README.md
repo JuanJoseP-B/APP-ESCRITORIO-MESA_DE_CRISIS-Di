@@ -1,6 +1,10 @@
 # Supabase: esquema, RLS y datos de ejemplo
 
-## Orden de ejecución (SQL Editor del proyecto, uno tras otro)
+## Dos caminos según el estado de tu base
+- **Base ya creada a mano (con datos/usuarios):** aplica solo `migrations/0002_alinear_esquema_y_rls.sql`. No borra datos: añade columnas faltantes, crea `zonas_riesgo`, reemplaza políticas y privilegios, y crea el bucket `reportes`. (Es el que se aplicó al proyecto real.)
+- **Base vacía:** usa el orden de abajo.
+
+## Orden de ejecución para una base vacía (SQL Editor, uno tras otro)
 1. `reset.sql` — solo si ya existen tablas creadas a mano (borra todo `public.*` de la app). Si el bucket `reportes` ya existe, vacíalo/bórralo antes en Storage.
 2. `migrations/0001_esquema_y_rls.sql` — tablas, trigger `zonas_riesgo` (espejo público sin `timeline`), RLS, bucket `reportes`, Realtime.
 3. `seed.sql` — 5 recursos, 2 refugios, 1 bloqueo y 1 incidente de ejemplo.
@@ -23,6 +27,7 @@
 
 ## Verificación
 - Automática: `npm run test` ejecuta `supabase/rls.test.ts` (análisis estático del SQL).
+- Aplicada en el proyecto real (2026-10-04): los asesores de seguridad de Supabase solo reportan "Leaked Password Protection" (se activa en Auth → Passwords, plan Pro).
 - Real, con la anon key (todas deben devolver `[]`/401/403, nunca datos):
   ```
   curl "$URL/rest/v1/recursos_operativos?select=*" -H "apikey: $ANON" -H "Authorization: Bearer $ANON"
