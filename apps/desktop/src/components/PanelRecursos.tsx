@@ -42,7 +42,7 @@ export function PanelRecursos({ recursos, incidenteSeleccionadoId, onCambiarEsta
               {grupo.map((r) => (
                 <li key={r.id} className="flex items-center gap-2 text-sm">
                   <span className="flex-1 truncate">
-                    {r.tipo} <span className="font-mono text-xs">{r.id}</span>
+                    {r.tipo} <span className="font-mono text-xs">{r.etiqueta ?? r.id}</span>
                   </span>
                   {TRANSICIONES_RECURSO[r.estado_actual].map((destino) => {
                     const sinIncidente = destino === 'Despachado' && !incidenteSeleccionadoId;

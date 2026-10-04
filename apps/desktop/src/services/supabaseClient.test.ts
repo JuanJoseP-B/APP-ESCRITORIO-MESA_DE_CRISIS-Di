@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
-import { aCambioRealtime, crearServicioMesa } from './supabaseClient';
+import { aCambioRealtime, aSesion, crearServicioMesa } from './supabaseClient';
 
 type Fila = Record<string, unknown>;
 
@@ -88,5 +88,75 @@ describe('crearServicioMesa', () => {
     } as unknown as SupabaseClient);
 
     await expect(servicio.cambiarEstadoRecurso('r1', 'Disponible', null)).rejects.toThrow('denegado');
+  });
+
+  it('crea un incidente con insert().select().single()', async () => {
+    const fila = { id: 'n1', titulo: 'x' };
+    const single = vi.fn().mockResolvedValue({ data: fila, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const from = vi.fn().mockReturnValue({ insert });
+    const servicio = crearServicioMesa({ from } as unknown as SupabaseClient);
+    const nuevo = {
+      titulo: 'x',
+      nivel_criticidad: 'Medio',
+      estado: 'Abierto',
+      geometria: { type: 'Point', coordinates: [0, 0] },
+      timeline: [],
+    } as const;
+
+    await expect(servicio.crearIncidente(nuevo)).resolves.toEqual(fila);
+    expect(from).toHaveBeenCalledWith('incidentes');
+    expect(insert).toHaveBeenCalledWith(nuevo);
+  });
+
+  it.each([
+    ['actualizarIncidente', 'incidentes', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarIncidente('i1', { estado: 'Resuelto' }), { estado: 'Resuelto' }],
+    ['actualizarEstadoReporte', 'reportes_ciudadanos', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarEstadoReporte('i1', 'Confirmado'), { estado_validacion: 'Confirmado' }],
+    ['actualizarOcupacionZona', 'zonas_publicas', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarOcupacionZona('i1', 7), { capacidad_actual: 7 }],
+  ])('%s hace update().eq("id")', async (_nombre, tabla, accion, cambios) => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn().mockReturnValue({ eq });
+    const from = vi.fn().mockReturnValue({ update });
+
+    await accion(crearServicioMesa({ from } as unknown as SupabaseClient));
+
+    expect(from).toHaveBeenCalledWith(tabla);
+    expect(update).toHaveBeenCalledWith(cambios);
+    expect(eq).toHaveBeenCalledWith('id', 'i1');
+  });
+
+  it('inicia sesión y deriva el rol de app_metadata', async () => {
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      data: { user: { email: 'op@x.com', app_metadata: { rol: 'operador' } } },
+      error: null,
+    });
+    const servicio = crearServicioMesa({ auth: { signInWithPassword } } as unknown as SupabaseClient);
+
+    await expect(servicio.iniciarSesion('op@x.com', 'pw')).resolves.toEqual({ email: 'op@x.com', esOperador: true });
+    expect(signInWithPassword).toHaveBeenCalledWith({ email: 'op@x.com', password: 'pw' });
+  });
+
+  it('rechaza credenciales inválidas y no confunde user_metadata con rol', async () => {
+    const signInWithPassword = vi.fn().mockResolvedValue({ data: { user: null }, error: { message: 'Invalid login' } });
+    const servicio = crearServicioMesa({ auth: { signInWithPassword } } as unknown as SupabaseClient);
+    await expect(servicio.iniciarSesion('a', 'b')).rejects.toThrow('Invalid login');
+    expect(aSesion('c@x.com', { rol: 'ciudadano' }).esOperador).toBe(false);
+    expect(aSesion('c@x.com', undefined).esOperador).toBe(false);
+  });
+
+  it('sesionActual devuelve null sin sesión y la sesión si existe', async () => {
+    const getSession = vi.fn()
+      .mockResolvedValueOnce({ data: { session: null } })
+      .mockResolvedValueOnce({ data: { session: { user: { email: 'o@x.com', app_metadata: { rol: 'operador' } } } } });
+    const servicio = crearServicioMesa({ auth: { getSession } } as unknown as SupabaseClient);
+    await expect(servicio.sesionActual()).resolves.toBeNull();
+    await expect(servicio.sesionActual()).resolves.toEqual({ email: 'o@x.com', esOperador: true });
+  });
+
+  it('cierra sesión con auth.signOut', async () => {
+    const signOut = vi.fn().mockResolvedValue({ error: null });
+    await crearServicioMesa({ auth: { signOut } } as unknown as SupabaseClient).cerrarSesion();
+    expect(signOut).toHaveBeenCalled();
   });
 });

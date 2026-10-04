@@ -24,3 +24,19 @@ export interface Incidente {
 
 /** Vista pública de un incidente: sin `timeline` ni datos tácticos. */
 export type ZonaRiesgo = Pick<Incidente, 'id' | 'titulo' | 'nivel_criticidad' | 'estado' | 'geometria'>;
+
+/** Datos para crear un incidente; el `id` lo genera la base de datos. */
+export type NuevoIncidente = Omit<Incidente, 'id'>;
+
+/** Devuelve un `timeline` nuevo con el evento añadido al final (sin mutar). */
+export function agregarEvento(
+  timeline: readonly EventoTimeline[],
+  descripcion: string,
+  ahora: Date = new Date(),
+  autor?: string,
+): readonly EventoTimeline[] {
+  const evento: EventoTimeline = autor
+    ? { timestamp: ahora.toISOString(), descripcion, autor }
+    : { timestamp: ahora.toISOString(), descripcion };
+  return [...timeline, evento];
+}
