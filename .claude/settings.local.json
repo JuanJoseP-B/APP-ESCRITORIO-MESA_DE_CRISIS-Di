@@ -1,4 +1,7 @@
 {
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
   "skillOverrides": {
     "anthropic-skills:pptx": "name-only",
     "anthropic-skills:xlsx": "name-only",
@@ -6,5 +9,15 @@
     "anthropic-skills:morning": "name-only",
     "anthropic-skills:skill-creator": "name-only",
     "anthropic-skills:import-memory": "name-only"
-  }
+  },
+  "mcpServers": {
+    "dbhub": {
+      "command": "dbhub",
+      "args": [],
+      "env": {
+        "DSN": "postgresql://postgres:pass@localhost:5432/MesaDeCrisis"
+      }
+    }
+  },
+  "enableAllProjectMcpServers": true
 }

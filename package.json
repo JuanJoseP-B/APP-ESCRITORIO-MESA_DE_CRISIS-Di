@@ -1,0 +1,23 @@
+{
+  "name": "mesa-de-crisis",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/desktop && tsc --noEmit -p apps/web",
+    "test": "vitest run",
+    "test:load": "vitest run --config vitest.load.config.ts",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.1",
+    "eslint": "^10.11.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
+  }
+}
