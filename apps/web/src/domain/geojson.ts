@@ -1,4 +1,4 @@
-import type { GeoJsonGeometry, NivelCriticidad, ZonaPublica, ZonaRiesgo } from '@argos/shared';
+import type { GeometriaZona, NivelCriticidad, ZonaPublica, ZonaRiesgo } from '@argos/shared';
 
 /** Colores de la paleta ARGOS (SPEC §10). */
 export const COLOR_CRITICIDAD: Record<NivelCriticidad, string> = {
@@ -14,7 +14,7 @@ export type CategoriaCapa = 'riesgo' | 'refugio' | 'bloqueo';
 export interface FeaturePublica {
   readonly type: 'Feature';
   readonly id: string;
-  readonly geometry: GeoJsonGeometry;
+  readonly geometry: GeometriaZona;
   readonly properties: {
     readonly id: string;
     readonly categoria: CategoriaCapa;

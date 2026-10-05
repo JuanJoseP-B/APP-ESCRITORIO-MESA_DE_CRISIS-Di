@@ -1,4 +1,7 @@
 {
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
   "skillOverrides": {
     "anthropic-skills:pptx": "name-only",
     "anthropic-skills:xlsx": "name-only",
@@ -12,8 +15,9 @@
       "command": "dbhub",
       "args": [],
       "env": {
-        "DSN": "postgresql://postgres:pass@localhost:5432/argos"
+        "DSN": "postgresql://postgres:pass@localhost:5432/MesaDeCrisis"
       }
     }
-  }
+  },
+  "enableAllProjectMcpServers": true
 }

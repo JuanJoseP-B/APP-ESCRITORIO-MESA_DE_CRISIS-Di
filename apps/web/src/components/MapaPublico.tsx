@@ -69,6 +69,14 @@ export function MapaPublico({ zonas, ubicacion }: Props) {
         filter: ['==', '$type', 'Polygon'],
         paint: { 'line-color': ['get', 'color'], 'line-width': 2 },
       });
+      // Tramos de vía bloqueados trazados por el operador como línea.
+      m.addLayer({
+        id: 'zonas-tramos',
+        type: 'line',
+        source: FUENTE,
+        filter: ['==', '$type', 'LineString'],
+        paint: { 'line-color': ['get', 'color'], 'line-width': 4 },
+      });
       m.addLayer({
         id: 'zonas-puntos',
         type: 'circle',

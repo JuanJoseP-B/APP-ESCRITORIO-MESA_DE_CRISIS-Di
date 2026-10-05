@@ -25,12 +25,11 @@
     "@argos/shared": "*",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
+    "@mapbox/mapbox-gl-draw": "^1.5.2",
     "@supabase/supabase-js": "^2.117.2",
     "@tauri-apps/api": "^2.12.1",
     "maplibre-gl": "^6.11.2",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "terra-draw": "^1.35.0",
-    "terra-draw-maplibre-gl-adapter": "^1.4.1"
+    "react-dom": "^19.3.0"
   }
 }

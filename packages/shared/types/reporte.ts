@@ -1,7 +1,8 @@
+import { TIPOS_EMERGENCIA, etiquetaTipoEmergencia, type TipoEmergencia } from './emergencia';
 import { agregarEvento, type NuevoIncidente } from './incidente';
 
-export const TIPOS_REPORTE = ['Incendio', 'Bloqueo', 'Otro'] as const;
-export type TipoReporte = (typeof TIPOS_REPORTE)[number];
+export const TIPOS_REPORTE = TIPOS_EMERGENCIA;
+export type TipoReporte = TipoEmergencia;
 
 export const ESTADOS_VALIDACION = ['No confirmado', 'Confirmado', 'Descartado'] as const;
 export type EstadoValidacion = (typeof ESTADOS_VALIDACION)[number];
@@ -13,6 +14,8 @@ export interface Reporte {
   readonly lng: number;
   readonly imagen_url: string | null;
   readonly estado_validacion: EstadoValidacion;
+  /** Fecha y hora ISO 8601 de recepción; la fija la base de datos. */
+  readonly creado_en?: string;
 }
 
 /** Datos que envía el ciudadano; el servicio fija `estado_validacion` en "No confirmado". */
@@ -30,7 +33,7 @@ export const puedeValidarReporte = (r: Pick<Reporte, 'estado_validacion'>): bool
 /** Incidente inicial (punto en la ubicación del reporte) al confirmar un reporte ciudadano. */
 export function incidenteDesdeReporte(reporte: Reporte, ahora: Date = new Date()): NuevoIncidente {
   return {
-    titulo: `${reporte.tipo} reportado por ciudadano`,
+    titulo: `${etiquetaTipoEmergencia(reporte.tipo)} reportado por ciudadano`,
     nivel_criticidad: 'Medio',
     estado: 'Abierto',
     geometria: { type: 'Point', coordinates: [reporte.lng, reporte.lat] },

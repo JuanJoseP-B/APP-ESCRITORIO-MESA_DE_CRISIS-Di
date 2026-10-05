@@ -37,11 +37,11 @@ describe('crearServicioPortal', () => {
     const from = vi.fn().mockReturnValue({ insert });
     const servicio = crearServicioPortal({ from } as unknown as SupabaseClient);
 
-    await servicio.enviarReporte({ tipo: 'Incendio', lat: -33.4, lng: -70.6 });
+    await servicio.enviarReporte({ tipo: 'INCENDIO', lat: -33.4, lng: -70.6 });
 
     expect(from).toHaveBeenCalledWith('reportes_ciudadanos');
     expect(insert).toHaveBeenCalledWith({
-      tipo: 'Incendio',
+      tipo: 'INCENDIO',
       lat: -33.4,
       lng: -70.6,
       imagen_url: null,
@@ -58,7 +58,7 @@ describe('crearServicioPortal', () => {
     const foto = new File(['x'], 'f.png', { type: 'image/png' });
 
     await crearServicioPortal(client as unknown as SupabaseClient).enviarReporte(
-      { tipo: 'Bloqueo', lat: 1, lng: 2 },
+      { tipo: 'VIA_BLOQUEADA', lat: 1, lng: 2 },
       foto,
     );
 
@@ -75,7 +75,7 @@ describe('crearServicioPortal', () => {
 
     await expect(
       crearServicioPortal(client as unknown as SupabaseClient).enviarReporte(
-        { tipo: 'Otro', lat: 0, lng: 0 },
+        { tipo: 'FUGA_GAS', lat: 0, lng: 0 },
         foto,
       ),
     ).rejects.toThrow('sin espacio');
@@ -95,7 +95,7 @@ describe('crearServicioPortal', () => {
 
     await s.listarZonasPublicas();
     await s.listarZonasRiesgo();
-    await s.enviarReporte({ tipo: 'Otro', lat: 0, lng: 0 });
+    await s.enviarReporte({ tipo: 'FUGA_GAS', lat: 0, lng: 0 });
     s.suscribirZonasPublicas(vi.fn());
     s.suscribirZonasRiesgo(vi.fn());
 

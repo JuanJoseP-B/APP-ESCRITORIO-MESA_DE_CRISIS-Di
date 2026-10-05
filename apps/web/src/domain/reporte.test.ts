@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TAMANO_MAX_FOTO, validarReporte } from './reporte';
 
-const ok = { tipo: 'Incendio', lat: -33.4, lng: -70.6 };
+const ok = { tipo: 'INUNDACION', lat: -33.4, lng: -70.6 };
 
 describe('validarReporte', () => {
   it('acepta un reporte válido sin foto', () => {
@@ -20,6 +20,7 @@ describe('validarReporte', () => {
 
   it('rechaza tipos desconocidos', () => {
     expect(validarReporte({ ...ok, tipo: 'Otra cosa' })).toHaveLength(1);
+    expect(validarReporte({ ...ok, tipo: 'Incendio' })).toHaveLength(1);
   });
 
   it('valida la foto: debe ser imagen y ≤ 5 MB', () => {

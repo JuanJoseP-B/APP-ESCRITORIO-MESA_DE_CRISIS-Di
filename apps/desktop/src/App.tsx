@@ -11,8 +11,12 @@ import {
   useReportesRealtime,
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
+import type { Coordenadas, Reporte } from '@argos/shared';
+import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { servicioDemo } from './services/servicioDemo';
+
+const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
 function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; readonly onCerrarSesion: () => void }) {
   const incidentes = useIncidentesRealtime(servicio);
@@ -20,7 +24,10 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
   const recursos = useRecursosRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
+  const [reporteSeleccionadoId, setReporteSeleccionadoId] = useState<string | null>(null);
+  const [foco, setFoco] = useState<Coordenadas | null>(null);
   const [dibujando, setDibujando] = useState(false);
+  const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
 
   const acciones = useAccionesOperador({
@@ -31,14 +38,20 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
     alAvisar: setAviso,
   });
 
-  const { guardarPoligono } = acciones;
-  const alPoligono = useCallback(
-    (p: Parameters<typeof guardarPoligono>[0]) => {
+  const { guardarTrazado } = acciones;
+  const alFigura = useCallback(
+    (f: Parameters<typeof guardarTrazado>[0]) => {
       setDibujando(false);
-      guardarPoligono(p);
+      guardarTrazado(f);
     },
-    [guardarPoligono],
+    [guardarTrazado],
   );
+  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita el mismo reporte.
+  const alSeleccionarReporte = useCallback((r: Reporte) => {
+    setReporteSeleccionadoId(r.id);
+    setFoco({ lat: r.lat, lng: r.lng });
+  }, []);
+  const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId);
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
 
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? reportes.error;
@@ -50,13 +63,11 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
         reportes={reportes.datos}
         seleccionadoId={seleccionadoId}
         onSeleccionar={setSeleccionadoId}
+        reporteSeleccionadoId={reporteSeleccionadoId}
+        onSeleccionarReporte={alSeleccionarReporte}
         dibujando={dibujando}
         onAlternarDibujo={() => {
           setAviso(null);
-          if (!dibujando && !seleccionadoId) {
-            setAviso('Selecciona un incidente antes de trazar su zona de riesgo');
-            return;
-          }
           setDibujando((d) => !d);
         }}
         onConfirmarReporte={acciones.confirmarReporte}
@@ -74,12 +85,42 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
       <main className="relative flex-1">
         <MapView
           incidentes={incidentes.datos}
+          zonas={zonas.datos}
+          reportes={reportes.datos}
           seleccionadoId={seleccionadoId}
+          reporteSeleccionadoId={reporteSeleccionadoId}
           onSeleccionar={setSeleccionadoId}
+          foco={foco}
           dibujando={dibujando}
-          onPoligono={alPoligono}
+          modoTrazado={modoTrazado}
+          onFigura={alFigura}
           onErrorDibujo={alErrorDibujo}
         />
+        {dibujando && (
+          <div className="absolute left-3 top-3 border border-linea bg-superficie px-2 py-1.5 font-mono text-xs">
+            <div role="group" aria-label="Figura a trazar" className="flex gap-1">
+              {MODOS_TRAZADO.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={m === modoTrazado}
+                  onClick={() => setModoTrazado(m)}
+                  className={`border px-2 py-0.5 uppercase ${
+                    m === modoTrazado ? 'border-texto bg-texto text-superficie' : 'border-linea hover:border-texto'
+                  }`}
+                >
+                  {ETIQUETA_MODO[m]}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 max-w-64">
+              {modoTrazado === 'poligono' && incidenteSeleccionado
+                ? `Destino: zona de riesgo de "${incidenteSeleccionado.titulo}".`
+                : 'Destino: zonas públicas (Bloqueo de Vía).'}{' '}
+              Clic para añadir vértices; doble clic o Enter para terminar.
+            </p>
+          </div>
+        )}
         {mensaje && (
           <p role="status" className="absolute bottom-3 left-3 border border-linea bg-superficie px-2 py-1 font-mono text-xs">
             {mensaje}

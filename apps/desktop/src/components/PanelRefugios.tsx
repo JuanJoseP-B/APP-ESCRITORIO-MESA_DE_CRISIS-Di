@@ -1,8 +1,9 @@
-import { ajustarOcupacion, type ZonaPublica } from '@argos/shared';
+import type { ZonaPublica } from '@argos/shared';
 
 interface Props {
   readonly zonas: readonly ZonaPublica[];
-  readonly onCambiarOcupacion: (zona: ZonaPublica, nuevaOcupacion: number) => void;
+  /** Recibe el incremento relativo (±PASO); quien persiste lo aplica de forma atómica. */
+  readonly onCambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
 }
 
 const PASO = 5;
@@ -23,7 +24,7 @@ export function PanelRefugios({ zonas, onCambiarOcupacion }: Props) {
               type="button"
               aria-label={`Reducir ocupación de ${z.nombre}`}
               disabled={z.capacidad_actual <= 0}
-              onClick={() => onCambiarOcupacion(z, ajustarOcupacion(z, -PASO))}
+              onClick={() => onCambiarOcupacion(z, -PASO)}
               className={boton}
             >
               -{PASO}
@@ -35,7 +36,7 @@ export function PanelRefugios({ zonas, onCambiarOcupacion }: Props) {
               type="button"
               aria-label={`Aumentar ocupación de ${z.nombre}`}
               disabled={z.capacidad_actual >= z.capacidad_maxima}
-              onClick={() => onCambiarOcupacion(z, ajustarOcupacion(z, PASO))}
+              onClick={() => onCambiarOcupacion(z, PASO)}
               className={boton}
             >
               +{PASO}

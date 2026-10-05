@@ -3,6 +3,7 @@ import type {
   EstadoRecurso,
   EstadoValidacion,
   Incidente,
+  NuevaZonaPublica,
   NuevoIncidente,
   Recurso,
   Reporte,
@@ -31,14 +32,21 @@ export interface ServicioMesa {
   suscribirReportes(alCambiar: (cambio: CambioRealtime<Reporte>) => void): () => void;
   listarRecursos(): Promise<readonly Recurso[]>;
   suscribirRecursos(alCambiar: (cambio: CambioRealtime<Recurso>) => void): () => void;
-  /** Persiste el cambio de estado; la validación de la transición la hace quien llama (UI/dominio). */
-  cambiarEstadoRecurso(id: string, estado: EstadoRecurso, incidenteId: string | null): Promise<void>;
+  /**
+   * Persiste el cambio de estado y devuelve la fila guardada; la validación de la transición la hace
+   * quien llama (UI/dominio). Toda escritura se notifica además a los suscriptores locales, sin
+   * esperar el eco de Realtime.
+   */
+  cambiarEstadoRecurso(id: string, estado: EstadoRecurso, incidenteId: string | null): Promise<Recurso>;
   crearIncidente(nuevo: NuevoIncidente): Promise<Incidente>;
   actualizarIncidente(id: string, cambios: CambiosIncidente): Promise<void>;
   actualizarEstadoReporte(id: string, estado: EstadoValidacion): Promise<void>;
   listarZonasPublicas(): Promise<readonly ZonaPublica[]>;
   suscribirZonasPublicas(alCambiar: (cambio: CambioRealtime<ZonaPublica>) => void): () => void;
-  actualizarOcupacionZona(id: string, capacidadActual: number): Promise<void>;
+  /** Guarda una figura trazada en el mapa (polígono o línea) como zona pública. */
+  crearZonaPublica(nueva: NuevaZonaPublica): Promise<ZonaPublica>;
+  /** Suma `delta` a `capacidad_actual` de forma atómica en la base (acotado entre 0 y la capacidad máxima). */
+  ajustarOcupacionZona(id: string, delta: number): Promise<ZonaPublica>;
   /** Autenticación email/contraseña (sin OAuth). */
   iniciarSesion(email: string, password: string): Promise<SesionOperador>;
   cerrarSesion(): Promise<void>;
@@ -61,10 +69,30 @@ export function aSesion(email: string | undefined, appMetadata: Record<string, u
   return { email: email ?? '', esOperador: appMetadata?.['rol'] === 'operador' };
 }
 
+/** PostgREST responde PGRST116 cuando `.single()` no encuentra fila: RLS la ocultó o no existe. */
+const describir = (error: { readonly message: string; readonly code?: string }): string =>
+  error.code === 'PGRST116' ? 'la fila no existe o la sesión no tiene rol de operador' : error.message;
+
 export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
-  const actualizar = async (tabla: string, id: string, cambios: Fila): Promise<void> => {
-    const { error } = await client.from(tabla).update(cambios).eq('id', id);
-    if (error) throw new Error(`No se pudo actualizar ${tabla} ${id}: ${error.message}`);
+  type Oyente = (cambio: CambioRealtime<{ readonly id: string }>) => void;
+  const oyentes = new Map<string, Set<Oyente>>();
+
+  /** Entrega a la UI la fila recién escrita; el eco posterior de Realtime es idempotente. */
+  const emitir = <T extends { readonly id: string }>(tabla: string, tipo: 'INSERT' | 'UPDATE', fila: T): T => {
+    oyentes.get(tabla)?.forEach((cb) => cb({ tipo, nuevo: fila, idEliminado: null }));
+    return fila;
+  };
+
+  const actualizar = async <T extends { readonly id: string }>(tabla: string, id: string, cambios: Fila): Promise<T> => {
+    const { data, error } = await client.from(tabla).update(cambios).eq('id', id).select().single();
+    if (error) throw new Error(`No se pudo actualizar ${tabla} ${id}: ${describir(error)}`);
+    return emitir(tabla, 'UPDATE', data as T);
+  };
+
+  const insertar = async <T extends { readonly id: string }>(tabla: string, fila: Fila): Promise<T> => {
+    const { data, error } = await client.from(tabla).insert(fila).select().single();
+    if (error) throw new Error(`No se pudo crear en ${tabla}: ${describir(error)}`);
+    return emitir(tabla, 'INSERT', data as T);
   };
 
   const listar = async <T>(tabla: string): Promise<readonly T[]> => {
@@ -77,6 +105,9 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
     tabla: string,
     alCambiar: (cambio: CambioRealtime<T>) => void,
   ): (() => void) => {
+    const local = alCambiar as Oyente;
+    const grupo = oyentes.get(tabla) ?? new Set<Oyente>();
+    oyentes.set(tabla, grupo.add(local));
     const canal = client
       .channel(`mesa-${tabla}`)
       .on<Fila>('postgres_changes', { event: '*', schema: 'public', table: tabla }, (payload) =>
@@ -84,6 +115,7 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
       )
       .subscribe();
     return () => {
+      grupo.delete(local);
       void client.removeChannel(canal);
     };
   };
@@ -95,23 +127,24 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
     suscribirReportes: (cb) => suscribir<Reporte>('reportes_ciudadanos', cb),
     listarRecursos: () => listar<Recurso>('recursos_operativos'),
     suscribirRecursos: (cb) => suscribir<Recurso>('recursos_operativos', cb),
-    cambiarEstadoRecurso: async (id, estado, incidenteId) => {
-      const { error } = await client
-        .from('recursos_operativos')
-        .update({ estado_actual: estado, incidente_asignado_id: incidenteId })
-        .eq('id', id);
-      if (error) throw new Error(`No se pudo actualizar el recurso ${id}: ${error.message}`);
+    cambiarEstadoRecurso: (id, estado, incidenteId) =>
+      actualizar<Recurso>('recursos_operativos', id, { estado_actual: estado, incidente_asignado_id: incidenteId }),
+    crearIncidente: (nuevo) => insertar<Incidente>('incidentes', { ...nuevo }),
+    actualizarIncidente: async (id, cambios) => {
+      await actualizar<Incidente>('incidentes', id, { ...cambios });
     },
-    crearIncidente: async (nuevo) => {
-      const { data, error } = await client.from('incidentes').insert(nuevo).select().single();
-      if (error) throw new Error(`No se pudo crear el incidente: ${error.message}`);
-      return data as Incidente;
+    actualizarEstadoReporte: async (id, estado) => {
+      await actualizar<Reporte>('reportes_ciudadanos', id, { estado_validacion: estado });
     },
-    actualizarIncidente: (id, cambios) => actualizar('incidentes', id, { ...cambios }),
-    actualizarEstadoReporte: (id, estado) => actualizar('reportes_ciudadanos', id, { estado_validacion: estado }),
     listarZonasPublicas: () => listar<ZonaPublica>('zonas_publicas'),
     suscribirZonasPublicas: (cb) => suscribir<ZonaPublica>('zonas_publicas', cb),
-    actualizarOcupacionZona: (id, capacidadActual) => actualizar('zonas_publicas', id, { capacidad_actual: capacidadActual }),
+    crearZonaPublica: (nueva) => insertar<ZonaPublica>('zonas_publicas', { ...nueva }),
+    ajustarOcupacionZona: async (id, delta) => {
+      // RPC de migrations/0004: un único UPDATE relativo, sin leer-y-escribir desde el cliente.
+      const { data, error } = await client.rpc('ajustar_ocupacion_zona', { p_id: id, p_delta: delta }).single();
+      if (error) throw new Error(`No se pudo ajustar la ocupación de ${id}: ${describir(error)}`);
+      return emitir('zonas_publicas', 'UPDATE', data as ZonaPublica);
+    },
     iniciarSesion: async (email, password) => {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw new Error(`No se pudo iniciar sesión: ${error.message}`);

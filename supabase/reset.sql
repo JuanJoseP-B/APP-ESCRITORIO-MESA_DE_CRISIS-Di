@@ -6,6 +6,7 @@ drop table if exists public.recursos_operativos cascade;
 drop table if exists public.reportes_ciudadanos cascade;
 drop table if exists public.zonas_publicas cascade;
 drop table if exists public.incidentes cascade;
+drop function if exists public.ajustar_ocupacion_zona(uuid, integer);
 drop function if exists public.sincronizar_zona_riesgo() cascade;
 drop function if exists public.es_operador() cascade;
 

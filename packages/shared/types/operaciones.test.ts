@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { agregarEvento } from './incidente';
 import { incidenteDesdeReporte, puedeValidarReporte, type Reporte } from './reporte';
-import { ajustarOcupacion } from './zona-publica';
+import { ajustarOcupacion, zonaDesdeTrazado } from './zona-publica';
 
 const ahora = new Date('2026-10-04T10:00:00Z');
 const reporte: Reporte = {
-  id: 'r1', tipo: 'Incendio', lat: 1.2, lng: -77.3, imagen_url: null, estado_validacion: 'No confirmado',
+  id: 'r1', tipo: 'INCENDIO', lat: 1.2, lng: -77.3, imagen_url: null, estado_validacion: 'No confirmado',
 };
 
 describe('agregarEvento', () => {
@@ -42,5 +42,20 @@ describe('ajustarOcupacion', () => {
     expect(ajustarOcupacion(z, 5)).toBe(10);
     expect(ajustarOcupacion(z, -20)).toBe(0);
     expect(ajustarOcupacion(z, -3)).toBe(5);
+  });
+});
+
+describe('zonaDesdeTrazado', () => {
+  it('crea un Bloqueo de Vía sin aforo con la geometría trazada y un nombre fechado', () => {
+    const linea = { type: 'LineString', coordinates: [[0, 0], [1, 1]] } as const;
+    expect(zonaDesdeTrazado(linea, ahora)).toEqual({
+      tipo: 'Bloqueo de Vía',
+      nombre: 'Tramo trazado 2026-10-04 10:00 UTC',
+      geometria: linea,
+      capacidad_actual: 0,
+      capacidad_maxima: 0,
+    });
+    const poligono = { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] } as const;
+    expect(zonaDesdeTrazado(poligono, ahora).nombre).toBe('Zona trazada 2026-10-04 10:00 UTC');
   });
 });

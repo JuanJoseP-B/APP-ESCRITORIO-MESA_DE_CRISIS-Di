@@ -51,11 +51,47 @@ describe('servicioDemo (incidentes, reportes y refugios)', () => {
     const servicio = crearServicioDemo();
     await servicio.actualizarEstadoReporte('demo-r1', 'Confirmado');
     await servicio.actualizarIncidente('demo-1', { estado: 'Resuelto' });
-    await servicio.actualizarOcupacionZona('demo-z1', 99);
+    await servicio.ajustarOcupacionZona('demo-z1', 5);
 
     expect((await servicio.listarReportes())[0]?.estado_validacion).toBe('Confirmado');
     expect((await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.estado).toBe('Resuelto');
-    expect((await servicio.listarZonasPublicas()).find((z) => z.id === 'demo-z1')?.capacidad_actual).toBe(99);
+    expect((await servicio.listarZonasPublicas()).find((z) => z.id === 'demo-z1')?.capacidad_actual).toBe(50);
+  });
+
+  it('ajusta la ocupación de forma relativa: dos pulsaciones simultáneas suman y el resultado se acota', async () => {
+    const servicio = crearServicioDemo();
+    const [a, b] = await Promise.all([
+      servicio.ajustarOcupacionZona('demo-z1', 5),
+      servicio.ajustarOcupacionZona('demo-z1', 5),
+    ]);
+    expect([a.capacidad_actual, b.capacidad_actual]).toEqual([50, 55]);
+    await expect(servicio.ajustarOcupacionZona('demo-z1', -1000)).resolves.toMatchObject({ capacidad_actual: 0 });
+    await expect(servicio.ajustarOcupacionZona('demo-z1', 1000)).resolves.toMatchObject({ capacidad_actual: 200 });
+  });
+
+  it('crea una zona pública trazada y la notifica', async () => {
+    const servicio = crearServicioDemo();
+    const alCambiar = vi.fn();
+    servicio.suscribirZonasPublicas(alCambiar);
+    const zona = await servicio.crearZonaPublica({
+      tipo: 'Bloqueo de Vía',
+      nombre: 'Tramo',
+      geometria: { type: 'LineString', coordinates: [[0, 0], [1, 1]] },
+      capacidad_actual: 0,
+      capacidad_maxima: 0,
+    });
+    expect(alCambiar).toHaveBeenCalledWith({ tipo: 'INSERT', nuevo: zona, idEliminado: null });
+    expect(await servicio.listarZonasPublicas()).toContainEqual(zona);
+  });
+
+  it('cambiar el estado de un recurso devuelve la fila guardada', async () => {
+    const servicio = crearServicioDemo();
+    await expect(servicio.cambiarEstadoRecurso('demo-rec-1', 'Despachado', 'demo-1')).resolves.toEqual({
+      id: 'demo-rec-1',
+      tipo: 'Bomberos',
+      estado_actual: 'Despachado',
+      incidente_asignado_id: 'demo-1',
+    });
   });
 
   it('simula sesión de operador', async () => {

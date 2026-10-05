@@ -17,14 +17,16 @@ const zona = (id: string, actual: number, max = 10, tipo: ZonaPublica['tipo'] = 
 });
 
 describe('PanelRefugios', () => {
-  it('solo lista refugios y emite la ocupación acotada', async () => {
+  it('solo lista refugios y emite el delta ±5 (no el valor absoluto)', async () => {
     const onCambiarOcupacion = vi.fn();
     const zonas = [zona('a', 8), zona('b', 0, 10, 'Bloqueo de Vía')];
     render(<PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} />);
 
     expect(screen.queryByText('Zona b')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Aumentar ocupación de Zona a' }));
-    expect(onCambiarOcupacion).toHaveBeenCalledWith(zonas[0], 10);
+    expect(onCambiarOcupacion).toHaveBeenCalledWith(zonas[0], 5);
+    await userEvent.click(screen.getByRole('button', { name: 'Reducir ocupación de Zona a' }));
+    expect(onCambiarOcupacion).toHaveBeenLastCalledWith(zonas[0], -5);
   });
 
   it('deshabilita los límites', () => {

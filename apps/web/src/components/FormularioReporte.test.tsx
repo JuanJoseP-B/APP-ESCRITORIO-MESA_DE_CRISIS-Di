@@ -36,10 +36,10 @@ describe('FormularioReporte', () => {
 
   it('envía tipo y coordenadas y confirma el envío', async () => {
     const { onEnviar } = montar(conUbicacion);
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de emergencia'), 'Bloqueo');
+    await userEvent.selectOptions(screen.getByLabelText('Tipo de emergencia'), 'Creciente súbita');
     await userEvent.click(screen.getByRole('button', { name: 'Enviar reporte' }));
 
-    expect(onEnviar).toHaveBeenCalledWith({ tipo: 'Bloqueo', lat: -33.4, lng: -70.6 }, null);
+    expect(onEnviar).toHaveBeenCalledWith({ tipo: 'CRECIENTE_SUBITA', lat: -33.4, lng: -70.6 }, null);
     expect(await screen.findByRole('status')).toHaveProperty('textContent', expect.stringContaining('Reporte enviado'));
   });
 

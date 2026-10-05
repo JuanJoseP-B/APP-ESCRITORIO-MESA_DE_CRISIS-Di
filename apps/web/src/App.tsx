@@ -13,6 +13,7 @@ type Pestana = 'mapa' | 'reportar';
 
 export function App() {
   const servicio = useMemo(() => crearServicioDesdeEntorno() ?? servicioDemo, []);
+  const esDemo = servicio === servicioDemo;
   const riesgo = useZonasRiesgoRealtime(servicio);
   const publicas = useZonasPublicasRealtime(servicio);
   const { resultado, solicitar } = useGeolocalizacion();
@@ -42,6 +43,11 @@ export function App() {
           {hayRiesgoActivo ? '● ZONAS DE RIESGO ACTIVAS' : '● SIN ALERTAS'}
         </span>
       </header>
+      {esDemo && (
+        <p role="alert" className="border-b border-linea bg-advertencia/15 px-3 py-1 font-mono text-xs font-bold">
+          MODO DEMO: sin conexión a Supabase, los reportes no llegan a la Mesa de Crisis.
+        </p>
+      )}
 
       <main className="relative min-h-0 flex-1">
         <div className={pestana === 'mapa' ? 'flex h-full flex-col' : 'hidden'}>
