@@ -1,4 +1,4 @@
-import type { Incidente, Recurso, Reporte, ZonaPublica } from '@argos/shared';
+import { ajustarOcupacion, type Incidente, type Recurso, type Reporte, type ZonaPublica } from '@argos/shared';
 import type { CambioRealtime } from '../domain/realtime';
 import type { ServicioMesa } from './supabaseClient';
 
@@ -88,12 +88,14 @@ function crearTabla<T extends { readonly id: string }>(inicial: readonly T[]) {
       filas = [...filas, fila];
       oyentes.forEach((cb) => cb({ tipo: 'INSERT', nuevo: fila, idEliminado: null }));
     },
-    actualizar(id: string, cambios: Partial<T>): void {
+    /** `cambios` puede derivarse de la fila vigente (actualización relativa). */
+    actualizar(id: string, cambios: Partial<T> | ((actual: T) => Partial<T>)): T {
       const actual = filas.find((f) => f.id === id);
       if (!actual) throw new Error(`Fila ${id} no existe`);
-      const nuevo = { ...actual, ...cambios };
+      const nuevo = { ...actual, ...(typeof cambios === 'function' ? cambios(actual) : cambios) };
       filas = filas.map((f) => (f.id === id ? nuevo : f));
       oyentes.forEach((cb) => cb({ tipo: 'UPDATE', nuevo, idEliminado: null }));
+      return nuevo;
     },
   };
 }
@@ -106,10 +108,9 @@ export function crearServicioDemo(): ServicioMesa {
   const tZonas = crearTabla<ZonaPublica>(zonasIniciales);
   let contador = 0;
   const sesion = { email: 'demo@local', esOperador: true };
-  const envolver = (f: () => void): Promise<void> => {
+  const envolver = <R>(f: () => R): Promise<R> => {
     try {
-      f();
-      return Promise.resolve();
+      return Promise.resolve(f());
     } catch (err) {
       return Promise.reject(err instanceof Error ? err : new Error('Error desconocido'));
     }
@@ -129,12 +130,18 @@ export function crearServicioDemo(): ServicioMesa {
       tIncidentes.insertar(incidente);
       return Promise.resolve(incidente);
     },
-    actualizarIncidente: (id, cambios) => envolver(() => tIncidentes.actualizar(id, cambios)),
-    actualizarEstadoReporte: (id, estado) => envolver(() => tReportes.actualizar(id, { estado_validacion: estado })),
+    actualizarIncidente: (id, cambios) => envolver(() => void tIncidentes.actualizar(id, cambios)),
+    actualizarEstadoReporte: (id, estado) =>
+      envolver(() => void tReportes.actualizar(id, { estado_validacion: estado })),
     listarZonasPublicas: tZonas.listar,
     suscribirZonasPublicas: tZonas.suscribir,
-    actualizarOcupacionZona: (id, capacidadActual) =>
-      envolver(() => tZonas.actualizar(id, { capacidad_actual: capacidadActual })),
+    crearZonaPublica: (nueva) => {
+      const zona: ZonaPublica = { ...nueva, id: `demo-zt${++contador}` };
+      tZonas.insertar(zona);
+      return Promise.resolve(zona);
+    },
+    ajustarOcupacionZona: (id, delta) =>
+      envolver(() => tZonas.actualizar(id, (z) => ({ capacidad_actual: ajustarOcupacion(z, delta) }))),
     iniciarSesion: () => Promise.resolve(sesion),
     cerrarSesion: () => Promise.resolve(),
     sesionActual: () => Promise.resolve(sesion),

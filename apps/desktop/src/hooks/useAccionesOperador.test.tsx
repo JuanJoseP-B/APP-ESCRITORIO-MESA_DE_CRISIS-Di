@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { GeoJsonPolygon, Incidente, Recurso, Reporte } from '@argos/shared';
+import type { GeoJsonPolygon, Incidente, Recurso, Reporte, ZonaPublica } from '@argos/shared';
 import { crearServicioDemo } from '../services/servicioDemo';
 import { useAccionesOperador } from './useAccionesOperador';
 
@@ -44,20 +44,47 @@ describe('useAccionesOperador', () => {
     const { servicio, acciones, alAvisar, incidentes } = await montar('demo-1');
     const antes = incidentes.find((i) => i.id === 'demo-1')?.timeline.length ?? 0;
 
-    acciones.current.guardarPoligono(poligono);
+    acciones.current.guardarTrazado(poligono);
 
     await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith(expect.stringContaining('Zona de riesgo guardada')));
     const actualizado = (await servicio.listarIncidentes()).find((i) => i.id === 'demo-1') as Incidente;
     expect(actualizado.geometria).toEqual(poligono);
     expect(actualizado.timeline).toHaveLength(antes + 1);
+    expect(await servicio.listarZonasPublicas()).toHaveLength(2);
   });
 
-  it('avisa si se traza una zona sin incidente seleccionado', async () => {
+  it('sin incidente seleccionado guarda el polígono en zonas_publicas', async () => {
     const { servicio, acciones, alAvisar } = await montar(null);
     const actualizar = vi.spyOn(servicio, 'actualizarIncidente');
-    acciones.current.guardarPoligono(poligono);
-    expect(alAvisar).toHaveBeenCalledWith(expect.stringContaining('Selecciona un incidente'));
+
+    acciones.current.guardarTrazado(poligono);
+
+    await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith(expect.stringContaining('guardado en zonas públicas')));
     expect(actualizar).not.toHaveBeenCalled();
+    const creada = (await servicio.listarZonasPublicas()).at(-1);
+    expect(creada).toMatchObject({ tipo: 'Bloqueo de Vía', geometria: poligono, capacidad_maxima: 0 });
+  });
+
+  it('una línea va siempre a zonas_publicas, aunque haya incidente seleccionado', async () => {
+    const { servicio, acciones, alAvisar } = await montar('demo-1');
+    const linea = { type: 'LineString', coordinates: [[0, 0], [1, 1]] } as const;
+
+    acciones.current.guardarTrazado(linea);
+
+    await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith(expect.stringContaining('guardado en zonas públicas')));
+    expect((await servicio.listarZonasPublicas()).at(-1)?.geometria).toEqual(linea);
+    expect((await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.geometria.type).toBe('Polygon');
+  });
+
+  it('cambia la ocupación de un refugio enviando el delta al servicio', async () => {
+    const { servicio, acciones } = await montar();
+    const ajustar = vi.spyOn(servicio, 'ajustarOcupacionZona');
+    const zona = (await servicio.listarZonasPublicas())[0] as ZonaPublica;
+
+    acciones.current.cambiarOcupacion(zona, -5);
+
+    await waitFor(async () => expect((await servicio.listarZonasPublicas())[0]?.capacidad_actual).toBe(40));
+    expect(ajustar).toHaveBeenCalledWith('demo-z1', -5);
   });
 
   it('cambia el estado del incidente y lo registra en el timeline', async () => {
@@ -84,12 +111,12 @@ describe('useAccionesOperador', () => {
     await waitFor(() => expect(alAvisar).toHaveBeenCalledWith(expect.stringContaining('Transición inválida')));
   });
 
-  it('guardarPoligono mantiene su identidad entre renders', async () => {
+  it('guardarTrazado mantiene su identidad entre renders', async () => {
     const servicio = crearServicioDemo();
     const props = { servicio, incidentes: [], seleccionadoId: null as string | null, alSeleccionar: vi.fn(), alAvisar: vi.fn() };
     const { result, rerender } = renderHook((p) => useAccionesOperador(p), { initialProps: props });
-    const primero = result.current.guardarPoligono;
+    const primero = result.current.guardarTrazado;
     rerender({ ...props, seleccionadoId: 'x' });
-    expect(result.current.guardarPoligono).toBe(primero);
+    expect(result.current.guardarTrazado).toBe(primero);
   });
 });

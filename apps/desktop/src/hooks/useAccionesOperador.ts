@@ -3,14 +3,15 @@ import {
   agregarEvento,
   incidenteDesdeReporte,
   transicionarRecurso,
+  zonaDesdeTrazado,
   type EstadoIncidente,
   type EstadoRecurso,
-  type GeoJsonPolygon,
   type Incidente,
   type Recurso,
   type Reporte,
   type ZonaPublica,
 } from '@argos/shared';
+import type { FiguraTrazada } from '../domain/trazado';
 import type { ServicioMesa } from '../services/supabaseClient';
 
 interface Opciones {
@@ -25,9 +26,14 @@ export interface AccionesOperador {
   readonly confirmarReporte: (reporte: Reporte) => void;
   readonly descartarReporte: (reporte: Reporte) => void;
   readonly cambiarEstadoIncidente: (incidente: Incidente, estado: EstadoIncidente) => void;
-  /** Identidad estable: el mapa reinicia el trazado si cambia. */
-  readonly guardarPoligono: (poligono: GeoJsonPolygon) => void;
-  readonly cambiarOcupacion: (zona: ZonaPublica, nuevaOcupacion: number) => void;
+  /**
+   * Un polígono con incidente seleccionado pasa a ser su zona de riesgo; cualquier otra figura
+   * (sin incidente, o una línea) se guarda en `zonas_publicas`.
+   * Identidad estable: el mapa reinicia el trazado si cambia.
+   */
+  readonly guardarTrazado: (figura: FiguraTrazada) => void;
+  /** `delta` relativo (p. ej. +5 / -5); la base lo aplica de forma atómica. */
+  readonly cambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
   readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso) => void;
 }
 
@@ -59,29 +65,30 @@ export function useAccionesOperador({
     [alAvisar],
   );
 
-  const guardarPoligono = useCallback(
-    (poligono: GeoJsonPolygon) => {
+  const guardarTrazado = useCallback(
+    (figura: FiguraTrazada) => {
       const { incidentes: lista, seleccionadoId: id } = ultimo.current;
       const incidente = lista.find((i) => i.id === id);
-      if (!incidente) {
-        alAvisar('Selecciona un incidente para asignarle la zona de riesgo');
+      if (figura.type === 'Polygon' && incidente) {
+        ejecutar(
+          () =>
+            servicio.actualizarIncidente(incidente.id, {
+              geometria: figura,
+              timeline: agregarEvento(incidente.timeline, 'Zona de riesgo trazada por operador'),
+            }),
+          `Zona de riesgo guardada en "${incidente.titulo}" (${figura.coordinates[0]?.length ?? 0} puntos)`,
+        );
         return;
       }
-      ejecutar(
-        () =>
-          servicio.actualizarIncidente(incidente.id, {
-            geometria: poligono,
-            timeline: agregarEvento(incidente.timeline, 'Zona de riesgo trazada por operador'),
-          }),
-        `Zona de riesgo guardada (${poligono.coordinates[0]?.length ?? 0} puntos)`,
-      );
+      const zona = zonaDesdeTrazado(figura);
+      ejecutar(() => servicio.crearZonaPublica(zona), `"${zona.nombre}" guardado en zonas públicas`);
     },
-    [servicio, ejecutar, alAvisar],
+    [servicio, ejecutar],
   );
 
   return useMemo<AccionesOperador>(
     () => ({
-      guardarPoligono,
+      guardarTrazado,
       confirmarReporte: (reporte) =>
         ejecutar(async () => {
           const incidente = await servicio.crearIncidente(incidenteDesdeReporte(reporte));
@@ -96,7 +103,7 @@ export function useAccionesOperador({
             timeline: agregarEvento(incidente.timeline, `Estado cambiado a ${estado}`),
           }),
         ),
-      cambiarOcupacion: (zona, nueva) => ejecutar(() => servicio.actualizarOcupacionZona(zona.id, nueva)),
+      cambiarOcupacion: (zona, delta) => ejecutar(() => servicio.ajustarOcupacionZona(zona.id, delta)),
       cambiarEstadoRecurso: (recurso, estado) =>
         ejecutar(() => {
           // Despachar usa el incidente seleccionado; otras transiciones lo conservan o liberan.
@@ -104,6 +111,6 @@ export function useAccionesOperador({
           return servicio.cambiarEstadoRecurso(recurso.id, estado, siguiente.incidente_asignado_id);
         }),
     }),
-    [servicio, ejecutar, alSeleccionar, guardarPoligono],
+    [servicio, ejecutar, alSeleccionar, guardarTrazado],
   );
 }

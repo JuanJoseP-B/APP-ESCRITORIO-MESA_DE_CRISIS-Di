@@ -16,6 +16,9 @@ interface Props {
   readonly reportes: readonly Reporte[];
   readonly seleccionadoId: string | null;
   readonly onSeleccionar: (id: string) => void;
+  readonly reporteSeleccionadoId?: string | null;
+  /** Al elegir un reporte de la bandeja (el mapa se centra en él). */
+  readonly onSeleccionarReporte?: (reporte: Reporte) => void;
   readonly dibujando: boolean;
   readonly onAlternarDibujo: () => void;
   readonly onConfirmarReporte?: (reporte: Reporte) => void;
@@ -45,6 +48,8 @@ export function PanelMesa({
   reportes,
   seleccionadoId,
   onSeleccionar,
+  reporteSeleccionadoId,
+  onSeleccionarReporte,
   dibujando,
   onAlternarDibujo,
   onConfirmarReporte,
@@ -91,20 +96,29 @@ export function PanelMesa({
         ) : (
           <ul className="mt-1 space-y-0.5 font-mono text-xs">
             {pendientes.map((r) => (
-              <li key={r.id} className="flex items-center gap-2">
-                <span className="flex-1">
+              <li
+                key={r.id}
+                className={`flex items-center gap-2 ${r.id === reporteSeleccionadoId ? 'bg-advertencia/30' : ''}`}
+              >
+                <button
+                  type="button"
+                  aria-label={`Ver reporte ${r.id} en el mapa`}
+                  aria-current={r.id === reporteSeleccionadoId}
+                  onClick={() => onSeleccionarReporte?.(r)}
+                  className="flex-1 text-left hover:underline"
+                >
                   {r.creado_en && (
                     <time dateTime={r.creado_en} className="mr-2 font-bold">
                       {formatearHora(r.creado_en)}
                     </time>
                   )}
                   {etiquetaTipoEmergencia(r.tipo)} · {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
-                  {r.imagen_url && (
-                    <a href={r.imagen_url} target="_blank" rel="noreferrer" className="ml-2 underline">
-                      Foto
-                    </a>
-                  )}
-                </span>
+                </button>
+                {r.imagen_url && (
+                  <a href={r.imagen_url} target="_blank" rel="noreferrer" className="underline">
+                    Foto
+                  </a>
+                )}
                 {onConfirmarReporte && (
                   <button type="button" aria-label={`Confirmar reporte ${r.id}`} onClick={() => onConfirmarReporte(r)} className={botonAccion}>
                     Confirmar

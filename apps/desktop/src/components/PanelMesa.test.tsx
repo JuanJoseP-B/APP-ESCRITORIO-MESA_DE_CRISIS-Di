@@ -81,6 +81,18 @@ describe('PanelMesa', () => {
     expect(within(bandeja).getByRole('link', { name: 'Foto' })).toHaveProperty('href', 'https://x/foto.jpg');
   });
 
+  it('al elegir un reporte de la bandeja lo notifica (para centrar el mapa) y lo marca como actual', async () => {
+    const reporte: Reporte = { id: 'r1', tipo: 'INCENDIO', lat: -33.4, lng: -70.6, imagen_url: null, estado_validacion: 'No confirmado' };
+    const onSeleccionarReporte = vi.fn();
+    const { rerender } = render(<PanelMesa {...props} reportes={[reporte]} onSeleccionarReporte={onSeleccionarReporte} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ver reporte r1 en el mapa' }));
+    expect(onSeleccionarReporte).toHaveBeenCalledWith(reporte);
+
+    rerender(<PanelMesa {...props} reportes={[reporte]} reporteSeleccionadoId="r1" onSeleccionarReporte={onSeleccionarReporte} />);
+    expect(screen.getByRole('button', { name: 'Ver reporte r1 en el mapa' }).getAttribute('aria-current')).toBe('true');
+  });
+
   it('la bandeja se muestra vacía cuando no hay reportes pendientes', () => {
     render(<PanelMesa {...props} />);
     const bandeja = screen.getByRole('region', { name: 'Bandeja de Reportes Entrantes' });
