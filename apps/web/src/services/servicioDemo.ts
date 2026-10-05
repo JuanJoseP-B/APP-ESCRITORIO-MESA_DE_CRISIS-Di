@@ -73,5 +73,5 @@ export const servicioDemo: ServicioPortal = {
   listarZonasRiesgo: () => Promise.resolve(zonasRiesgo),
   suscribirZonasPublicas: () => () => undefined,
   suscribirZonasRiesgo: () => () => undefined,
-  enviarReporte: () => Promise.resolve(),
+  enviarReporte: () => Promise.resolve(crypto.randomUUID()),
 };

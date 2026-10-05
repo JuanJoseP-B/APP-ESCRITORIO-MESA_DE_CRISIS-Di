@@ -13,7 +13,8 @@ export interface ServicioPortal {
   /** Devuelven la función para cancelar la suscripción. */
   suscribirZonasPublicas(alCambiar: (cambio: CambioRealtime<ZonaPublica>) => void): () => void;
   suscribirZonasRiesgo(alCambiar: (cambio: CambioRealtime<ZonaRiesgo>) => void): () => void;
-  enviarReporte(reporte: NuevoReporte, foto?: File | null): Promise<void>;
+  /** Inserta el reporte como "No confirmado" y devuelve su ID. */
+  enviarReporte(reporte: NuevoReporte, foto?: File | null): Promise<string>;
 }
 
 type Fila = Record<string, unknown>;
@@ -91,7 +92,10 @@ export function crearServicioPortal(client: SupabaseClient): ServicioPortal {
         if (errorSubida) throw new Error(`No se pudo subir la foto: ${errorSubida.message}`);
         imagenUrl = client.storage.from(BUCKET_FOTOS).getPublicUrl(ruta).data.publicUrl;
       }
+      // El ID se genera aquí: el rol anónimo solo puede INSERT (RLS), así que no puede leer la fila de vuelta.
+      const id = crypto.randomUUID();
       const { error } = await client.from('reportes_ciudadanos').insert({
+        id,
         tipo: reporte.tipo,
         lat: reporte.lat,
         lng: reporte.lng,
@@ -99,6 +103,7 @@ export function crearServicioPortal(client: SupabaseClient): ServicioPortal {
         estado_validacion: 'No confirmado',
       });
       if (error) throw new Error(`No se pudo enviar el reporte: ${error.message}`);
+      return id;
     },
   };
 }

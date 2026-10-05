@@ -26,6 +26,9 @@ export interface NuevoReporte {
   readonly imagen_url?: string | null;
 }
 
+/** Código corto (8 caracteres) con que el ciudadano y el operador identifican un reporte. */
+export const codigoReporte = (id: string): string => id.slice(0, 8).toUpperCase();
+
 /** Solo un reporte "No confirmado" puede validarse o descartarse. */
 export const puedeValidarReporte = (r: Pick<Reporte, 'estado_validacion'>): boolean =>
   r.estado_validacion === 'No confirmado';
