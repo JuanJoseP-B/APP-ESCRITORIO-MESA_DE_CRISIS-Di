@@ -3,6 +3,7 @@ import {
   ESTADOS_INCIDENTE,
   NIVELES_CRITICIDAD,
   etiquetaTipoEmergencia,
+  codigoReporte,
   puedeValidarReporte,
   type EstadoIncidente,
   type Incidente,
@@ -112,6 +113,7 @@ export function PanelMesa({
                       {formatearHora(r.creado_en)}
                     </time>
                   )}
+                  <span className="mr-2 font-bold">#{codigoReporte(r.id)}</span>
                   {etiquetaTipoEmergencia(r.tipo)} · {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
                 </button>
                 {r.imagen_url && (

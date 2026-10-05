@@ -1,3 +1,5 @@
+import { codigoReporte } from '@argos/shared';
+
 interface Props {
   readonly idReporte: string;
   readonly onCerrar: () => void;
@@ -23,8 +25,9 @@ export function ConfirmacionReporte({ idReporte, onCerrar }: Props) {
           data-testid="id-reporte"
           className="mt-2 break-all border border-linea bg-base p-2 font-mono text-sm font-bold"
         >
-          {idReporte}
+          #{codigoReporte(idReporte)}
         </p>
+        <p className="mt-1 break-all font-mono text-xs">ID completo: {idReporte}</p>
         <button
           type="button"
           onClick={onCerrar}

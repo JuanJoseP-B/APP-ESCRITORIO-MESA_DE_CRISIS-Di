@@ -60,7 +60,8 @@ describe('FormularioReporte', () => {
     expect(onEnviar).toHaveBeenCalledWith({ tipo: 'CRECIENTE_SUBITA', lat: -33.4, lng: -70.6 }, null);
     expect(await screen.findByRole('alertdialog')).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain('Guarda este código');
-    expect(screen.getByTestId('id-reporte').textContent).toBe(ID);
+    expect(screen.getByTestId('id-reporte').textContent).toBe('#0B9F2C1E');
+    expect(screen.getByText(`ID completo: ${ID}`)).toBeTruthy();
   });
 
   it('usa la ubicación ajustada en el mapa en lugar de la del GPS', async () => {
