@@ -37,10 +37,12 @@ describe('crearServicioPortal', () => {
     const from = vi.fn().mockReturnValue({ insert });
     const servicio = crearServicioPortal({ from } as unknown as SupabaseClient);
 
-    await servicio.enviarReporte({ tipo: 'INCENDIO', lat: -33.4, lng: -70.6 });
+    const id = await servicio.enviarReporte({ tipo: 'INCENDIO', lat: -33.4, lng: -70.6 });
 
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-/);
     expect(from).toHaveBeenCalledWith('reportes_ciudadanos');
     expect(insert).toHaveBeenCalledWith({
+      id,
       tipo: 'INCENDIO',
       lat: -33.4,
       lng: -70.6,

@@ -25,7 +25,7 @@ export function App() {
   );
 
   const enviar = useCallback(
-    (reporte: NuevoReporte, foto: File | null) => servicio.enviarReporte(reporte, foto),
+    (reporte: NuevoReporte, foto: File | null): Promise<string> => servicio.enviarReporte(reporte, foto),
     [servicio],
   );
 
