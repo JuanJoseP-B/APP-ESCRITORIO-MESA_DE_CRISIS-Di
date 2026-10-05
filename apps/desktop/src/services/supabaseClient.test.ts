@@ -61,6 +61,28 @@ describe('crearServicioMesa', () => {
     expect(removeChannel).toHaveBeenCalledWith(canal);
   });
 
+  it('entrega a la bandeja cada reporte ciudadano que llega por Realtime', () => {
+    type Manejador = (payload: RealtimePostgresChangesPayload<Fila>) => void;
+    const canal = { on: vi.fn(), subscribe: vi.fn() };
+    canal.on.mockReturnValue(canal);
+    canal.subscribe.mockReturnValue(canal);
+    const client = { channel: vi.fn().mockReturnValue(canal), removeChannel: vi.fn() };
+    const alCambiar = vi.fn();
+
+    crearServicioMesa(client as unknown as SupabaseClient).suscribirReportes(alCambiar);
+    expect(canal.on).toHaveBeenCalledWith(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'reportes_ciudadanos' },
+      expect.any(Function),
+    );
+    expect(canal.subscribe).toHaveBeenCalledOnce();
+
+    const fila = { id: 'r9', tipo: 'DESLIZAMIENTO', lat: 1, lng: 2, imagen_url: null, estado_validacion: 'No confirmado' };
+    const manejador = canal.on.mock.calls[0]?.[2] as Manejador;
+    manejador({ eventType: 'INSERT', new: fila, old: {} } as unknown as RealtimePostgresChangesPayload<Fila>);
+    expect(alCambiar).toHaveBeenCalledWith({ tipo: 'INSERT', nuevo: fila, idEliminado: null });
+  });
+
   it('lista recursos desde recursos_operativos', async () => {
     const select = vi.fn().mockResolvedValue({ data: [], error: null });
     const from = vi.fn().mockReturnValue({ select });

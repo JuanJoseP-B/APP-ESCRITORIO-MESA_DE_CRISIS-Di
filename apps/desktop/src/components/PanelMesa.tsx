@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import {
   ESTADOS_INCIDENTE,
   NIVELES_CRITICIDAD,
+  etiquetaTipoEmergencia,
   puedeValidarReporte,
   type EstadoIncidente,
   type Incidente,
   type Reporte,
 } from '@argos/shared';
 import { COLOR_CRITICIDAD } from '../domain/geojson';
+import { eventosVisibles, formatearHora } from '../domain/timeline';
 
 interface Props {
   readonly incidentes: readonly Incidente[];
@@ -33,8 +35,10 @@ export function ordenarIncidentes(incidentes: readonly Incidente[]): readonly In
   );
 }
 
-const formatearHora = (iso: string): string =>
-  new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: false });
+/** Los más recientes primero; los que no traen fecha de recepción quedan al final. */
+export function ordenarReportes(reportes: readonly Reporte[]): readonly Reporte[] {
+  return [...reportes].sort((a, b) => (b.creado_en ?? '').localeCompare(a.creado_en ?? ''));
+}
 
 export function PanelMesa({
   incidentes,
@@ -51,7 +55,7 @@ export function PanelMesa({
 }: Props) {
   const ordenados = ordenarIncidentes(incidentes);
   const seleccionado = incidentes.find((i) => i.id === seleccionadoId);
-  const pendientes = reportes.filter(puedeValidarReporte);
+  const pendientes = ordenarReportes(reportes.filter(puedeValidarReporte));
   const botonAccion = 'border border-linea px-1.5 py-0.5 font-mono text-xs uppercase hover:border-texto';
 
   return (
@@ -75,16 +79,31 @@ export function PanelMesa({
         )}
       </header>
 
-      {pendientes.length > 0 && (
-        <section aria-label="Alertas" className="border-b border-linea bg-advertencia/15 px-3 py-2">
-          <p className="font-mono text-xs font-bold uppercase">
-            {pendientes.length} reporte(s) sin confirmar
-          </p>
+      <section
+        aria-label="Bandeja de Reportes Entrantes"
+        className={`max-h-56 overflow-y-auto border-b border-linea px-3 py-2 ${pendientes.length > 0 ? 'bg-advertencia/15' : ''}`}
+      >
+        <h2 className="font-mono text-xs font-bold uppercase">
+          Reportes entrantes · {pendientes.length} sin confirmar
+        </h2>
+        {pendientes.length === 0 ? (
+          <p className="mt-1 font-mono text-xs">Sin reportes pendientes</p>
+        ) : (
           <ul className="mt-1 space-y-0.5 font-mono text-xs">
             {pendientes.map((r) => (
               <li key={r.id} className="flex items-center gap-2">
                 <span className="flex-1">
-                  {r.tipo} · {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
+                  {r.creado_en && (
+                    <time dateTime={r.creado_en} className="mr-2 font-bold">
+                      {formatearHora(r.creado_en)}
+                    </time>
+                  )}
+                  {etiquetaTipoEmergencia(r.tipo)} · {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
+                  {r.imagen_url && (
+                    <a href={r.imagen_url} target="_blank" rel="noreferrer" className="ml-2 underline">
+                      Foto
+                    </a>
+                  )}
                 </span>
                 {onConfirmarReporte && (
                   <button type="button" aria-label={`Confirmar reporte ${r.id}`} onClick={() => onConfirmarReporte(r)} className={botonAccion}>
@@ -99,8 +118,8 @@ export function PanelMesa({
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
 
       <ul aria-label="Incidentes" className="flex-1 overflow-y-auto">
         {ordenados.map((i) => (
@@ -142,10 +161,10 @@ export function PanelMesa({
             </div>
           )}
           <ol className="space-y-1 font-mono text-xs">
-            {seleccionado.timeline.map((e) => (
-              <li key={`${e.timestamp}-${e.descripcion}`}>
-                <time dateTime={e.timestamp} className="mr-2 font-bold">
-                  {formatearHora(e.timestamp)}
+            {eventosVisibles(seleccionado.timeline).map((e, n) => (
+              <li key={`${n}-${e.descripcion}`}>
+                <time dateTime={e.iso ?? undefined} className="mr-2 font-bold">
+                  {e.hora}
                 </time>
                 {e.descripcion}
               </li>

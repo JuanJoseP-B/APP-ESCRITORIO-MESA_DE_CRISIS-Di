@@ -5,7 +5,7 @@ import { ajustarOcupacion } from './zona-publica';
 
 const ahora = new Date('2026-10-04T10:00:00Z');
 const reporte: Reporte = {
-  id: 'r1', tipo: 'Incendio', lat: 1.2, lng: -77.3, imagen_url: null, estado_validacion: 'No confirmado',
+  id: 'r1', tipo: 'INCENDIO', lat: 1.2, lng: -77.3, imagen_url: null, estado_validacion: 'No confirmado',
 };
 
 describe('agregarEvento', () => {

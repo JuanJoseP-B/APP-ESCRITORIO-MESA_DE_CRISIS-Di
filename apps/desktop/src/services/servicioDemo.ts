@@ -38,11 +38,12 @@ const incidentes: readonly Incidente[] = [
 const reportes: readonly Reporte[] = [
   {
     id: 'demo-r1',
-    tipo: 'Incendio',
+    tipo: 'INCENDIO',
     lat: -33.45,
     lng: -70.66,
     imagen_url: null,
     estado_validacion: 'No confirmado',
+    creado_en: '2026-10-02T08:20:00Z',
   },
 ];
 

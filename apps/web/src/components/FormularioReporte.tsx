@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { TIPOS_REPORTE, type NuevoReporte, type TipoReporte } from '@argos/shared';
+import { ETIQUETAS_TIPO_EMERGENCIA, TIPOS_REPORTE, type NuevoReporte, type TipoReporte } from '@argos/shared';
 import { validarReporte } from '../domain/reporte';
 import type { EstadoGeolocalizacion } from '../hooks/useGeolocalizacion';
 
@@ -12,7 +12,7 @@ interface Props {
 type Envio = 'inactivo' | 'enviando' | 'enviado' | 'error';
 
 export function FormularioReporte({ geolocalizacion, onSolicitarUbicacion, onEnviar }: Props) {
-  const [tipo, setTipo] = useState<TipoReporte>('Incendio');
+  const [tipo, setTipo] = useState<TipoReporte>('INCENDIO');
   const [foto, setFoto] = useState<File | null>(null);
   const [errores, setErrores] = useState<readonly string[]>([]);
   const [envio, setEnvio] = useState<Envio>('inactivo');
@@ -66,7 +66,7 @@ export function FormularioReporte({ geolocalizacion, onSolicitarUbicacion, onEnv
         >
           {TIPOS_REPORTE.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {ETIQUETAS_TIPO_EMERGENCIA[t]}
             </option>
           ))}
         </select>

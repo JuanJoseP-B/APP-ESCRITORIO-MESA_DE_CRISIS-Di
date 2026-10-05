@@ -3,6 +3,7 @@
 ## Dos caminos según el estado de tu base
 - **Base ya creada a mano (con datos/usuarios):** aplica solo `migrations/0002_alinear_esquema_y_rls.sql`. No borra datos: añade columnas faltantes, crea `zonas_riesgo`, reemplaza políticas y privilegios, y crea el bucket `reportes`. (Es el que se aplicó al proyecto real.)
 - **Base vacía:** usa el orden de abajo.
+- **En ambos casos**, después aplica `migrations/0003_tipos_emergencia_y_bandeja.sql`: amplía `reportes_ciudadanos.tipo` al catálogo `TIPOS_EMERGENCIA` de `@argos/shared` y añade `creado_en` (hora de recepción en la Bandeja de Reportes Entrantes). Sin ella, el portal no puede insertar los tipos nuevos.
 
 ## Orden de ejecución para una base vacía (SQL Editor, uno tras otro)
 1. `reset.sql` — solo si ya existen tablas creadas a mano (borra todo `public.*` de la app). Si el bucket `reportes` ya existe, vacíalo/bórralo antes en Storage.
