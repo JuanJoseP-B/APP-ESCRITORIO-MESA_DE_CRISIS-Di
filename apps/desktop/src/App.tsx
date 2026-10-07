@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button } from '@argos/ui';
 import { Login } from './components/Login';
 import { MapView } from './components/MapView';
 import { PanelMesa } from './components/PanelMesa';
@@ -15,6 +16,7 @@ import type { Coordenadas, Reporte } from '@argos/shared';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { servicioDemo } from './services/servicioDemo';
+import { aplicarTema, temaGuardado, type Tema } from './tema';
 
 const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
@@ -29,6 +31,9 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
+  const [tema, setTema] = useState<Tema>(temaGuardado);
+  useEffect(() => aplicarTema(tema), [tema]);
+  const alternarTema = useCallback(() => setTema((actual) => (actual === 'crema' ? 'carbon' : 'crema')), []);
 
   const acciones = useAccionesOperador({
     servicio,
@@ -74,6 +79,8 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
         onDescartarReporte={acciones.descartarReporte}
         onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
         onCerrarSesion={onCerrarSesion}
+        tema={tema}
+        onAlternarTema={alternarTema}
       >
         <PanelRecursos
           recursos={recursos.datos}
@@ -97,23 +104,16 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
           onErrorDibujo={alErrorDibujo}
         />
         {dibujando && (
-          <div className="absolute left-3 top-3 border border-linea bg-superficie px-2 py-1.5 font-mono text-xs">
-            <div role="group" aria-label="Figura a trazar" className="flex gap-1">
+          <div className="absolute left-4 top-4 z-toolbar border border-border-strong bg-surface-panel p-3 shadow-overlay">
+            <p className="font-mono text-overline uppercase text-text-primary">Trazar figura</p>
+            <div role="group" aria-label="Figura a trazar" className="mt-2 flex gap-1">
               {MODOS_TRAZADO.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  aria-pressed={m === modoTrazado}
-                  onClick={() => setModoTrazado(m)}
-                  className={`border px-2 py-0.5 uppercase ${
-                    m === modoTrazado ? 'border-texto bg-texto text-superficie' : 'border-linea hover:border-texto'
-                  }`}
-                >
+                <Button key={m} size="sm" variant={m === modoTrazado ? 'secondary' : 'ghost'} aria-pressed={m === modoTrazado} onClick={() => setModoTrazado(m)}>
                   {ETIQUETA_MODO[m]}
-                </button>
+                </Button>
               ))}
             </div>
-            <p className="mt-1.5 max-w-64">
+            <p className="mt-2 max-w-64 font-ui text-body-sm text-text-secondary">
               {modoTrazado === 'poligono' && incidenteSeleccionado
                 ? `Destino: zona de riesgo de "${incidenteSeleccionado.titulo}".`
                 : 'Destino: zonas públicas (Bloqueo de Vía).'}{' '}
@@ -122,7 +122,8 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
           </div>
         )}
         {mensaje && (
-          <p role="status" className="absolute bottom-3 left-3 border border-linea bg-superficie px-2 py-1 font-mono text-xs">
+          <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
+            <span aria-hidden="true" className="mr-2 text-status-info">◆</span>
             {mensaje}
           </p>
         )}
