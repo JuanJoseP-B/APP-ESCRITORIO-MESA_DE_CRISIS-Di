@@ -41,4 +41,10 @@ describe('ShelterGauge', () => {
     rerender(<ShelterGauge name="X" current={0} capacity={20} />);
     expect((screen.getByRole('button', { name: 'Restar 5' }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it('permite nombres accesibles propios para los botones', () => {
+    render(<ShelterGauge name="X" current={5} capacity={20} decrementLabel="Reducir X" incrementLabel="Aumentar X" />);
+    expect(screen.getByRole('button', { name: 'Reducir X' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Aumentar X' })).toBeTruthy();
+  });
 });

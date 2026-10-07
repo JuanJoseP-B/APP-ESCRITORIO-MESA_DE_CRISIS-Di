@@ -11,6 +11,9 @@ export interface ShelterGaugeProps {
   step?: number;
   onDecrement?: () => void;
   onIncrement?: () => void;
+  /** Nombres accesibles de los botones (por defecto "Restar N" / "Sumar N"). */
+  decrementLabel?: string;
+  incrementLabel?: string;
   className?: string;
 }
 
@@ -25,7 +28,7 @@ function nivelDe(pct: number): Nivel {
 const FORMA_NIVEL: Record<Nivel, FormaGlifo> = { critical: 'square', warning: 'triangle', ok: 'circle' };
 
 /** Aforo con ceros a la izquierda (045/200) y estado en glifo + palabra. */
-export function ShelterGauge({ name, current, capacity, step = 5, onDecrement, onIncrement, className }: ShelterGaugeProps) {
+export function ShelterGauge({ name, current, capacity, step = 5, onDecrement, onIncrement, decrementLabel, incrementLabel, className }: ShelterGaugeProps) {
   const cap = capacity > 0 ? capacity : 1;
   const cur = Math.max(0, Math.min(current, cap));
   const pct = Math.round((cur / cap) * 100);
@@ -42,10 +45,10 @@ export function ShelterGauge({ name, current, capacity, step = 5, onDecrement, o
         </span>
       </div>
       <div className="ag-gauge__ctrl">
-        <Button size="sm" square aria-label={`Restar ${step}`} onClick={onDecrement} disabled={cur <= 0}>
+        <Button size="sm" square aria-label={decrementLabel ?? `Restar ${step}`} onClick={onDecrement} disabled={cur <= 0}>
           {`−${step}`}
         </Button>
-        <Button size="sm" square aria-label={`Sumar ${step}`} onClick={onIncrement} disabled={cur >= cap}>
+        <Button size="sm" square aria-label={incrementLabel ?? `Sumar ${step}`} onClick={onIncrement} disabled={cur >= cap}>
           {`+${step}`}
         </Button>
       </div>
