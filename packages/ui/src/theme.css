@@ -1,0 +1,183 @@
+/* ARGOS Táctico · puente Tailwind 4 → tokens.css.
+ * `inline` hace que las utilidades emitan var(--token) directo, así el tema
+ * (data-theme) cambia también en subárboles. Se reinician paleta, radios y
+ * sombras por defecto: lo que no es del sistema no compila. */
+@custom-variant dark (&:where([data-theme='carbon'], [data-theme='carbon'] *));
+
+@theme inline {
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Superficies */
+  --color-surface-canvas: var(--surface-canvas);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-disabled: var(--surface-disabled);
+  /* Bordes */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-control: var(--border-control);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+  /* Texto */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-accent: var(--text-accent);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-text-on-secondary: var(--text-on-secondary);
+  /* Acción */
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-hover: var(--action-primary-hover);
+  --color-action-primary-pressed: var(--action-primary-pressed);
+  --color-action-secondary: var(--action-secondary);
+  --color-action-secondary-hover: var(--action-secondary-hover);
+  --color-action-secondary-pressed: var(--action-secondary-pressed);
+  --color-action-disabled: var(--action-disabled);
+  /* Estado */
+  --color-status-critical: var(--status-critical);
+  --color-status-critical-bg: var(--status-critical-bg);
+  --color-on-critical: var(--on-critical);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-on-warning: var(--on-warning);
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-on-success: var(--on-success);
+  --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-on-info: var(--on-info);
+  --color-status-offline: var(--status-offline);
+  --color-status-offline-bg: var(--status-offline-bg);
+  /* Mapa */
+  --color-map-zone-stroke: var(--map-zone-stroke);
+  --color-map-zone-fill: var(--map-zone-fill);
+  --color-map-marker-halo: var(--map-marker-halo);
+
+  /* Espaciado: base de 4px (p-1 = 4px … p-16 = 64px) + medidas de control */
+  --spacing: 4px;
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-md: var(--control-md);
+  --spacing-control-lg: var(--control-lg);
+  --spacing-row: var(--row-height);
+  --spacing-panel: var(--panel-width);
+
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-marker: 50%;
+
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-ui: Lexend, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  --text-display-xl: 48px;
+  --text-display-xl--line-height: 52px;
+  --text-display-xl--font-weight: 700;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-lg: 32px;
+  --text-display-lg--line-height: 36px;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.015em;
+  --text-title-lg: 24px;
+  --text-title-lg--line-height: 28px;
+  --text-title-lg--font-weight: 600;
+  --text-title-lg--letter-spacing: -0.01em;
+  --text-title-md: 18px;
+  --text-title-md--line-height: 24px;
+  --text-title-md--font-weight: 600;
+  --text-title-sm: 16px;
+  --text-title-sm--line-height: 20px;
+  --text-title-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--letter-spacing: 0.01em;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 500;
+  --text-data-xl: 28px;
+  --text-data-xl--line-height: 32px;
+  --text-data-xl--font-weight: 600;
+  --text-data-xl--letter-spacing: -0.01em;
+  --text-data-md: 14px;
+  --text-data-md--line-height: 20px;
+  --text-data-md--font-weight: 500;
+  --text-data-sm: 12px;
+  --text-data-sm--line-height: 16px;
+  --text-data-sm--font-weight: 500;
+  --text-data-sm--letter-spacing: 0.02em;
+  --text-overline: 12px;
+  --text-overline--line-height: 16px;
+  --text-overline--font-weight: 600;
+  --text-overline--letter-spacing: 0.08em;
+  --text-micro: 11px;
+  --text-micro--line-height: 16px;
+  --text-micro--font-weight: 700;
+  --text-micro--letter-spacing: 0.06em;
+
+  --shadow-offset: var(--elev-offset);
+  --shadow-overlay: var(--elev-overlay);
+  --shadow-panel: var(--elev-panel);
+  --shadow-focus: var(--focus-ring);
+  --shadow-focus-inverse: var(--focus-ring-inverse);
+  --shadow-error: var(--error-ring);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+@utility press-mechanical {
+  box-shadow: none;
+  transform: translate(2px, 2px);
+}
+@utility border-t-rule {
+  border-top-width: var(--border-rule);
+}
+@utility z-map-overlay {
+  z-index: var(--z-map-overlay);
+}
+@utility z-panel {
+  z-index: var(--z-panel);
+}
+@utility z-toolbar {
+  z-index: var(--z-toolbar);
+}
+@utility z-popover {
+  z-index: var(--z-popover);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    background: var(--surface-canvas);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
