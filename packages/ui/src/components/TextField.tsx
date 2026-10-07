@@ -17,7 +17,7 @@ export function TextField({ label, hint, error, size = 'lg', mono, trailing, cla
   const campoId = id ?? auto;
   const hintId = `${campoId}-hint`;
   const errId = `${campoId}-err`;
-  const descrito = [error ? errId : null, hint ? hintId : null].filter(Boolean).join(' ') || undefined;
+  const descrito = [error ? errId : null, hint && !error ? hintId : null].filter(Boolean).join(' ') || undefined;
   return (
     <div className={cx('ag-field', size === 'md' && 'ag-field--md', mono && 'ag-field--mono', error && 'ag-field--error', disabled && 'ag-field--disabled', className)}>
       <label className="ag-field__label" htmlFor={campoId}>
