@@ -5,3 +5,4 @@ export { TextField, type TextFieldProps } from './components/TextField';
 export { Badge, SEVERIDADES, type BadgeProps, type SeveridadBadge, type EstadoIncidenteBadge, type TonoBadge, type EnfasisBadge } from './components/Badge';
 export { StatusIndicator, ESTADOS_RECURSO_UI, type StatusIndicatorProps, type EstadoRecursoUI } from './components/StatusIndicator';
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader';
+export { IncidentCard, type IncidentCardProps } from './components/IncidentCard';

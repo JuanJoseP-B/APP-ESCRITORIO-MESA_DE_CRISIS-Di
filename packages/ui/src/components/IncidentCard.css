@@ -1,0 +1,15 @@
+/* ── IncidentCard ───────────────────────────────────────────────────────── */
+.ag-card { box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-3); width: 100%; padding: var(--space-3) var(--space-4); background: var(--card-bg); border: var(--border-hairline) solid var(--card-border); border-radius: var(--radius-sm); text-align: left; font: inherit; color: inherit; cursor: pointer; transition: background-color 80ms linear, border-color 80ms linear; }
+.ag-card:hover, .ag-card.is-hover { background: var(--card-bg-hover); border-color: var(--card-border-hover); }
+.ag-card:focus { outline: none; }
+.ag-card:focus-visible, .ag-card.is-focus { box-shadow: var(--focus-ring); }
+.ag-card[aria-pressed="true"] { background: var(--card-bg-selected); border-color: var(--card-border-selected); box-shadow: inset 0 0 0 1px var(--card-border-selected); }
+.ag-card[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--card-border-selected), var(--focus-ring); }
+.ag-card__title { display: flex; align-items: flex-start; gap: var(--space-2); margin: 0; font-family: var(--font-display); font-size: 16px; line-height: 20px; font-weight: 600; color: var(--card-title); }
+.ag-card__title .ag-glyph { margin-top: 6px; }
+.ag-card__title-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ag-card__time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--card-title); }
+.ag-card__badges { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ag-card__meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .02em; color: var(--card-meta); }
+.ag-card__meta b { font-weight: 600; color: var(--text-secondary); }
+.ag-sev--critico { color: var(--status-critical); } .ag-sev--alto { color: var(--status-critical); } .ag-sev--medio { color: var(--status-warning); } .ag-sev--bajo { color: var(--text-secondary); }
