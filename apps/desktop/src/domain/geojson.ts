@@ -27,11 +27,17 @@ export interface FeatureCollectionIncidentes {
   readonly features: readonly FeatureIncidente[];
 }
 
-/** Colores de criticidad según la paleta ARGOS (SPEC §10). */
-export const COLOR_CRITICIDAD: Record<NivelCriticidad, string> = {
-  Crítico: '#E53935',
-  Medio: '#FFB300',
-  Bajo: '#43A047',
+/**
+ * Los colores del mapa se expresan como nombre de token de @argos/ui (sin `--`); MapView los
+ * resuelve al valor del turno activo (crema/carbón) antes de pintar.
+ */
+export type TokenColor = string;
+
+/** Criticidad → token de estado (rojo solo para riesgo vital). */
+export const COLOR_CRITICIDAD: Record<NivelCriticidad, TokenColor> = {
+  Crítico: 'status-critical',
+  Medio: 'status-warning',
+  Bajo: 'status-success',
 };
 
 export function incidentesAFeatureCollection(
@@ -54,10 +60,21 @@ export function incidentesAFeatureCollection(
   };
 }
 
-/** Paleta ARGOS para las capas operativas que no dependen de la criticidad. */
-export const COLOR_REFUGIO = '#43A047';
-export const COLOR_BLOQUEO = '#FFB300';
-export const COLOR_REPORTE = '#0F172A';
+/** Tokens para las capas operativas que no dependen de la criticidad. */
+export const COLOR_REFUGIO: TokenColor = 'status-success';
+export const COLOR_BLOQUEO: TokenColor = 'status-warning';
+export const COLOR_REPORTE: TokenColor = 'border-strong';
+
+/** Sustituye el token de `properties.color` por su valor en el tema activo. */
+export function colorearFeatures<T extends { readonly features: readonly { readonly properties: { readonly color: string } }[] }>(
+  coleccion: T,
+  resolver: (token: TokenColor) => string,
+): T {
+  return {
+    ...coleccion,
+    features: coleccion.features.map((f) => ({ ...f, properties: { ...f.properties, color: resolver(f.properties.color) } })),
+  };
+}
 
 export interface FeatureOperativa {
   readonly type: 'Feature';
