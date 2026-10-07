@@ -8,3 +8,4 @@ export { SectionHeader, type SectionHeaderProps } from './components/SectionHead
 export { IncidentCard, type IncidentCardProps } from './components/IncidentCard';
 export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
 export { ShelterGauge, type ShelterGaugeProps } from './components/ShelterGauge';
+export { Masthead, type MastheadProps } from './components/Masthead';
