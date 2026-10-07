@@ -7,3 +7,4 @@ export { StatusIndicator, ESTADOS_RECURSO_UI, type StatusIndicatorProps, type Es
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader';
 export { IncidentCard, type IncidentCardProps } from './components/IncidentCard';
 export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
+export { ShelterGauge, type ShelterGaugeProps } from './components/ShelterGauge';
