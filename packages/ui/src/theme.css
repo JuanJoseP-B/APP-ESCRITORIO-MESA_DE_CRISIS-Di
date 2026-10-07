@@ -33,6 +33,7 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-text-inverse: var(--text-inverse);
+  --color-text-inverse-accent: var(--text-inverse-accent);
   --color-text-accent: var(--text-accent);
   --color-text-disabled: var(--text-disabled);
   --color-text-on-accent: var(--text-on-accent);
