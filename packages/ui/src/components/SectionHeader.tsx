@@ -18,7 +18,9 @@ export function SectionHeader({ title, index, count, action, as: Etiqueta = 'h2'
     <div className={cx('ag-section', className)}>
       <Etiqueta className="ag-section__title">
         {index ? <span className="ag-section__index">{index}</span> : null}
+        {index ? ' ' : null}
         <span>{title}</span>
+        {count != null ? ' ' : null}
         {count != null ? <span className="ag-section__count">· {count}</span> : null}
       </Etiqueta>
       {action ?? null}

@@ -9,7 +9,7 @@ describe('SectionHeader', () => {
   it('renderiza índice, título y conteo dentro de un h2', () => {
     render(<SectionHeader index="01" title="Incidentes" count={3} />);
     const h = screen.getByRole('heading', { level: 2 });
-    expect(h.textContent).toBe('01Incidentes· 3');
+    expect(h.textContent).toBe('01 Incidentes · 3');
   });
 
   it('admite h3 y una acción', () => {
