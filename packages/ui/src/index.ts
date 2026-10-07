@@ -6,3 +6,4 @@ export { Badge, SEVERIDADES, type BadgeProps, type SeveridadBadge, type EstadoIn
 export { StatusIndicator, ESTADOS_RECURSO_UI, type StatusIndicatorProps, type EstadoRecursoUI } from './components/StatusIndicator';
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader';
 export { IncidentCard, type IncidentCardProps } from './components/IncidentCard';
+export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
