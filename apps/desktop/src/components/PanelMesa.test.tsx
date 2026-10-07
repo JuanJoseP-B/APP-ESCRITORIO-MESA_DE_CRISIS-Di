@@ -75,7 +75,7 @@ describe('PanelMesa', () => {
     ];
     render(<PanelMesa {...props} reportes={reportes} />);
     const bandeja = screen.getByRole('region', { name: 'Bandeja de Reportes Entrantes' });
-    expect(within(bandeja).getByText('Reportes entrantes · 2 sin confirmar')).toBeTruthy();
+    expect(within(bandeja).getByRole('heading', { name: '01 Reportes entrantes · 2 sin confirmar' })).toBeTruthy();
     const items = within(bandeja).getAllByRole('listitem').map((li) => li.textContent);
     expect(items).toEqual([expect.stringContaining('Fuga de gas'), expect.stringContaining('Incendio')]);
     expect(within(bandeja).getByRole('link', { name: 'Foto' })).toHaveProperty('href', 'https://x/foto.jpg');

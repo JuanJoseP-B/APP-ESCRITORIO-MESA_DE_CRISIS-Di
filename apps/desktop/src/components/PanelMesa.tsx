@@ -9,8 +9,9 @@ import {
   type Incidente,
   type Reporte,
 } from '@argos/shared';
-import { COLOR_CRITICIDAD } from '../domain/geojson';
+import { Button, IncidentCard, Masthead, SectionHeader, type EstadoIncidenteBadge, type SeveridadBadge } from '@argos/ui';
 import { eventosVisibles, formatearHora } from '../domain/timeline';
+import type { Tema } from '../tema';
 
 interface Props {
   readonly incidentes: readonly Incidente[];
@@ -26,9 +27,24 @@ interface Props {
   readonly onDescartarReporte?: (reporte: Reporte) => void;
   readonly onCambiarEstadoIncidente?: (incidente: Incidente, estado: EstadoIncidente) => void;
   readonly onCerrarSesion?: () => void;
+  /** Turno visual actual y su alternador (crema/carbón). */
+  readonly tema?: Tema;
+  readonly onAlternarTema?: () => void;
   /** Secciones adicionales (p. ej. recursos) entre la lista de incidentes y el timeline. */
   readonly children?: ReactNode;
 }
+
+const SEVERIDAD_UI: Record<Incidente['nivel_criticidad'], SeveridadBadge> = {
+  Crítico: 'critico',
+  Medio: 'medio',
+  Bajo: 'bajo',
+};
+
+const ESTADO_UI: Record<EstadoIncidente, EstadoIncidenteBadge> = {
+  Abierto: 'abierto',
+  Contenido: 'contenido',
+  Resuelto: 'resuelto',
+};
 
 /** Más crítico primero; a igual criticidad, los no resueltos antes. */
 export function ordenarIncidentes(incidentes: readonly Incidente[]): readonly Incidente[] {
@@ -57,79 +73,81 @@ export function PanelMesa({
   onDescartarReporte,
   onCambiarEstadoIncidente,
   onCerrarSesion,
+  tema,
+  onAlternarTema,
   children,
 }: Props) {
   const ordenados = ordenarIncidentes(incidentes);
   const seleccionado = incidentes.find((i) => i.id === seleccionadoId);
   const pendientes = ordenarReportes(reportes.filter(puedeValidarReporte));
-  const botonAccion = 'border border-linea px-1.5 py-0.5 font-mono text-xs uppercase hover:border-texto';
 
   return (
-    <aside className="flex h-full w-96 flex-col border-r border-linea bg-superficie text-texto">
-      <header className="flex items-center justify-between border-b border-linea px-3 py-2">
-        <h1 className="text-lg font-bold tracking-tight">ARGOS · Mesa de Crisis</h1>
-        <button
-          type="button"
-          onClick={onAlternarDibujo}
-          aria-pressed={dibujando}
-          className={`border px-2 py-1 font-mono text-xs uppercase ${
-            dibujando ? 'border-critico bg-critico text-white' : 'border-linea hover:border-texto'
-          }`}
-        >
-          {dibujando ? 'Cancelar trazado' : 'Trazar zona'}
-        </button>
-        {onCerrarSesion && (
-          <button type="button" onClick={onCerrarSesion} className={botonAccion}>
-            Salir
-          </button>
-        )}
-      </header>
+    <aside className="relative z-panel flex h-full w-panel flex-col overflow-y-auto bg-surface-panel text-text-primary shadow-panel">
+      <Masthead
+        kicker="ARGOS"
+        title="Mesa de Crisis"
+        actions={
+          <>
+            <Button variant="inverse" size="sm" onClick={onAlternarDibujo} aria-pressed={dibujando}>
+              {dibujando ? 'Cancelar trazado' : 'Trazar zona'}
+            </Button>
+            {onAlternarTema && (
+              <Button variant="inverse" size="sm" onClick={onAlternarTema}>
+                {tema === 'carbon' ? 'Turno día' : 'Turno noche'}
+              </Button>
+            )}
+            {onCerrarSesion && (
+              <Button variant="inverse" size="sm" onClick={onCerrarSesion}>
+                Salir
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <section
         aria-label="Bandeja de Reportes Entrantes"
-        className={`max-h-56 overflow-y-auto border-b border-linea px-3 py-2 ${pendientes.length > 0 ? 'bg-advertencia/15' : ''}`}
+        className={`max-h-56 shrink-0 overflow-y-auto ${pendientes.length > 0 ? 'bg-status-warning-bg' : ''}`}
       >
-        <h2 className="font-mono text-xs font-bold uppercase">
-          Reportes entrantes · {pendientes.length} sin confirmar
-        </h2>
+        <SectionHeader index="01" title="Reportes entrantes" count={`${pendientes.length} sin confirmar`} />
         {pendientes.length === 0 ? (
-          <p className="mt-1 font-mono text-xs">Sin reportes pendientes</p>
+          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">Sin reportes pendientes</p>
         ) : (
-          <ul className="mt-1 space-y-0.5 font-mono text-xs">
+          <ul className="pb-2 font-mono text-data-sm">
             {pendientes.map((r) => (
               <li
                 key={r.id}
-                className={`flex items-center gap-2 ${r.id === reporteSeleccionadoId ? 'bg-advertencia/30' : ''}`}
+                className={`flex items-center gap-2 px-4 py-1 ${r.id === reporteSeleccionadoId ? 'bg-surface-selected' : ''}`}
               >
                 <button
                   type="button"
                   aria-label={`Ver reporte ${r.id} en el mapa`}
                   aria-current={r.id === reporteSeleccionadoId}
                   onClick={() => onSeleccionarReporte?.(r)}
-                  className="flex-1 text-left hover:underline"
+                  className="flex-1 rounded-xs text-left text-text-primary hover:underline"
                 >
                   {r.creado_en && (
-                    <time dateTime={r.creado_en} className="mr-2 font-bold">
+                    <time dateTime={r.creado_en} className="mr-2 font-bold tabular">
                       {formatearHora(r.creado_en)}
                     </time>
                   )}
-                  <span className="mr-2 font-bold">#{codigoReporte(r.id)}</span>
+                  <span className="mr-2 font-bold tabular">#{codigoReporte(r.id)}</span>
                   {etiquetaTipoEmergencia(r.tipo)} · {r.lat.toFixed(4)}, {r.lng.toFixed(4)}
                 </button>
                 {r.imagen_url && (
-                  <a href={r.imagen_url} target="_blank" rel="noreferrer" className="underline">
+                  <a href={r.imagen_url} target="_blank" rel="noreferrer" className="rounded-xs text-text-accent underline">
                     Foto
                   </a>
                 )}
                 {onConfirmarReporte && (
-                  <button type="button" aria-label={`Confirmar reporte ${r.id}`} onClick={() => onConfirmarReporte(r)} className={botonAccion}>
+                  <Button size="sm" aria-label={`Confirmar reporte ${r.id}`} onClick={() => onConfirmarReporte(r)}>
                     Confirmar
-                  </button>
+                  </Button>
                 )}
                 {onDescartarReporte && (
-                  <button type="button" aria-label={`Descartar reporte ${r.id}`} onClick={() => onDescartarReporte(r)} className={botonAccion}>
+                  <Button size="sm" aria-label={`Descartar reporte ${r.id}`} onClick={() => onDescartarReporte(r)}>
                     Descartar
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}
@@ -137,27 +155,18 @@ export function PanelMesa({
         )}
       </section>
 
-      <ul aria-label="Incidentes" className="flex-1 overflow-y-auto">
+      <SectionHeader index="02" title="Incidentes" count={ordenados.length} />
+      <ul aria-label="Incidentes" className="flex shrink-0 flex-col gap-2 px-4 pb-4">
         {ordenados.map((i) => (
           <li key={i.id}>
-            <button
-              type="button"
-              onClick={() => onSeleccionar(i.id)}
-              aria-current={i.id === seleccionadoId}
-              className={`flex w-full items-center gap-2 border-b border-linea px-3 py-2 text-left ${
-                i.id === seleccionadoId ? 'bg-base' : 'hover:bg-base'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="size-2.5 shrink-0"
-                style={{ backgroundColor: COLOR_CRITICIDAD[i.nivel_criticidad] }}
-              />
-              <span className="flex-1 truncate text-sm font-medium">{i.titulo}</span>
-              <span className="font-mono text-xs uppercase">
-                {i.nivel_criticidad} · {i.estado}
-              </span>
-            </button>
+            <IncidentCard
+              title={i.titulo}
+              severity={SEVERIDAD_UI[i.nivel_criticidad]}
+              status={ESTADO_UI[i.estado]}
+              time={eventosVisibles(i.timeline)[0]?.hora}
+              selected={i.id === seleccionadoId}
+              onSelect={() => onSeleccionar(i.id)}
+            />
           </li>
         ))}
       </ul>
@@ -165,27 +174,30 @@ export function PanelMesa({
       {children}
 
       {seleccionado && (
-        <section aria-label="Timeline" className="max-h-64 overflow-y-auto border-t border-linea px-3 py-2">
-          <h2 className="mb-1 text-sm font-bold">{seleccionado.titulo}</h2>
-          {onCambiarEstadoIncidente && (
-            <div role="group" aria-label="Estado del incidente" className="mb-2 flex gap-1">
-              {ESTADOS_INCIDENTE.filter((e) => e !== seleccionado.estado).map((e) => (
-                <button key={e} type="button" onClick={() => onCambiarEstadoIncidente(seleccionado, e)} className={botonAccion}>
-                  Marcar {e}
-                </button>
+        <section aria-label="Timeline" className="shrink-0">
+          <SectionHeader index="05" title="Línea de tiempo" />
+          <div className="px-4 pb-3">
+            <h3 className="mb-2 font-display text-title-sm text-text-primary">{seleccionado.titulo}</h3>
+            {onCambiarEstadoIncidente && (
+              <div role="group" aria-label="Estado del incidente" className="mb-2 flex gap-1">
+                {ESTADOS_INCIDENTE.filter((e) => e !== seleccionado.estado).map((e) => (
+                  <Button key={e} size="sm" onClick={() => onCambiarEstadoIncidente(seleccionado, e)}>
+                    Marcar {e}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <ol className="space-y-1 font-mono text-data-sm text-text-secondary">
+              {eventosVisibles(seleccionado.timeline).map((e, n) => (
+                <li key={`${n}-${e.descripcion}`}>
+                  <time dateTime={e.iso ?? undefined} className="mr-2 font-bold tabular text-text-primary">
+                    {e.hora}
+                  </time>
+                  {e.descripcion}
+                </li>
               ))}
-            </div>
-          )}
-          <ol className="space-y-1 font-mono text-xs">
-            {eventosVisibles(seleccionado.timeline).map((e, n) => (
-              <li key={`${n}-${e.descripcion}`}>
-                <time dateTime={e.iso ?? undefined} className="mr-2 font-bold">
-                  {e.hora}
-                </time>
-                {e.descripcion}
-              </li>
-            ))}
-          </ol>
+            </ol>
+          </div>
         </section>
       )}
     </aside>
