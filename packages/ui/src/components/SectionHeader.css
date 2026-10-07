@@ -1,0 +1,5 @@
+/* ── SectionHeader: filete editorial ───────────────────────────────────── */
+.ag-section { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: var(--control-md); padding: var(--space-3) var(--space-4) var(--space-2); border-top: var(--border-rule) solid var(--border-strong); }
+.ag-section__title { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-primary); }
+.ag-section__index { color: var(--text-accent); }
+.ag-section__count { font-weight: 500; color: var(--text-muted); }
