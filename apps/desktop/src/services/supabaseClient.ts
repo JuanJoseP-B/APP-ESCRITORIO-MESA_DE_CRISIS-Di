@@ -1,16 +1,22 @@
 import { createClient, type RealtimePostgresChangesPayload, type SupabaseClient } from '@supabase/supabase-js';
 import type {
+  Coordenadas,
   EstadoRecurso,
   EstadoValidacion,
+  EventoRecurso,
   Incidente,
+  Llamada,
+  NuevaLlamada,
   NuevaZonaPublica,
   NuevoIncidente,
+  OrigenEventoRecurso,
   Recurso,
   Reporte,
   ZonaPublica,
 } from '@argos/shared';
 import { calcularDesfaseMs, leerCabeceraDate } from '../domain/reloj';
 import type { CambioRealtime } from '../domain/realtime';
+import { aEventoRecurso, aFilaLlamada, aLlamada, type Fila } from './filas';
 
 export interface SesionOperador {
   readonly email: string;
@@ -19,7 +25,12 @@ export interface SesionOperador {
 }
 
 /** Campos de un incidente que el operador puede modificar. */
-export type CambiosIncidente = Partial<Pick<Incidente, 'estado' | 'geometria' | 'timeline' | 'nivel_criticidad' | 'titulo'>>;
+export type CambiosIncidente = Partial<
+  Pick<
+    Incidente,
+    'estado' | 'geometria' | 'timeline' | 'nivel_criticidad' | 'titulo' | 'prioridad' | 'tipo' | 'perimetro' | 'perimetro_origen'
+  >
+>;
 
 /**
  * Único punto de acceso a Supabase. Los componentes de UI consumen
@@ -33,12 +44,30 @@ export interface ServicioMesa {
   suscribirReportes(alCambiar: (cambio: CambioRealtime<Reporte>) => void): () => void;
   listarRecursos(): Promise<readonly Recurso[]>;
   suscribirRecursos(alCambiar: (cambio: CambioRealtime<Recurso>) => void): () => void;
+  /** Llamadas registradas por el operador (tabla `llamadas`), ya convertidas a `Llamada`. */
+  listarLlamadas(): Promise<readonly Llamada[]>;
+  suscribirLlamadas(alCambiar: (cambio: CambioRealtime<Llamada>) => void): () => void;
+  /** Registra una llamada nueva; con `incidenteId` nace vinculada a ese incidente. */
+  registrarLlamada(nueva: NuevaLlamada, incidenteId?: string | null): Promise<Llamada>;
+  /** Asocia una llamada existente a un incidente y la da por confirmada. */
+  vincularLlamada(id: string, incidenteId: string): Promise<Llamada>;
+  descartarLlamada(id: string): Promise<void>;
+  /** Transiciones de recursos con hora del servidor (base del cálculo de SLA). */
+  listarEventosRecurso(): Promise<readonly EventoRecurso[]>;
+  suscribirEventosRecurso(alCambiar: (cambio: CambioRealtime<EventoRecurso>) => void): () => void;
   /**
-   * Persiste el cambio de estado y devuelve la fila guardada; la validación de la transición la hace
-   * quien llama (UI/dominio). Toda escritura se notifica además a los suscriptores locales, sin
-   * esperar el eco de Realtime.
+   * Transición atómica (RPC `transicionar_recurso`, 0006): cambia el estado, el incidente y la ubicación e
+   * inserta el evento con la hora del servidor. La base rechaza las transiciones inválidas. Devuelve la fila
+   * guardada y la notifica, junto con su evento, a los suscriptores locales sin esperar a Realtime.
    */
-  cambiarEstadoRecurso(id: string, estado: EstadoRecurso, incidenteId: string | null): Promise<Recurso>;
+  cambiarEstadoRecurso(
+    id: string,
+    estado: EstadoRecurso,
+    incidenteId: string | null,
+    origen?: OrigenEventoRecurso,
+  ): Promise<Recurso>;
+  /** Corrige a mano la posición de una unidad (no genera evento). */
+  actualizarUbicacionRecurso(id: string, ubicacion: Coordenadas): Promise<Recurso>;
   crearIncidente(nuevo: NuevoIncidente): Promise<Incidente>;
   actualizarIncidente(id: string, cambios: CambiosIncidente): Promise<void>;
   actualizarEstadoReporte(id: string, estado: EstadoValidacion): Promise<void>;
@@ -59,16 +88,19 @@ export interface ServicioMesa {
   desfaseHoraServidorMs(): Promise<number>;
 }
 
-type Fila = Record<string, unknown>;
+/** Convierte una fila de la base en el tipo de dominio; por defecto la fila ya tiene su forma. */
+type Mapeo<T> = (fila: Fila) => T;
+const tal = <T>(fila: Fila): T => fila as unknown as T;
 
 export function aCambioRealtime<T extends { readonly id: string }>(
   payload: RealtimePostgresChangesPayload<Fila>,
+  mapear: Mapeo<T> = tal,
 ): CambioRealtime<T> {
   if (payload.eventType === 'DELETE') {
     const id = payload.old['id'];
     return { tipo: 'DELETE', nuevo: null, idEliminado: typeof id === 'string' ? id : null };
   }
-  return { tipo: payload.eventType, nuevo: payload.new as unknown as T, idEliminado: null };
+  return { tipo: payload.eventType, nuevo: mapear(payload.new), idEliminado: null };
 }
 
 export function aSesion(email: string | undefined, appMetadata: Record<string, unknown> | undefined): SesionOperador {
@@ -92,27 +124,37 @@ export function crearServicioMesa(
     return fila;
   };
 
-  const actualizar = async <T extends { readonly id: string }>(tabla: string, id: string, cambios: Fila): Promise<T> => {
+  const actualizar = async <T extends { readonly id: string }>(
+    tabla: string,
+    id: string,
+    cambios: Fila,
+    mapear: Mapeo<T> = tal,
+  ): Promise<T> => {
     const { data, error } = await client.from(tabla).update(cambios).eq('id', id).select().single();
     if (error) throw new Error(`No se pudo actualizar ${tabla} ${id}: ${describir(error)}`);
-    return emitir(tabla, 'UPDATE', data as T);
+    return emitir(tabla, 'UPDATE', mapear(data as Fila));
   };
 
-  const insertar = async <T extends { readonly id: string }>(tabla: string, fila: Fila): Promise<T> => {
+  const insertar = async <T extends { readonly id: string }>(
+    tabla: string,
+    fila: Fila,
+    mapear: Mapeo<T> = tal,
+  ): Promise<T> => {
     const { data, error } = await client.from(tabla).insert(fila).select().single();
     if (error) throw new Error(`No se pudo crear en ${tabla}: ${describir(error)}`);
-    return emitir(tabla, 'INSERT', data as T);
+    return emitir(tabla, 'INSERT', mapear(data as Fila));
   };
 
-  const listar = async <T>(tabla: string): Promise<readonly T[]> => {
+  const listar = async <T>(tabla: string, mapear: Mapeo<T> = tal): Promise<readonly T[]> => {
     const { data, error } = await client.from(tabla).select('*');
     if (error) throw new Error(`No se pudo leer ${tabla}: ${error.message}`);
-    return (data ?? []) as T[];
+    return ((data ?? []) as Fila[]).map(mapear);
   };
 
   const suscribir = <T extends { readonly id: string }>(
     tabla: string,
     alCambiar: (cambio: CambioRealtime<T>) => void,
+    mapear: Mapeo<T> = tal,
   ): (() => void) => {
     const local = alCambiar as Oyente;
     const grupo = oyentes.get(tabla) ?? new Set<Oyente>();
@@ -120,13 +162,29 @@ export function crearServicioMesa(
     const canal = client
       .channel(`mesa-${tabla}`)
       .on<Fila>('postgres_changes', { event: '*', schema: 'public', table: tabla }, (payload) =>
-        alCambiar(aCambioRealtime<T>(payload)),
+        alCambiar(aCambioRealtime<T>(payload, mapear)),
       )
       .subscribe();
     return () => {
       grupo.delete(local);
       void client.removeChannel(canal);
     };
+  };
+
+  /** Entrega el evento que acaba de insertar la RPC sin esperar el eco de Realtime (que es idempotente). */
+  const emitirUltimoEvento = async (recursoId: string): Promise<void> => {
+    try {
+      const { data } = await client
+        .from('eventos_recurso')
+        .select('*')
+        .eq('recurso_id', recursoId)
+        .order('creado_en', { ascending: false })
+        .limit(1);
+      const fila = (data as Fila[] | null)?.[0];
+      if (fila) emitir('eventos_recurso', 'INSERT', aEventoRecurso(fila));
+    } catch {
+      // Solo agiliza la interfaz: si falla, el evento llega por Realtime.
+    }
   };
 
   return {
@@ -136,8 +194,27 @@ export function crearServicioMesa(
     suscribirReportes: (cb) => suscribir<Reporte>('llamadas', cb),
     listarRecursos: () => listar<Recurso>('recursos_operativos'),
     suscribirRecursos: (cb) => suscribir<Recurso>('recursos_operativos', cb),
-    cambiarEstadoRecurso: (id, estado, incidenteId) =>
-      actualizar<Recurso>('recursos_operativos', id, { estado_actual: estado, incidente_asignado_id: incidenteId }),
+    listarLlamadas: () => listar<Llamada>('llamadas', aLlamada),
+    suscribirLlamadas: (cb) => suscribir<Llamada>('llamadas', cb, aLlamada),
+    registrarLlamada: (nueva, incidenteId = null) => insertar<Llamada>('llamadas', aFilaLlamada(nueva, incidenteId), aLlamada),
+    vincularLlamada: (id, incidenteId) =>
+      actualizar<Llamada>('llamadas', id, { incidente_id: incidenteId, estado_validacion: 'Confirmado' }, aLlamada),
+    descartarLlamada: async (id) => {
+      await actualizar<Llamada>('llamadas', id, { estado_validacion: 'Descartado' }, aLlamada);
+    },
+    listarEventosRecurso: () => listar<EventoRecurso>('eventos_recurso', aEventoRecurso),
+    suscribirEventosRecurso: (cb) => suscribir<EventoRecurso>('eventos_recurso', cb, aEventoRecurso),
+    cambiarEstadoRecurso: async (id, estado, incidenteId, origen = 'MANUAL') => {
+      // RPC de migrations/0006: estado, incidente, ubicación y evento en una sola transacción.
+      const { data, error } = await client
+        .rpc('transicionar_recurso', { p_id: id, p_hacia: estado, p_incidente: incidenteId, p_origen: origen })
+        .single();
+      if (error) throw new Error(`No se pudo cambiar el estado de ${id}: ${describir(error)}`);
+      const recurso = emitir('recursos_operativos', 'UPDATE', data as Recurso);
+      await emitirUltimoEvento(id);
+      return recurso;
+    },
+    actualizarUbicacionRecurso: (id, ubicacion) => actualizar<Recurso>('recursos_operativos', id, { ubicacion }),
     crearIncidente: (nuevo) => insertar<Incidente>('incidentes', { ...nuevo }),
     actualizarIncidente: async (id, cambios) => {
       await actualizar<Incidente>('incidentes', id, { ...cambios });

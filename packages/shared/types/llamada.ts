@@ -43,7 +43,7 @@ export interface Llamada {
   /** `null` = sin vincular. */
   readonly incidenteId: string | null;
   readonly estadoValidacion: EstadoValidacion;
-  readonly operadorId: string;
+  readonly operadorId: string | null;
   /** ISO 8601, hora del servidor. */
   readonly creadoEn: string;
 }

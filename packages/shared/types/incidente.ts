@@ -12,6 +12,8 @@ export type EstadoIncidente = (typeof ESTADOS_INCIDENTE)[number];
 export interface EventoTimeline {
   /** Fecha y hora ISO 8601. */
   readonly timestamp: string;
+  /** Hora del servidor con que la base selló el evento (trigger de la 0006); falta en eventos aún sin guardar. */
+  readonly creado_en?: string;
   readonly descripcion: string;
   readonly autor?: string;
 }
