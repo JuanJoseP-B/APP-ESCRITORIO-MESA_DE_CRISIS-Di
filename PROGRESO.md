@@ -22,12 +22,9 @@ repo tal cual y NO se aplican al proyecto real. `medirDesfaseServidor` sigue exp
 - Confirmar/descartar de la bandeja vieja desaparece: abrir la llamada lleva al formulario; Descartar queda en la fila.
 - Una entrante editada en el formulario no se reescribe en su fila (no hay `actualizarLlamada`): los datos editados van al incidente.
 - Ctrl+Enter = crear incidente; con candidatos NO decide: lleva el foco a VINCULAR (el aviso exige elegir). F2 con el drawer abierto no hace nada.
-- Candidatos requieren tipo y ubicación válidos. Vincular no escala la prioridad del incidente. Coordenadas con 5 decimales (≈1 m).
+- Candidatos requieren tipo y ubicación válidos. Vincular no escala la prioridad del incidente. Coordenadas con 5 decimales (≈1 m). Ui: nuevos `SelectField` y `TextAreaField`; la cola muestra P1–P4 en vez de la criticidad.
 - Bitácora: crear anota «Incidente creado desde llamada…» y cada duplicado descartado; vincular anota «Llamada … vinculada».
-- Faltaban campos en ui: se añadieron `SelectField` y `TextAreaField`. La cola muestra P1–P4 en lugar de la criticidad.
-- Los archivos del árbol de trabajo están en CRLF (git los guarda en LF por `.gitattributes`); se preservó.
 
 ## Pendiente heredado
-- Retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs.
-- Supabase solo con `VITE_USAR_SUPABASE=true`: con la 0006 sin aplicar la base devuelve estados antiguos y `UnitChip` rompía la pantalla.
+- Retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs. Supabase solo con `VITE_USAR_SUPABASE=true` (0006 sin aplicar).
 - Sin navegador no se verificó a ojo: contraste AA, foco visible y reduced-motion de lo nuevo quedan para U6.
