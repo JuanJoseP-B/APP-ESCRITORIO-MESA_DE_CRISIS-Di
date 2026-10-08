@@ -20,6 +20,7 @@ import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
 import { GrillaTactica } from './layout/GrillaTactica';
 import { PanelDetalle } from './layout/PanelDetalle';
+import { TableroUnidades } from './layout/TableroUnidades';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { servicioDemo } from './services/servicioDemo';
 import { aplicarTema, temaGuardado, type Tema } from './tema';
@@ -200,7 +201,15 @@ function Mesa({
           onCambiarOcupacion={acciones.cambiarOcupacion}
         />
       }
-      tablero={null}
+      tablero={
+        <TableroUnidades
+          recursos={recursos.datos}
+          incidenteSeleccionadoId={seleccionadoId}
+          onSeleccionarUnidad={(unidad) => {
+            if (unidad.incidente_asignado_id) setSeleccionadoId(unidad.incidente_asignado_id);
+          }}
+        />
+      }
     />
   );
 }
