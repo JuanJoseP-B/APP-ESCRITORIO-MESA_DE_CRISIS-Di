@@ -17,4 +17,5 @@ export { SegmentedControl, type SegmentedControlProps, type OpcionSegmento } fro
 export { Switch, type SwitchProps } from './components/Switch';
 export { Kbd, type KbdProps } from './components/Kbd';
 export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';
+export { Coachmark, posicionarPopover, type CoachmarkProps, type EtiquetasCoachmark, type ColocacionCoachmark, type RectCoachmark, type PosicionCoachmark } from './components/Coachmark';
 export { leerToken, observarTema, opacidadZona } from './mapaTema';

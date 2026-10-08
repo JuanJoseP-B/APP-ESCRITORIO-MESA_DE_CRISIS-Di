@@ -1,0 +1,23 @@
+/* ── Coachmark ──────────────────────────────────────────────────────────── */
+/* Foco de luz: cuatro paños oscuros (el token de telón) rodean al ancla; el popover es un panel sólido. */
+.ag-coach { position: fixed; inset: 0; z-index: var(--z-modal); }
+.ag-coach__pano { position: fixed; background: var(--surface-inverse); opacity: var(--opacity-scrim); pointer-events: auto; }
+.ag-coach__anillo { position: fixed; box-sizing: border-box; pointer-events: none; border-radius: var(--radius-xs); box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 4px var(--border-focus); transition: top 150ms linear, left 150ms linear, width 150ms linear, height 150ms linear; }
+
+.ag-coach__popover { position: fixed; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-3); width: 360px; max-width: calc(100vw - var(--space-6)); max-height: calc(100dvh - var(--space-6)); overflow-y: auto; padding: var(--space-4); background: var(--surface-panel); color: var(--text-primary); border: var(--border-hairline) solid var(--border-strong); border-radius: var(--radius-sm); box-shadow: var(--shadow-overlay); transition: top 150ms linear, left 150ms linear; }
+.ag-coach__cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ag-coach__progreso { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .08em; color: var(--text-primary); }
+.ag-coach__teclas { font-family: var(--font-mono); font-size: calc(10px * var(--escala-texto, 1)); line-height: 14px; letter-spacing: .04em; color: var(--text-muted); text-align: right; }
+.ag-coach__texto { display: flex; flex-direction: column; gap: var(--space-2); }
+.ag-coach__titulo { margin: 0; font-family: var(--font-display); font-size: calc(20px * var(--escala-texto, 1)); line-height: 24px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+.ag-coach__cuerpo { margin: 0; font-family: var(--font-body); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; color: var(--text-secondary); }
+.ag-coach__pista { margin: 0; padding-top: var(--space-2); border-top: var(--border-hairline) solid var(--border-strong); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; color: var(--text-primary); }
+.ag-coach__acciones { display: flex; align-items: center; gap: var(--space-2); }
+.ag-coach__espacio { flex: 1; }
+
+/* Sin transiciones: el recorte y el popover saltan de un paso al siguiente. */
+.ag-coach[data-movimiento="reducido"] .ag-coach__anillo,
+.ag-coach[data-movimiento="reducido"] .ag-coach__popover { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ag-coach__anillo, .ag-coach__popover { transition: none; }
+}
