@@ -7,10 +7,10 @@ import {
   type Incidente,
   type Llamada,
   type Recurso,
-  type Reporte,
   type ZonaPublica,
 } from '@argos/shared';
 import type { CambioRealtime } from '../domain/realtime';
+import { reporteDeLlamada } from '../domain/entrantes';
 import { ubicacionDeIncidente } from '../domain/geo';
 import type { ServicioMesa } from './supabaseClient';
 
@@ -56,17 +56,6 @@ function llamadasIniciales(ahoraMs: number): readonly Llamada[] {
     },
   ];
 }
-
-/** Vista de una llamada con la forma de `Reporte`, mientras la bandeja siga consumiendo ese tipo. */
-const aReporte = (l: Llamada): Reporte => ({
-  id: l.id,
-  tipo: l.tipo,
-  lat: l.ubicacion.lat,
-  lng: l.ubicacion.lng,
-  imagen_url: null,
-  estado_validacion: l.estadoValidacion,
-  creado_en: l.creadoEn,
-});
 
 const unidad = (
   n: number,
@@ -211,10 +200,10 @@ export function crearServicioDemo({ ahora = Date.now }: OpcionesDemo = {}): Serv
 
   return {
     listarIncidentes: tIncidentes.listar,
-    listarReportes: () => tLlamadas.listar().then((ls) => ls.map(aReporte)),
+    listarReportes: () => tLlamadas.listar().then((ls) => ls.map(reporteDeLlamada)),
     suscribirIncidentes: tIncidentes.suscribir,
     suscribirReportes: (cb) =>
-      tLlamadas.suscribir((c) => cb({ ...c, nuevo: c.nuevo ? aReporte(c.nuevo) : null })),
+      tLlamadas.suscribir((c) => cb({ ...c, nuevo: c.nuevo ? reporteDeLlamada(c.nuevo) : null })),
     listarLlamadas: tLlamadas.listar,
     suscribirLlamadas: tLlamadas.suscribir,
     registrarLlamada: (nueva, incidenteId = null) =>

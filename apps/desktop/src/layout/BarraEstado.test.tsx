@@ -59,6 +59,21 @@ describe('BarraEstado', () => {
     expect(screen.queryByRole('button', { name: 'Salir' })).toBeNull();
   });
 
+  it('el contador de entrantes aparece si se informa y cambia de glifo cuando hay llamadas', () => {
+    const { rerender, container } = render(<BarraEstado {...base} />);
+    expect(screen.queryByText(/Entrantes/)).toBeNull();
+
+    rerender(<BarraEstado {...base} entrantes={0} />);
+    expect(screen.getByRole('status', { name: '0 llamadas entrantes' })).toBeTruthy();
+    expect(container.querySelector('.ag-glyph--ring')).not.toBeNull();
+
+    rerender(<BarraEstado {...base} entrantes={3} />);
+    const contador = screen.getByRole('status', { name: '3 llamadas entrantes' });
+    expect(contador.textContent).toContain('3');
+    expect(contador.textContent).toContain('Entrantes');
+    expect(container.querySelector('.ag-glyph--triangle')).not.toBeNull();
+  });
+
   it('el contador de SLA solo aparece si se informa, y filtra al pulsarlo', async () => {
     const filtrar = vi.fn();
     const { rerender } = render(<BarraEstado {...base} />);

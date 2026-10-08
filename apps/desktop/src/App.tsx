@@ -5,17 +5,18 @@ import { MapaTactico } from './layout/MapaTactico';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
   useIncidentesRealtime,
+  useLlamadasRealtime,
   useRecursosRealtime,
-  useReportesRealtime,
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
 import { useAtajos } from './hooks/useAtajos';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
 import { useSimulacion } from './hooks/useSimulacion';
-import type { Coordenadas, Reporte } from '@argos/shared';
+import type { Coordenadas, Llamada } from '@argos/shared';
 import { dividirCola, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
+import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { BarraEstado } from './layout/BarraEstado';
@@ -50,11 +51,11 @@ function Mesa({
   readonly onCerrarSesion: () => void;
 }) {
   const incidentes = useIncidentesRealtime(servicio);
-  const reportes = useReportesRealtime(servicio);
+  const llamadas = useLlamadasRealtime(servicio);
   const recursos = useRecursosRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
-  const [reporteSeleccionadoId, setReporteSeleccionadoId] = useState<string | null>(null);
+  const [llamadaAbiertaId, setLlamadaAbiertaId] = useState<string | null>(null);
   const [foco, setFoco] = useState<Coordenadas | null>(null);
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
@@ -102,11 +103,21 @@ function Mesa({
     },
     [guardarTrazado],
   );
-  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita el mismo reporte.
-  const alSeleccionarReporte = useCallback((r: Reporte) => {
-    setReporteSeleccionadoId(r.id);
-    setFoco({ lat: r.lat, lng: r.lng });
+  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
+  const alAbrirLlamada = useCallback((l: Llamada) => {
+    setLlamadaAbiertaId(l.id);
+    setFoco({ lat: l.ubicacion.lat, lng: l.ubicacion.lng });
   }, []);
+  const { descartarReporte } = acciones;
+  const alDescartarLlamada = useCallback(
+    (l: Llamada) => {
+      setLlamadaAbiertaId((abierta) => (abierta === l.id ? null : abierta));
+      descartarReporte(reporteDeLlamada(l));
+    },
+    [descartarReporte],
+  );
+  const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
+  const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
 
@@ -117,17 +128,17 @@ function Mesa({
     Escape: () => setDibujando(false),
   });
 
-  const enlace = estadoEnlace([incidentes, reportes, recursos, zonas]);
-  const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? reportes.error;
+  const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
+  const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
 
   const mapa = (
     <>
       <MapaTactico
         incidentes={incidentes.datos}
         zonas={zonas.datos}
-        reportes={reportes.datos}
+        reportes={reportes}
         seleccionadoId={seleccionadoId}
-        reporteSeleccionadoId={reporteSeleccionadoId}
+        reporteSeleccionadoId={llamadaAbiertaId}
         onSeleccionar={setSeleccionadoId}
         foco={foco}
         dibujando={dibujando}
@@ -187,6 +198,7 @@ function Mesa({
           onAlternarTurno={alternarTema}
           operador={operador}
           enlace={enlace}
+          entrantes={totalEntrantes}
           simulacion={
             simulacion && onReiniciarSimulacion
               ? {
@@ -207,14 +219,13 @@ function Mesa({
         <ColaIncidentes
           incidentes={incidentes.datos}
           recursos={recursos.datos}
-          reportes={reportes.datos}
+          llamadas={llamadas.datos}
           ahora={ahora}
           seleccionadoId={seleccionadoId}
           onSeleccionar={setSeleccionadoId}
-          reporteSeleccionadoId={reporteSeleccionadoId}
-          onSeleccionarReporte={alSeleccionarReporte}
-          onConfirmarReporte={acciones.confirmarReporte}
-          onDescartarReporte={acciones.descartarReporte}
+          llamadaAbiertaId={llamadaAbiertaId}
+          onAbrirLlamada={alAbrirLlamada}
+          onDescartarLlamada={alDescartarLlamada}
         />
       }
       mapa={mapa}

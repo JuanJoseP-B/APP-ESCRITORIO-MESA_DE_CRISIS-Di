@@ -2,7 +2,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PRIORIDAD_POR_CRITICIDAD, type EstadoIncidente, type Incidente, type NivelCriticidad, type Recurso, type Reporte } from '@argos/shared';
+import { PRIORIDAD_POR_CRITICIDAD, type EstadoIncidente, type Incidente, type NivelCriticidad, type Llamada, type Recurso } from '@argos/shared';
 import { ColaIncidentes, formatearDuracion, type ColaIncidentesProps } from './ColaIncidentes';
 
 afterEach(cleanup);
@@ -27,14 +27,20 @@ const rec = (id: string, incidenteId: string | null): Recurso => ({
   incidente_asignado_id: incidenteId,
 });
 
-const reporte = (id: string, estado: Reporte['estado_validacion'] = 'No confirmado'): Reporte => ({
+const llamada = (id: string, extra: Partial<Llamada> = {}): Llamada => ({
   id,
+  canal: '123',
   tipo: 'INCENDIO',
-  lat: 1.2,
-  lng: -77.3,
-  imagen_url: null,
-  estado_validacion: estado,
-  creado_en: '2026-10-07T11:50:00Z',
+  prioridad: 'P2',
+  ubicacion: { lat: 1.2, lng: -77.3 },
+  narrativa: '',
+  reportante: null,
+  callback: null,
+  incidenteId: null,
+  estadoValidacion: 'No confirmado',
+  operadorId: null,
+  creadoEn: '2026-10-07T11:50:00Z',
+  ...extra,
 });
 
 const base: ColaIncidentesProps = {
@@ -45,10 +51,11 @@ const base: ColaIncidentesProps = {
     inc('cerrado', 'Medio', '2026-10-07T08:00:00Z', 'Resuelto'),
   ],
   recursos: [rec('r1', 'critico'), rec('r2', 'critico'), rec('r3', null)],
-  reportes: [],
+  llamadas: [],
   ahora: AHORA,
   seleccionadoId: null,
   onSeleccionar: vi.fn(),
+  onAbrirLlamada: vi.fn(),
 };
 
 const filas = () => within(screen.getByRole('list', { name: /Incidentes (activos|cerrados)/ })).getAllByRole('listitem');
@@ -118,53 +125,26 @@ describe('ColaIncidentes', () => {
   });
 });
 
-describe('bandeja de llamadas entrantes', () => {
-  const conReportes: ColaIncidentesProps = {
+describe('bandeja de llamadas entrantes en la cola', () => {
+  const conLlamadas: ColaIncidentesProps = {
     ...base,
-    reportes: [reporte('abc12345-0000'), reporte('zzz99999-0000', 'Confirmado')],
+    llamadas: [llamada('abc'), llamada('vinculada', { incidenteId: 'critico', estadoValidacion: 'Confirmado' })],
   };
 
-  it('lista solo las llamadas por confirmar, con su contador', () => {
-    render(<ColaIncidentes {...conReportes} />);
+  it('va encima de los incidentes y lista solo las llamadas sin vincular', () => {
+    render(<ColaIncidentes {...conLlamadas} />);
     const bandeja = screen.getByRole('region', { name: 'Bandeja de llamadas entrantes' });
-    expect(within(bandeja).getByText(/1 por confirmar/)).toBeTruthy();
     expect(within(bandeja).getAllByRole('listitem')).toHaveLength(1);
-    expect(bandeja.textContent).toContain('#ABC12345');
+    expect(bandeja.compareDocumentPosition(screen.getByRole('tablist', { name: 'Incidentes' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('confirma, descarta y centra el mapa en la llamada elegida', async () => {
-    const confirmar = vi.fn();
+  it('abre y descarta la llamada elegida', async () => {
+    const abrir = vi.fn();
     const descartar = vi.fn();
-    const elegir = vi.fn();
-    render(
-      <ColaIncidentes
-        {...conReportes}
-        onConfirmarReporte={confirmar}
-        onDescartarReporte={descartar}
-        onSeleccionarReporte={elegir}
-      />,
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Confirmar reporte abc12345-0000' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Descartar reporte abc12345-0000' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Ver reporte abc12345-0000 en el mapa' }));
-    expect(confirmar).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc12345-0000' }));
-    expect(descartar).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc12345-0000' }));
-    expect(elegir).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc12345-0000' }));
-  });
-
-  it('se pliega y se despliega', async () => {
-    render(<ColaIncidentes {...conReportes} />);
-    const alternar = screen.getByRole('button', { name: 'Plegar' });
-    expect(alternar.getAttribute('aria-expanded')).toBe('true');
-    await userEvent.click(alternar);
-    expect(screen.queryByRole('button', { name: /Ver reporte/ })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Desplegar' }).getAttribute('aria-expanded')).toBe('false');
-    await userEvent.click(screen.getByRole('button', { name: 'Desplegar' }));
-    expect(screen.getByRole('button', { name: /Ver reporte/ })).toBeTruthy();
-  });
-
-  it('sin llamadas pendientes lo indica', () => {
-    render(<ColaIncidentes {...base} />);
-    expect(screen.getByText('Sin llamadas pendientes')).toBeTruthy();
+    render(<ColaIncidentes {...conLlamadas} onAbrirLlamada={abrir} onDescartarLlamada={descartar} />);
+    await userEvent.click(screen.getByRole('button', { name: /Abrir llamada 123, Incendio/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Descartar llamada 123/ }));
+    expect(abrir).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc' }));
+    expect(descartar).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc' }));
   });
 });

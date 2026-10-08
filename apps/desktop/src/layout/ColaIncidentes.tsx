@@ -1,29 +1,22 @@
 import { useState } from 'react';
-import {
-  codigoReporte,
-  etiquetaTipoEmergencia,
-  puedeValidarReporte,
-  type Incidente,
-  type Recurso,
-  type Reporte,
-} from '@argos/shared';
-import { Button, Glyph, SEVERIDADES, SectionHeader, type SeveridadBadge } from '@argos/ui';
+import type { Incidente, Llamada, Recurso } from '@argos/shared';
+import { Glyph, SEVERIDADES, type SeveridadBadge } from '@argos/ui';
 import { codigoIncidente, dividirCola, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
-import { formatearHora } from '../domain/timeline';
+import { BandejaEntrantes } from './BandejaEntrantes';
 import { SEVERIDAD_UI } from './presentacion';
 
 export interface ColaIncidentesProps {
   incidentes: readonly Incidente[];
   recursos: readonly Recurso[];
-  reportes: readonly Reporte[];
-  /** Hora corregida (ms epoch) para calcular el tiempo abierto. */
+  llamadas: readonly Llamada[];
+  /** Hora corregida (ms epoch) para calcular el tiempo abierto y la espera de las llamadas. */
   ahora: number;
   seleccionadoId: string | null;
   onSeleccionar: (id: string) => void;
-  reporteSeleccionadoId?: string | null;
-  onSeleccionarReporte?: (reporte: Reporte) => void;
-  onConfirmarReporte?: (reporte: Reporte) => void;
-  onDescartarReporte?: (reporte: Reporte) => void;
+  /** Llamada que el formulario tiene abierta. */
+  llamadaAbiertaId?: string | null;
+  onAbrirLlamada: (llamada: Llamada) => void;
+  onDescartarLlamada?: (llamada: Llamada) => void;
 }
 
 const COLOR_SEVERIDAD: Record<SeveridadBadge, string> = {
@@ -86,85 +79,32 @@ function FilaIncidente({
   );
 }
 
-/** B · cola de incidentes: activos por prioridad, pestaña de cerrados y bandeja de llamadas por confirmar. */
+/** B · cola de incidentes: bandeja de entrantes, activos por prioridad y pestaña de cerrados. */
 export function ColaIncidentes({
   incidentes,
   recursos,
-  reportes,
+  llamadas,
   ahora,
   seleccionadoId,
   onSeleccionar,
-  reporteSeleccionadoId,
-  onSeleccionarReporte,
-  onConfirmarReporte,
-  onDescartarReporte,
+  llamadaAbiertaId,
+  onAbrirLlamada,
+  onDescartarLlamada,
 }: ColaIncidentesProps) {
   const [pestana, setPestana] = useState<Pestana>('activos');
-  const [bandejaAbierta, setBandejaAbierta] = useState(true);
   const { activos, cerrados } = dividirCola(incidentes);
   const unidades = unidadesPorIncidente(recursos);
-  const pendientes = [...reportes.filter(puedeValidarReporte)].sort((a, b) =>
-    (b.creado_en ?? '').localeCompare(a.creado_en ?? ''),
-  );
   const visibles = pestana === 'activos' ? activos : cerrados;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <section aria-label="Bandeja de llamadas entrantes" className={`shrink-0 ${pendientes.length > 0 ? 'bg-status-warning-bg' : ''}`}>
-        <div className="flex items-center">
-          <div className="flex-1">
-            <SectionHeader index="01" title="Llamadas" count={`${pendientes.length} por confirmar`} />
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="mr-2"
-            aria-expanded={bandejaAbierta}
-            onClick={() => setBandejaAbierta((a) => !a)}
-          >
-            {bandejaAbierta ? 'Plegar' : 'Desplegar'}
-          </Button>
-        </div>
-        {bandejaAbierta &&
-          (pendientes.length === 0 ? (
-            <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">Sin llamadas pendientes</p>
-          ) : (
-            <ul className="max-h-40 overflow-y-auto pb-2 font-mono text-data-sm">
-              {pendientes.map((r) => (
-                <li
-                  key={r.id}
-                  className={`flex flex-wrap items-center gap-2 px-4 py-1 ${r.id === reporteSeleccionadoId ? 'bg-surface-selected' : ''}`}
-                >
-                  <button
-                    type="button"
-                    aria-label={`Ver reporte ${r.id} en el mapa`}
-                    aria-current={r.id === reporteSeleccionadoId}
-                    onClick={() => onSeleccionarReporte?.(r)}
-                    className="flex-1 rounded-xs text-left text-text-primary hover:underline"
-                  >
-                    {r.creado_en && (
-                      <time dateTime={r.creado_en} className="mr-2 font-bold tabular">
-                        {formatearHora(r.creado_en)}
-                      </time>
-                    )}
-                    <span className="mr-2 font-bold tabular">#{codigoReporte(r.id)}</span>
-                    {etiquetaTipoEmergencia(r.tipo)}
-                  </button>
-                  {onConfirmarReporte && (
-                    <Button size="sm" aria-label={`Confirmar reporte ${r.id}`} onClick={() => onConfirmarReporte(r)}>
-                      Confirmar
-                    </Button>
-                  )}
-                  {onDescartarReporte && (
-                    <Button size="sm" aria-label={`Descartar reporte ${r.id}`} onClick={() => onDescartarReporte(r)}>
-                      Descartar
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ))}
-      </section>
+      <BandejaEntrantes
+        llamadas={llamadas}
+        ahora={ahora}
+        abiertaId={llamadaAbiertaId}
+        onAbrir={onAbrirLlamada}
+        onDescartar={onDescartarLlamada}
+      />
 
       <div role="tablist" aria-label="Incidentes" className="flex shrink-0 border-y border-border-strong">
         {(

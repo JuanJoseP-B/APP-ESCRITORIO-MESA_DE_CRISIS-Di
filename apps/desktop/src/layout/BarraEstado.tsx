@@ -27,6 +27,8 @@ export interface BarraEstadoProps {
   enlace: EstadoEnlace;
   /** Unidades con SLA vencido; si falta, el contador no se muestra (llega con la lógica CAD). */
   slaVencidos?: number;
+  /** Llamadas sin vincular en la bandeja de entrantes. */
+  entrantes?: number;
   onFiltrarSla?: () => void;
   simulacion?: SimulacionBarra;
   onCerrarSesion?: () => void;
@@ -47,6 +49,7 @@ export function BarraEstado({
   operador,
   enlace,
   slaVencidos,
+  entrantes,
   onFiltrarSla,
   simulacion,
   onCerrarSesion,
@@ -74,6 +77,16 @@ export function BarraEstado({
         <Glyph shape={estadoEnlace.shape} />
         {estadoEnlace.palabra}
       </span>
+      {entrantes !== undefined && (
+        <span
+          role="status"
+          aria-label={`${entrantes} llamadas entrantes`}
+          className={`flex items-center gap-2 font-mono text-data-sm uppercase ${entrantes > 0 ? 'text-status-warning' : 'text-text-muted'}`}
+        >
+          <Glyph shape={entrantes > 0 ? 'triangle' : 'ring'} />
+          <span className="tabular">{entrantes}</span> Entrantes
+        </span>
+      )}
       {slaVencidos !== undefined && (
         <Button
           size="sm"
