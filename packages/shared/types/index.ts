@@ -4,4 +4,5 @@ export * from './incidente';
 export * from './llamada';
 export * from './recurso';
 export * from './reporte';
+export * from './sla';
 export * from './zona-publica';
