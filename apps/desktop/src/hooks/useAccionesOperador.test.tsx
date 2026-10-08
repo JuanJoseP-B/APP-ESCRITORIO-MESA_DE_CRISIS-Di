@@ -102,12 +102,12 @@ describe('useAccionesOperador', () => {
       (await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-5') as Recurso,
     ];
 
-    acciones.current.cambiarEstadoRecurso(libre, 'Despachado');
+    acciones.current.cambiarEstadoRecurso(libre, 'ASIGNADO');
     await waitFor(async () =>
       expect((await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-1')?.incidente_asignado_id).toBe('demo-2'),
     );
 
-    acciones.current.cambiarEstadoRecurso(inoperativo, 'Despachado');
+    acciones.current.cambiarEstadoRecurso(inoperativo, 'ASIGNADO');
     await waitFor(() => expect(alAvisar).toHaveBeenCalledWith(expect.stringContaining('Transición inválida')));
   });
 
@@ -115,7 +115,7 @@ describe('useAccionesOperador', () => {
     const { servicio, acciones } = await montar('demo-2');
     const libre = (await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4') as Recurso;
 
-    acciones.current.cambiarEstadoRecurso(libre, 'Despachado', 'demo-1');
+    acciones.current.cambiarEstadoRecurso(libre, 'ASIGNADO', 'demo-1');
     await waitFor(async () =>
       expect((await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4')?.incidente_asignado_id).toBe('demo-1'),
     );

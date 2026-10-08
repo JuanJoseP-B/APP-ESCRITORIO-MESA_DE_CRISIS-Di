@@ -17,10 +17,10 @@ const rec = (id: string, tipo: Recurso['tipo'], etiqueta: string | null, estado:
 });
 
 const recursos: readonly Recurso[] = [
-  rec('r4', 'Policía', 'P01', 'En Escena', 'i1'),
-  rec('r2', 'Ambulancia', 'M12', 'Despachado', 'i1'),
-  rec('r1', 'Bomberos', 'U01', 'Disponible'),
-  rec('r3', 'Ambulancia', 'M10', 'Inoperativo'),
+  rec('r4', 'Policía', 'P01', 'EN_ESCENA', 'i1'),
+  rec('r2', 'Ambulancia', 'M12', 'ASIGNADO', 'i1'),
+  rec('r1', 'Bomberos', 'U01', 'DISPONIBLE'),
+  rec('r3', 'Ambulancia', 'M10', 'INOPERATIVO'),
 ];
 
 const base: TableroUnidadesProps = {
@@ -75,7 +75,7 @@ describe('TableroUnidades', () => {
   });
 
   it('genera indicativos completos para unidades sin etiqueta', () => {
-    render(<TableroUnidades {...base} recursos={[rec('a', 'Bomberos', null, 'Disponible'), rec('b', 'Bomberos', null, 'Disponible')]} />);
+    render(<TableroUnidades {...base} recursos={[rec('a', 'Bomberos', null, 'DISPONIBLE'), rec('b', 'Bomberos', null, 'DISPONIBLE')]} />);
     expect(screen.getByRole('button', { name: /^B-01/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^B-02/ })).toBeTruthy();
   });

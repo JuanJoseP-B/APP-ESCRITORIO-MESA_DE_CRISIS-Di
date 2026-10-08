@@ -29,18 +29,20 @@ export interface PanelDetalleProps {
 }
 
 const ETIQUETA_ACCION: Record<EstadoRecurso, string> = {
-  Disponible: 'Liberar',
-  Despachado: 'Despachar',
-  'En Escena': 'En escena',
-  Inoperativo: 'Inoperativo',
+  DISPONIBLE: 'Liberar',
+  ASIGNADO: 'Despachar',
+  EN_RUTA: 'En ruta',
+  EN_ESCENA: 'En escena',
+  INOPERATIVO: 'Inoperativo',
 };
 
 /** Solo Despachar es la acción primaria (naranja); el resto es secundaria o neutra. */
 const VARIANTE_ACCION: Record<EstadoRecurso, VarianteBoton> = {
-  Disponible: 'ghost',
-  Despachado: 'primary',
-  'En Escena': 'secondary',
-  Inoperativo: 'ghost',
+  DISPONIBLE: 'ghost',
+  ASIGNADO: 'primary',
+  EN_RUTA: 'secondary',
+  EN_ESCENA: 'secondary',
+  INOPERATIVO: 'ghost',
 };
 
 /** D · detalle del incidente: ficha, unidades (aquí vive DESPACHAR), línea de tiempo y refugios. */
@@ -79,7 +81,7 @@ export function PanelDetalle({
         aria-label={`${ETIQUETA_ACCION[destino]} ${nombreUnidad(r)}`}
         onClick={() => onCambiarEstadoRecurso(r, destino, incidente.id)}
       >
-        {destino === 'Despachado' ? 'DESPACHAR' : ETIQUETA_ACCION[destino]}
+        {destino === 'ASIGNADO' ? 'DESPACHAR' : ETIQUETA_ACCION[destino]}
       </Button>
     ));
 
@@ -95,8 +97,8 @@ export function PanelDetalle({
   );
 
   const asignadas = recursos.filter((r) => r.incidente_asignado_id === incidente.id);
-  const disponibles = recursos.filter((r) => r.estado_actual === 'Disponible');
-  const inoperativas = recursos.filter((r) => r.estado_actual === 'Inoperativo');
+  const disponibles = recursos.filter((r) => r.estado_actual === 'DISPONIBLE');
+  const inoperativas = recursos.filter((r) => r.estado_actual === 'INOPERATIVO');
   const entradas = bitacora(incidente.timeline);
   const totalEventos = entradas.filter((e) => e.tipo === 'evento').length;
 

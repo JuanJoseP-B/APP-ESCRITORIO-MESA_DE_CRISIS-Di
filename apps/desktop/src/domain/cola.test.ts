@@ -114,7 +114,7 @@ describe('unidadesPorIncidente', () => {
     const r = (id: string, incidenteId: string | null): Recurso => ({
       id,
       tipo: 'Bomberos',
-      estado_actual: incidenteId ? 'Despachado' : 'Disponible',
+      estado_actual: incidenteId ? 'ASIGNADO' : 'DISPONIBLE',
       incidente_asignado_id: incidenteId,
     });
     const mapa = unidadesPorIncidente([r('1', 'a'), r('2', 'a'), r('3', 'b'), r('4', null)]);

@@ -19,13 +19,14 @@ describe('DispatchRow', () => {
     expect(onToggleOperative).toHaveBeenCalledTimes(1);
   });
 
-  it('despachado ofrece En escena y Cancelar', async () => {
-    const onArrive = vi.fn();
+  it('despachado ofrece En ruta y Cancelar (no salta directo a En escena)', async () => {
+    const onEnRoute = vi.fn();
     const onCancel = vi.fn();
-    render(<DispatchRow kind="Bomberos" code="M11" status="despachado" onArrive={onArrive} onCancel={onCancel} />);
-    await userEvent.click(screen.getByRole('button', { name: 'En escena' }));
+    render(<DispatchRow kind="Bomberos" code="M11" status="despachado" onEnRoute={onEnRoute} onCancel={onCancel} />);
+    expect(screen.queryByRole('button', { name: 'En escena' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'En ruta' }));
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(onArrive).toHaveBeenCalledTimes(1);
+    expect(onEnRoute).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 

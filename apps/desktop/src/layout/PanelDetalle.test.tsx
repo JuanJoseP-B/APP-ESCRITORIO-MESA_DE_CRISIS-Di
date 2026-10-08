@@ -30,11 +30,11 @@ const unidad = (id: string, estado: Recurso['estado_actual'], incidenteId: strin
 });
 
 const recursos: readonly Recurso[] = [
-  unidad('U01', 'Disponible'),
-  unidad('M11', 'Disponible'),
-  unidad('U02', 'Despachado', incidente.id),
-  unidad('P01', 'En Escena', 'otro-incidente'),
-  unidad('M10', 'Inoperativo'),
+  unidad('U01', 'DISPONIBLE'),
+  unidad('M11', 'DISPONIBLE'),
+  unidad('U02', 'ASIGNADO', incidente.id),
+  unidad('P01', 'EN_ESCENA', 'otro-incidente'),
+  unidad('M10', 'INOPERATIVO'),
 ];
 
 const refugio: ZonaPublica = {
@@ -74,7 +74,7 @@ describe('PanelDetalle: despacho contextual', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Despachar M11' }));
     expect(mutar).toHaveBeenCalledTimes(1);
-    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'Despachado', 'inc-1-a3f');
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'ASIGNADO', 'inc-1-a3f');
   });
 
   it('las unidades asignadas ofrecen solo transiciones válidas y conservan el incidente', async () => {
@@ -85,8 +85,18 @@ describe('PanelDetalle: despacho contextual', () => {
     expect(within(asignadas).queryByText('P01')).toBeNull();
     expect(within(asignadas).queryByText('DESPACHAR')).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'En escena U02' }));
-    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'U02' }), 'En Escena', 'inc-1-a3f');
+    await userEvent.click(screen.getByRole('button', { name: 'En ruta U02' }));
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'U02' }), 'EN_RUTA', 'inc-1-a3f');
+    expect(screen.queryByRole('button', { name: 'En escena U02' })).toBeNull();
+  });
+
+  it('una unidad en ruta ofrece En escena y la liberación cancela el despacho', async () => {
+    const mutar = vi.fn();
+    render(<PanelDetalle {...base({ recursos: [unidad('U03', 'EN_RUTA', 'inc-1-a3f')], onCambiarEstadoRecurso: mutar })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'En escena U03' }));
+    expect(mutar).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'U03' }), 'EN_ESCENA', 'inc-1-a3f');
+    await userEvent.click(screen.getByRole('button', { name: 'Liberar U03' }));
+    expect(mutar).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'U03' }), 'DISPONIBLE', 'inc-1-a3f');
   });
 
   it('una unidad inoperativa solo puede habilitarse, nunca despacharse', () => {
@@ -96,7 +106,7 @@ describe('PanelDetalle: despacho contextual', () => {
   });
 
   it('sin unidades disponibles lo indica', () => {
-    render(<PanelDetalle {...base({ recursos: [unidad('M10', 'Inoperativo')] })} />);
+    render(<PanelDetalle {...base({ recursos: [unidad('M10', 'INOPERATIVO')] })} />);
     expect(screen.getByText('No hay unidades disponibles')).toBeTruthy();
     expect(screen.getByText('Sin unidades asignadas')).toBeTruthy();
   });

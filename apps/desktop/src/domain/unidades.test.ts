@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EstadoRecurso, Recurso, TipoRecurso } from '@argos/shared';
 import { indicativosDe, ordenarUnidades, resumirUnidades } from './unidades';
 
-const rec = (id: string, tipo: TipoRecurso, etiqueta?: string | null, estado: EstadoRecurso = 'Disponible'): Recurso => ({
+const rec = (id: string, tipo: TipoRecurso, etiqueta?: string | null, estado: EstadoRecurso = 'DISPONIBLE'): Recurso => ({
   id,
   tipo,
   estado_actual: estado,
@@ -58,7 +58,7 @@ describe('ordenarUnidades', () => {
 describe('resumirUnidades', () => {
   it('cuenta el total y las disponibles', () => {
     expect(
-      resumirUnidades([rec('1', 'Bomberos', 'U1'), rec('2', 'Bomberos', 'U2', 'Despachado'), rec('3', 'Policía', 'P1', 'Inoperativo')]),
+      resumirUnidades([rec('1', 'Bomberos', 'U1'), rec('2', 'Bomberos', 'U2', 'ASIGNADO'), rec('3', 'Policía', 'P1', 'INOPERATIVO')]),
     ).toEqual({ total: 3, disponibles: 1 });
     expect(resumirUnidades([])).toEqual({ total: 0, disponibles: 0 });
   });

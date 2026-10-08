@@ -100,19 +100,19 @@ describe('crearServicioMesa', () => {
   });
 
   it('cambia el estado de un recurso con update().eq().select().single() y devuelve la fila', async () => {
-    const fila = { id: 'r1', tipo: 'Bomberos', estado_actual: 'Despachado', incidente_asignado_id: 'inc-1' };
+    const fila = { id: 'r1', tipo: 'Bomberos', estado_actual: 'ASIGNADO', incidente_asignado_id: 'inc-1' };
     const { from, update, eq } = clienteUpdate({ data: fila, error: null });
     const servicio = crearServicioMesa({ from } as unknown as SupabaseClient);
 
-    await expect(servicio.cambiarEstadoRecurso('r1', 'Despachado', 'inc-1')).resolves.toEqual(fila);
+    await expect(servicio.cambiarEstadoRecurso('r1', 'ASIGNADO', 'inc-1')).resolves.toEqual(fila);
 
     expect(from).toHaveBeenCalledWith('recursos_operativos');
-    expect(update).toHaveBeenCalledWith({ estado_actual: 'Despachado', incidente_asignado_id: 'inc-1' });
+    expect(update).toHaveBeenCalledWith({ estado_actual: 'ASIGNADO', incidente_asignado_id: 'inc-1' });
     expect(eq).toHaveBeenCalledWith('id', 'r1');
   });
 
   it('emite la fila guardada a los suscriptores sin esperar a Realtime y deja de hacerlo al cancelar', async () => {
-    const fila = { id: 'r1', tipo: 'Bomberos', estado_actual: 'En Escena', incidente_asignado_id: 'inc-1' };
+    const fila = { id: 'r1', tipo: 'Bomberos', estado_actual: 'EN_ESCENA', incidente_asignado_id: 'inc-1' };
     const canal = { on: vi.fn(), subscribe: vi.fn() };
     canal.on.mockReturnValue(canal);
     canal.subscribe.mockReturnValue(canal);
@@ -124,12 +124,12 @@ describe('crearServicioMesa', () => {
     const cancelar = servicio.suscribirRecursos(alCambiar);
     servicio.suscribirIncidentes(enOtraTabla);
 
-    await servicio.cambiarEstadoRecurso('r1', 'En Escena', 'inc-1');
+    await servicio.cambiarEstadoRecurso('r1', 'EN_ESCENA', 'inc-1');
     expect(alCambiar).toHaveBeenCalledWith({ tipo: 'UPDATE', nuevo: fila, idEliminado: null });
     expect(enOtraTabla).not.toHaveBeenCalled();
 
     cancelar();
-    await servicio.cambiarEstadoRecurso('r1', 'En Escena', 'inc-1');
+    await servicio.cambiarEstadoRecurso('r1', 'EN_ESCENA', 'inc-1');
     expect(alCambiar).toHaveBeenCalledOnce();
   });
 
@@ -137,14 +137,14 @@ describe('crearServicioMesa', () => {
     const { from } = clienteUpdate({ data: null, error: { message: 'denegado' } });
     const servicio = crearServicioMesa({ from } as unknown as SupabaseClient);
 
-    await expect(servicio.cambiarEstadoRecurso('r1', 'Disponible', null)).rejects.toThrow('denegado');
+    await expect(servicio.cambiarEstadoRecurso('r1', 'DISPONIBLE', null)).rejects.toThrow('denegado');
   });
 
   it('una actualización que no toca ninguna fila (RLS) falla en vez de pasar en silencio', async () => {
     const { from } = clienteUpdate({ data: null, error: { code: 'PGRST116', message: 'JSON object requested' } });
     const servicio = crearServicioMesa({ from } as unknown as SupabaseClient);
 
-    await expect(servicio.cambiarEstadoRecurso('r1', 'Disponible', null)).rejects.toThrow('rol de operador');
+    await expect(servicio.cambiarEstadoRecurso('r1', 'DISPONIBLE', null)).rejects.toThrow('rol de operador');
   });
 
   it('ajusta la ocupación con la RPC atómica enviando solo el delta', async () => {

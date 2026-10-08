@@ -37,5 +37,5 @@ export interface ResumenUnidades {
 }
 
 export function resumirUnidades(recursos: readonly Recurso[]): ResumenUnidades {
-  return { total: recursos.length, disponibles: recursos.filter((r) => r.estado_actual === 'Disponible').length };
+  return { total: recursos.length, disponibles: recursos.filter((r) => r.estado_actual === 'DISPONIBLE').length };
 }

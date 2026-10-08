@@ -15,8 +15,9 @@ export const ESTADO_INCIDENTE_UI: Readonly<Record<EstadoIncidente, EstadoInciden
 };
 
 export const ESTADO_RECURSO_UI: Readonly<Record<EstadoRecurso, EstadoRecursoUI>> = {
-  Disponible: 'disponible',
-  Despachado: 'despachado',
-  'En Escena': 'escena',
-  Inoperativo: 'inoperativo',
+  DISPONIBLE: 'disponible',
+  ASIGNADO: 'despachado',
+  EN_RUTA: 'enruta',
+  EN_ESCENA: 'escena',
+  INOPERATIVO: 'inoperativo',
 };

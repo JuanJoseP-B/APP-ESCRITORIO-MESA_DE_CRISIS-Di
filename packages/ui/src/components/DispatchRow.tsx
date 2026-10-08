@@ -15,13 +15,14 @@ export interface DispatchRowProps {
   actions?: ReactNode;
   onDispatch?: () => void;
   onToggleOperative?: () => void;
+  onEnRoute?: () => void;
   onArrive?: () => void;
   onCancel?: () => void;
   onRelease?: () => void;
   className?: string;
 }
 
-export function DispatchRow({ kind, code, status, detail, actions, onDispatch, onToggleOperative, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
+export function DispatchRow({ kind, code, status, detail, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
   const porDefecto: Record<EstadoRecursoUI, ReactNode> = {
     disponible: (
       <>
@@ -35,8 +36,8 @@ export function DispatchRow({ kind, code, status, detail, actions, onDispatch, o
     ),
     despachado: (
       <>
-        <Button variant="secondary" size="sm" onClick={onArrive}>
-          En escena
+        <Button variant="secondary" size="sm" onClick={onEnRoute}>
+          En ruta
         </Button>
         <Button size="sm" onClick={onCancel}>
           Cancelar

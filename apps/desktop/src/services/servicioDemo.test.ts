@@ -7,24 +7,24 @@ describe('servicioDemo (recursos)', () => {
     const alCambiar = vi.fn();
     const cancelar = servicio.suscribirRecursos(alCambiar);
 
-    await servicio.cambiarEstadoRecurso('demo-rec-1', 'Despachado', 'demo-1');
+    await servicio.cambiarEstadoRecurso('demo-rec-1', 'ASIGNADO', 'demo-1');
 
     expect(alCambiar).toHaveBeenCalledWith(
       expect.objectContaining({
         tipo: 'UPDATE',
-        nuevo: expect.objectContaining({ id: 'demo-rec-1', estado_actual: 'Despachado' }),
+        nuevo: expect.objectContaining({ id: 'demo-rec-1', estado_actual: 'ASIGNADO' }),
       }),
     );
     const recursos = await servicio.listarRecursos();
     expect(recursos.find((r) => r.id === 'demo-rec-1')?.incidente_asignado_id).toBe('demo-1');
 
     cancelar();
-    await servicio.cambiarEstadoRecurso('demo-rec-1', 'Disponible', null);
+    await servicio.cambiarEstadoRecurso('demo-rec-1', 'DISPONIBLE', null);
     expect(alCambiar).toHaveBeenCalledTimes(1);
   });
 
   it('rechaza recursos inexistentes', async () => {
-    await expect(crearServicioDemo().cambiarEstadoRecurso('nope', 'Disponible', null)).rejects.toThrow('nope');
+    await expect(crearServicioDemo().cambiarEstadoRecurso('nope', 'DISPONIBLE', null)).rejects.toThrow('nope');
   });
 });
 
@@ -88,10 +88,10 @@ describe('servicioDemo (incidentes, reportes y refugios)', () => {
 
   it('cambiar el estado de un recurso devuelve la fila guardada', async () => {
     const servicio = crearServicioDemo();
-    await expect(servicio.cambiarEstadoRecurso('demo-rec-1', 'Despachado', 'demo-1')).resolves.toEqual({
+    await expect(servicio.cambiarEstadoRecurso('demo-rec-1', 'ASIGNADO', 'demo-1')).resolves.toEqual({
       id: 'demo-rec-1',
       tipo: 'Bomberos',
-      estado_actual: 'Despachado',
+      estado_actual: 'ASIGNADO',
       incidente_asignado_id: 'demo-1',
     });
   });

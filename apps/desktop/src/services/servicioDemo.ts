@@ -52,11 +52,11 @@ const reportes: readonly Reporte[] = [
 ];
 
 const recursosIniciales: readonly Recurso[] = [
-  { id: 'demo-rec-1', tipo: 'Bomberos', estado_actual: 'Disponible', incidente_asignado_id: null },
-  { id: 'demo-rec-2', tipo: 'Bomberos', estado_actual: 'Despachado', incidente_asignado_id: 'demo-1' },
-  { id: 'demo-rec-3', tipo: 'Ambulancia', estado_actual: 'En Escena', incidente_asignado_id: 'demo-1' },
-  { id: 'demo-rec-4', tipo: 'Policía', estado_actual: 'Disponible', incidente_asignado_id: null },
-  { id: 'demo-rec-5', tipo: 'Ambulancia', estado_actual: 'Inoperativo', incidente_asignado_id: null },
+  { id: 'demo-rec-1', tipo: 'Bomberos', estado_actual: 'DISPONIBLE', incidente_asignado_id: null },
+  { id: 'demo-rec-2', tipo: 'Bomberos', estado_actual: 'ASIGNADO', incidente_asignado_id: 'demo-1' },
+  { id: 'demo-rec-3', tipo: 'Ambulancia', estado_actual: 'EN_ESCENA', incidente_asignado_id: 'demo-1' },
+  { id: 'demo-rec-4', tipo: 'Policía', estado_actual: 'DISPONIBLE', incidente_asignado_id: null },
+  { id: 'demo-rec-5', tipo: 'Ambulancia', estado_actual: 'INOPERATIVO', incidente_asignado_id: null },
 ];
 
 const zonasIniciales: readonly ZonaPublica[] = [

@@ -23,7 +23,7 @@ const inc = (id: string, nivel: NivelCriticidad, abierto: string, estado: Estado
 const rec = (id: string, incidenteId: string | null): Recurso => ({
   id,
   tipo: 'Bomberos',
-  estado_actual: incidenteId ? 'Despachado' : 'Disponible',
+  estado_actual: incidenteId ? 'ASIGNADO' : 'DISPONIBLE',
   incidente_asignado_id: incidenteId,
 });
 
