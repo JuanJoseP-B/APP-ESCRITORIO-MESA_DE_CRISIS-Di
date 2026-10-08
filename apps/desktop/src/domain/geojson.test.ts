@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Incidente } from '@argos/shared';
-import { COLOR_CRITICIDAD, incidentesAFeatureCollection } from './geojson';
+import { COLOR_CRITICIDAD, colorearFeatures, incidentesAFeatureCollection } from './geojson';
 
 const base: Incidente = {
   id: 'a',
@@ -47,5 +47,16 @@ describe('incidentesAFeatureCollection', () => {
       COLOR_CRITICIDAD.Medio,
       COLOR_CRITICIDAD.Bajo,
     ]);
+  });
+
+  it('colorearFeatures sustituye el token por el valor del tema sin mutar el original', () => {
+    const original = incidentesAFeatureCollection([base]);
+    const pintada = colorearFeatures(original, (token) => `valor(${token})`);
+    expect(pintada.features[0]?.properties.color).toBe('valor(status-critical)');
+    expect(original.features[0]?.properties.color).toBe('status-critical');
+  });
+
+  it('los colores del dominio son tokens, no hex', () => {
+    expect(Object.values(COLOR_CRITICIDAD).every((t) => !t.startsWith('#'))).toBe(true);
   });
 });

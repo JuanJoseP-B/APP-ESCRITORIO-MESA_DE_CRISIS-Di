@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
 import type { Coordenadas, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
-import { incidentesAFeatureCollection, reportesAFeatureCollection, zonasAFeatureCollection } from '../domain/geojson';
+import { leerToken, observarTema } from '@argos/ui';
+import {
+  colorearFeatures,
+  incidentesAFeatureCollection,
+  reportesAFeatureCollection,
+  zonasAFeatureCollection,
+} from '../domain/geojson';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
 
 const FUENTE = 'incidentes';
@@ -81,6 +87,9 @@ export function MapView({
   alSeleccionar.current = onSeleccionar;
   const trazando = useRef(dibujando);
   trazando.current = dibujando;
+  // Sube cada vez que cambia el turno (crema/carbón) para repintar con los tokens del tema nuevo.
+  const [versionTema, setVersionTema] = useState(0);
+  useEffect(() => observarTema(() => setVersionTema((v) => v + 1)), []);
 
   // Inicializa el mapa una sola vez.
   useEffect(() => {
@@ -116,7 +125,7 @@ export function MapView({
         paint: {
           'circle-color': ['get', 'color'],
           'circle-radius': 6,
-          'circle-stroke-color': '#ffffff',
+          'circle-stroke-color': leerToken('map-marker-halo'),
           'circle-stroke-width': 2,
         },
       });
@@ -143,7 +152,7 @@ export function MapView({
         paint: {
           'circle-color': ['get', 'color'],
           'circle-radius': 7,
-          'circle-stroke-color': '#ffffff',
+          'circle-stroke-color': leerToken('map-marker-halo'),
           'circle-stroke-width': 2,
         },
       });
@@ -155,7 +164,7 @@ export function MapView({
         paint: {
           'circle-color': ['get', 'color'],
           'circle-radius': ['case', ['get', 'seleccionado'], 9, 5],
-          'circle-stroke-color': '#FFB300',
+          'circle-stroke-color': leerToken('status-warning'),
           'circle-stroke-width': ['case', ['get', 'seleccionado'], 4, 2],
         },
       });
@@ -181,21 +190,30 @@ export function MapView({
   useEffect(() => {
     if (!mapa || !listo) return;
     const fuente = mapa.getSource<GeoJSONSource>(FUENTE);
-    fuente?.setData(incidentesAFeatureCollection(incidentes) as never);
-  }, [mapa, listo, incidentes]);
+    fuente?.setData(colorearFeatures(incidentesAFeatureCollection(incidentes), leerToken) as never);
+  }, [mapa, listo, incidentes, versionTema]);
 
   // Sincroniza zonas públicas (refugios y figuras trazadas) y reportes pendientes.
   useEffect(() => {
     if (!mapa || !listo) return;
-    mapa.getSource<GeoJSONSource>(FUENTE_ZONAS)?.setData(zonasAFeatureCollection(zonas) as never);
-  }, [mapa, listo, zonas]);
+    mapa.getSource<GeoJSONSource>(FUENTE_ZONAS)?.setData(colorearFeatures(zonasAFeatureCollection(zonas), leerToken) as never);
+  }, [mapa, listo, zonas, versionTema]);
 
   useEffect(() => {
     if (!mapa || !listo) return;
     mapa
       .getSource<GeoJSONSource>(FUENTE_REPORTES)
-      ?.setData(reportesAFeatureCollection(reportes, reporteSeleccionadoId) as never);
-  }, [mapa, listo, reportes, reporteSeleccionadoId]);
+      ?.setData(colorearFeatures(reportesAFeatureCollection(reportes, reporteSeleccionadoId), leerToken) as never);
+  }, [mapa, listo, reportes, reporteSeleccionadoId, versionTema]);
+
+  // Los trazos de los marcadores dependen del tema: se reasignan al cambiar de turno.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    const halo = leerToken('map-marker-halo');
+    mapa.setPaintProperty('zonas-puntos', 'circle-stroke-color', halo);
+    mapa.setPaintProperty('incidentes-puntos', 'circle-stroke-color', halo);
+    mapa.setPaintProperty('reportes-puntos', 'circle-stroke-color', leerToken('status-warning'));
+  }, [mapa, listo, versionTema]);
 
   // Vuela al reporte elegido en la bandeja.
   useEffect(() => {
