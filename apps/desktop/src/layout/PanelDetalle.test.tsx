@@ -217,6 +217,8 @@ describe('PanelDetalle: asesor táctico', () => {
   const asesorBase = (extra: Partial<NonNullable<PanelDetalleProps['asesor']>> = {}): NonNullable<PanelDetalleProps['asesor']> => ({
     estado: { fase: 'inactivo' },
     onAlternar: vi.fn(),
+    onAplicar: vi.fn(),
+    onDescartar: vi.fn(),
     onCerrar: vi.fn(),
     ...extra,
   });

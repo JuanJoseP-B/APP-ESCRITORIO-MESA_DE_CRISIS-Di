@@ -90,6 +90,8 @@ export const GRUPOS_ATAJOS = [
     titulo: 'atajos.grupo.asesor',
     atajos: [
       { clave: 'atajos.asesor.abrir', teclas: ['A'] },
+      { clave: 'atajos.asesor.marcar', teclas: ['Space'] },
+      { clave: 'atajos.asesor.confirmar', teclas: ['Enter'] },
       { clave: 'atajos.asesor.cerrar', teclas: ['Esc'] },
     ],
   },

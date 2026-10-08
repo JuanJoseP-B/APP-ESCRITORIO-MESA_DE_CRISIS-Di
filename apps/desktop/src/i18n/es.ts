@@ -330,7 +330,26 @@ export const es = {
   'asesor.error.API': 'El asesor falló al analizar el incidente.',
   'atajos.grupo.asesor': 'Asesor táctico',
   'atajos.asesor.abrir': 'Abrir o cerrar el asesor del incidente seleccionado',
-  'atajos.asesor.cerrar': 'Cerrar la tarjeta del asesor sin registrar nada',
+  'atajos.asesor.cerrar': 'Cerrar la tarjeta del asesor o cancelar su confirmación, sin registrar nada',
+
+  // Asesor táctico · confirmación por acción
+  'plan.titulo': 'Aplicar sugerencia · #{codigo}',
+  'plan.ayuda': 'Marca lo que quieres ejecutar. Solo se aplican las acciones marcadas; el resto queda como rechazado en la bitácora.',
+  'plan.acciones': 'Acciones propuestas',
+  'plan.despachar': 'Despachar {unidad}',
+  'plan.despachar.detalle': '{tipo} · {rol} · ETA {min} min',
+  'plan.perimetro': 'Aplicar perímetro {caliente} / {tibia} / {evacuacion} m',
+  'plan.perimetro.detalle': 'Guarda los radios en el incidente con origen asesor.',
+  'plan.refugio': 'Fijar refugio {nombre}',
+  'plan.refugio.detalle': 'Queda designado en la bitácora; no cambia su ocupación.',
+  'plan.marcada': 'Aplicar',
+  'plan.rechazada': 'Omitir',
+  'plan.cancelar': 'Cancelar',
+  'plan.confirmar': 'Confirmar {n} de {total}',
+  'aviso.asesor.aplicado': 'Asesor: se aplicaron {n} de {total} acciones.',
+  'aviso.asesor.descartado': 'Asesor: sugerencia descartada y registrada en la bitácora.',
+  'atajos.asesor.confirmar': 'Confirmar las acciones marcadas de la sugerencia',
+  'atajos.asesor.marcar': 'Marcar o desmarcar una acción de la sugerencia',
 } as const;
 
 export type ClaveTexto = keyof typeof es;

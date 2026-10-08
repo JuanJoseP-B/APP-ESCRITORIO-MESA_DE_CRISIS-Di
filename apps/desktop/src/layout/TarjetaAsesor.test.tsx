@@ -129,12 +129,6 @@ describe('TarjetaAsesor', () => {
     expect(onCerrar).toHaveBeenCalledTimes(1);
   });
 
-  it('sin manejadores de aplicar y descartar no se ofrecen', () => {
-    montar({ estado: listo, onAplicar: undefined, onDescartar: undefined });
-    expect(screen.queryByRole('button', { name: 'APLICAR SUGERENCIA' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'DESCARTAR' })).toBeNull();
-  });
-
   it('error: mensaje claro, el despacho manual sigue disponible y no hay nada que aplicar', async () => {
     const { onCerrar } = montar({ estado: { fase: 'error', error: 'SIN_RECOMENDACION', detalle: 'detalle interno' } });
     const alerta = screen.getByRole('alert');

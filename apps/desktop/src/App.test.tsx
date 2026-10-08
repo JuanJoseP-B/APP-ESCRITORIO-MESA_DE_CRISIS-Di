@@ -167,3 +167,56 @@ describe('App: asesor táctico', () => {
     expect(await screen.findByRole('dialog', { name: /^Despachar · #/ })).toBeTruthy();
   });
 });
+
+describe('App: sugerencia del asesor', () => {
+  const REGION = { name: 'Asesor táctico · motor de reglas' };
+
+  /** Libera la U02 del demo para que Bomberos quede sin cubrir y el asesor tenga una unidad que proponer. */
+  async function abrirAsesorConUnidadPorCubrir() {
+    await abrirConsola();
+    await userEvent.keyboard('j');
+    await userEvent.click(await screen.findByRole('button', { name: 'Liberar U02' }));
+    await userEvent.keyboard('a');
+    await screen.findByText('Unidades recomendadas', undefined, { timeout: 3000 });
+  }
+
+  it('[APLICAR SUGERENCIA] abre la confirmación; Enter ejecuta solo lo marcado y deja el rastro en la bitácora', async () => {
+    await abrirAsesorConUnidadPorCubrir();
+    await userEvent.click(screen.getByRole('button', { name: 'APLICAR SUGERENCIA' }));
+    const dialogo = await screen.findByRole('dialog', { name: /^Aplicar sugerencia · #/ });
+    // Se omite el perímetro: solo se despacha la unidad y se fija el refugio.
+    await userEvent.click(within(dialogo).getByRole('checkbox', { name: /Aplicar perímetro/ }));
+    await userEvent.keyboard('{Enter}');
+
+    expect(screen.queryByRole('dialog', { name: /^Aplicar sugerencia · #/ })).toBeNull();
+    expect(screen.queryByRole('region', REGION)).toBeNull();
+    expect(await screen.findByRole('button', { name: /^U0\d, Bomberos, Despachado/ })).toBeTruthy();
+    const bitacora = await screen.findByText(/el operador aplicó la sugerencia en parte/);
+    expect(bitacora.textContent).toMatch(/Asesor táctico \[[0-9a-f]{8}\] · /);
+    expect(bitacora.textContent).toContain('Aceptado: despachar U0');
+    expect(bitacora.textContent).toContain('refugio Colegio Central');
+    expect(bitacora.textContent).toContain('Rechazado: perímetro 100/300/800 m.');
+    expect(bitacora.textContent).toContain('ASESOR · demo@local');
+  });
+
+  it('Esc en la confirmación cancela sin cambiar nada y deja la tarjeta abierta', async () => {
+    await abrirAsesorConUnidadPorCubrir();
+    await userEvent.click(screen.getByRole('button', { name: 'APLICAR SUGERENCIA' }));
+    await screen.findByRole('dialog', { name: /^Aplicar sugerencia · #/ });
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: /^Aplicar sugerencia · #/ })).toBeNull();
+    expect(screen.getByRole('region', REGION)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^U0\d, Bomberos, Despachado/ })).toBeNull();
+    expect(screen.queryByText(/Asesor táctico \[/)).toBeNull();
+  });
+
+  it('[DESCARTAR] cierra la tarjeta sin cambiar el estado y queda en la bitácora', async () => {
+    await abrirAsesorConUnidadPorCubrir();
+    await userEvent.click(screen.getByRole('button', { name: 'DESCARTAR' }));
+    expect(screen.queryByRole('region', REGION)).toBeNull();
+    const bitacora = await screen.findByText(/el operador descartó la sugerencia/);
+    expect(bitacora.textContent).toContain('Aceptado: ninguna.');
+    expect(bitacora.textContent).toContain('Rechazado: despachar U0');
+    expect(screen.queryByRole('button', { name: /^U0\d, Bomberos, Despachado/ })).toBeNull();
+  });
+});

@@ -5,6 +5,7 @@ import {
   autorAsesor,
   claveAccion,
   construirSnapshot,
+  separarAcciones,
   previsualizarRecomendacion,
   textoBitacoraAsesor,
   validarRecomendacion,
@@ -229,6 +230,28 @@ describe('acciones y bitácora del asesor', () => {
     const descarte = textoBitacoraAsesor(snapshot, rec, [], todas);
     expect(descarte).toContain('descartó la sugerencia. Aceptado: ninguna.');
     expect(descarte).toContain('Rechazado: despachar U01');
+  });
+
+  it('separa lo marcado de lo omitido y rechaza despachar una unidad que ya no está libre', () => {
+    const claves = (as: readonly Parameters<typeof claveAccion>[0][]) => as.map(claveAccion);
+    const todas = new Set(accionesDeRecomendacion(rec).map(claveAccion));
+    const libres = new Set(['u01', 'm11']);
+
+    const completa = separarAcciones(rec, todas, libres);
+    expect(claves(completa.aceptadas)).toEqual(['despachar:u01', 'despachar:m11', 'perimetro', 'refugio:z-lejos']);
+    expect(completa.rechazadas).toEqual([]);
+
+    const parcial = separarAcciones(rec, new Set(['despachar:u01', 'perimetro']), libres);
+    expect(claves(parcial.aceptadas)).toEqual(['despachar:u01', 'perimetro']);
+    expect(claves(parcial.rechazadas)).toEqual(['despachar:m11', 'refugio:z-lejos']);
+
+    const ocupada = separarAcciones(rec, todas, new Set(['u01']));
+    expect(claves(ocupada.aceptadas)).toEqual(['despachar:u01', 'perimetro', 'refugio:z-lejos']);
+    expect(claves(ocupada.rechazadas)).toEqual(['despachar:m11']);
+
+    const ninguna = separarAcciones(rec, new Set(), libres);
+    expect(ninguna.aceptadas).toEqual([]);
+    expect(ninguna.rechazadas).toHaveLength(4);
   });
 
   it('el autor indica el origen ASESOR y quién confirmó', () => {

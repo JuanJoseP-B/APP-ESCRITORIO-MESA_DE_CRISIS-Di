@@ -153,6 +153,24 @@ export function accionesDeRecomendacion(rec: RecomendacionAsesor): readonly Acci
   ];
 }
 
+/**
+ * Reparte las acciones de la recomendación entre aceptadas y rechazadas. Se acepta lo que el operador marcó, salvo
+ * despachar una unidad que ya no está disponible (la ocupó otro puesto mientras decidía): esa queda rechazada.
+ */
+export function separarAcciones(
+  rec: RecomendacionAsesor,
+  marcadas: ReadonlySet<string>,
+  disponibles: ReadonlySet<string>,
+): { readonly aceptadas: readonly AccionAsesor[]; readonly rechazadas: readonly AccionAsesor[] } {
+  const aceptadas: AccionAsesor[] = [];
+  const rechazadas: AccionAsesor[] = [];
+  for (const a of accionesDeRecomendacion(rec)) {
+    const ejecutable = marcadas.has(claveAccion(a)) && (a.tipo !== 'DESPACHAR' || disponibles.has(a.idRecurso));
+    (ejecutable ? aceptadas : rechazadas).push(a);
+  }
+  return { aceptadas, rechazadas };
+}
+
 const idCorto = (rec: RecomendacionAsesor): string => rec.idRecomendacion.slice(0, 8);
 
 function describirAccion(a: AccionAsesor, snapshot: SnapshotAsesor, rec: RecomendacionAsesor): string {

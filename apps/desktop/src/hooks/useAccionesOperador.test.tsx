@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { GeoJsonPolygon, Incidente, Recurso, Reporte, ZonaPublica } from '@argos/shared';
+import type { GeoJsonPolygon, Incidente, RecomendacionAsesor, Recurso, Reporte, SnapshotAsesor, ZonaPublica } from '@argos/shared';
 import { crearServicioDemo } from '../services/servicioDemo';
 import { useAccionesOperador } from './useAccionesOperador';
 
@@ -148,5 +148,107 @@ describe('useAccionesOperador', () => {
     const primero = result.current.guardarTrazado;
     rerender({ ...props, seleccionadoId: 'x' });
     expect(result.current.guardarTrazado).toBe(primero);
+  });
+});
+
+describe('useAccionesOperador: sugerencias del asesor', () => {
+  const radios = { CALIENTE: 100, TIBIA: 300, EVACUACION: 800 };
+  const posicion = { lat: 1.2136, lng: -77.2811 };
+  const snapshot: SnapshotAsesor = {
+    version: 1,
+    generadoEn: '2026-10-07T12:00:00.000Z',
+    incidente: { id: 'demo-1', codigo: 'O-1', tipo: 'FUGA_GAS', prioridad: 'P1', ubicacion: posicion, descripcion: 'Fuga', llamadasVinculadas: 1, minutosAbierto: 9, perimetroActual: null },
+    recursos: [
+      { id: 'demo-rec-1', indicativo: 'U01', tipo: 'Bomberos', estado: 'DISPONIBLE', incidenteId: null, ubicacion: posicion, distanciaM: 300 },
+      { id: 'demo-rec-4', indicativo: 'P01', tipo: 'Policía', estado: 'DISPONIBLE', incidenteId: null, ubicacion: posicion, distanciaM: 150 },
+    ],
+    refugios: [{ id: 'demo-z2', nombre: 'Colegio Central', ubicacion: posicion, ocupacion: 10, capacidad: 120, anillo: 'FUERA' }],
+    contexto: { slaVencidos: [], unidadesEnZonaCaliente: [] },
+  };
+  const recomendacion: RecomendacionAsesor = {
+    idRecomendacion: 'abcd1234-0000-4000-8000-000000000000',
+    unidades: [
+      { idRecurso: 'demo-rec-1', rol: 'Control y rescate', etaMin: 1 },
+      { idRecurso: 'demo-rec-4', rol: 'Seguridad', etaMin: 1 },
+    ],
+    justificacion: 'Texto.',
+    perimetroSugerido: radios,
+    refugioSugeridoId: 'demo-z2',
+    advertencias: [],
+    confianza: 'ALTA',
+  };
+
+  async function montarAsesor() {
+    const base = await montar('demo-1', 'jefe@argos.test');
+    const incidente = (await base.servicio.listarIncidentes()).find((i) => i.id === 'demo-1') as Incidente;
+    const recursos = await base.servicio.listarRecursos();
+    return { ...base, incidente, recursos, sugerencia: { incidente, snapshot, recomendacion } };
+  }
+
+  it('una aplicación parcial ejecuta solo lo marcado, con origen IA, y deja lo rechazado en la bitácora', async () => {
+    const { servicio, acciones, alAvisar, recursos, sugerencia, incidente } = await montarAsesor();
+
+    acciones.current.aplicarSugerenciaAsesor({ ...sugerencia, recursos, marcadas: new Set(['despachar:demo-rec-1', 'perimetro']) });
+
+    await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith('Asesor: se aplicaron 2 de 4 acciones.'));
+    const despues = await servicio.listarRecursos();
+    expect(despues.find((r) => r.id === 'demo-rec-1')).toMatchObject({ estado_actual: 'ASIGNADO', incidente_asignado_id: 'demo-1' });
+    expect(despues.find((r) => r.id === 'demo-rec-4')?.estado_actual).toBe('DISPONIBLE');
+    const eventos = await servicio.listarEventosRecurso();
+    expect(eventos.at(-1)).toMatchObject({ recursoId: 'demo-rec-1', hacia: 'ASIGNADO', origen: 'IA' });
+    expect(eventos.filter((e) => e.recursoId === 'demo-rec-4')).toHaveLength(0);
+
+    const actualizado = (await servicio.listarIncidentes()).find((i) => i.id === 'demo-1') as Incidente;
+    expect(actualizado.perimetro).toEqual({ centro: posicion, radios, origen: 'IA', poligonoManual: null });
+    expect(actualizado.perimetro_origen).toBe('IA');
+    expect(actualizado.timeline).toHaveLength(incidente.timeline.length + 1);
+    expect(actualizado.timeline.at(-1)).toMatchObject({
+      autor: 'ASESOR · jefe@argos.test',
+      descripcion:
+        'Asesor táctico [abcd1234] · el operador aplicó la sugerencia en parte. Aceptado: despachar U01, perímetro 100/300/800 m. Rechazado: despachar P01, refugio Colegio Central.',
+    });
+  });
+
+  it('sin marcar el perímetro no se guarda, y la unidad que ya no está libre no se despacha', async () => {
+    const { servicio, acciones, alAvisar, sugerencia } = await montarAsesor();
+    await servicio.cambiarEstadoRecurso('demo-rec-4', 'ASIGNADO', 'otro');
+    const recursos = await servicio.listarRecursos();
+
+    acciones.current.aplicarSugerenciaAsesor({ ...sugerencia, recursos, marcadas: new Set(['despachar:demo-rec-4', 'refugio:demo-z2']) });
+
+    await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith('Asesor: se aplicaron 1 de 4 acciones.'));
+    const actualizado = (await servicio.listarIncidentes()).find((i) => i.id === 'demo-1') as Incidente;
+    expect(actualizado.perimetro ?? null).toBeNull();
+    expect(actualizado.timeline.at(-1)?.descripcion).toContain('Aceptado: refugio Colegio Central.');
+    expect(actualizado.timeline.at(-1)?.descripcion).toContain('Rechazado: despachar U01, despachar P01, perímetro 100/300/800 m.');
+    expect((await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4')?.incidente_asignado_id).toBe('otro');
+  });
+
+  it('descartar no cambia nada salvo la bitácora, que registra el rechazo de todo', async () => {
+    const { servicio, acciones, alAvisar, sugerencia, incidente, recursos } = await montarAsesor();
+    const actualizar = vi.spyOn(servicio, 'actualizarIncidente');
+    const cambiar = vi.spyOn(servicio, 'cambiarEstadoRecurso');
+
+    acciones.current.descartarSugerenciaAsesor(sugerencia);
+
+    await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith('Asesor: sugerencia descartada y registrada en la bitácora.'));
+    expect(cambiar).not.toHaveBeenCalled();
+    expect(actualizar).toHaveBeenCalledTimes(1);
+    expect(await servicio.listarRecursos()).toEqual(recursos);
+    const actualizado = (await servicio.listarIncidentes()).find((i) => i.id === 'demo-1') as Incidente;
+    expect(actualizado.perimetro ?? null).toBeNull();
+    expect(actualizado.timeline).toHaveLength(incidente.timeline.length + 1);
+    expect(actualizado.timeline.at(-1)).toMatchObject({
+      autor: 'ASESOR · jefe@argos.test',
+      descripcion:
+        'Asesor táctico [abcd1234] · el operador descartó la sugerencia. Aceptado: ninguna. Rechazado: despachar U01, despachar P01, perímetro 100/300/800 m, refugio Colegio Central.',
+    });
+  });
+
+  it('el despacho manual sigue sin origen: no pasa el cuarto argumento al servicio', async () => {
+    const { servicio, acciones, recursos } = await montarAsesor();
+    const cambiar = vi.spyOn(servicio, 'cambiarEstadoRecurso');
+    acciones.current.cambiarEstadoRecurso(recursos.find((r) => r.id === 'demo-rec-1') as Recurso, 'ASIGNADO', 'demo-1');
+    await waitFor(() => expect(cambiar).toHaveBeenCalledWith('demo-rec-1', 'ASIGNADO', 'demo-1'));
   });
 });

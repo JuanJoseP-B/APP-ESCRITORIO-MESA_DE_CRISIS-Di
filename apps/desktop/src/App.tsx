@@ -37,6 +37,7 @@ import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { AvisosSla } from './layout/AvisosSla';
+import { ConfirmacionPlan } from './layout/ConfirmacionPlan';
 import { DialogoDespacho } from './layout/DialogoDespacho';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
@@ -99,6 +100,7 @@ function Mesa({
   const { reducirMovimiento } = preferencias;
   const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
   const [despachoAbierto, setDespachoAbierto] = useState(false);
+  const [planAbierto, setPlanAbierto] = useState(false);
   const [atajosAbiertos, setAtajosAbiertos] = useState(false);
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
@@ -254,6 +256,11 @@ function Mesa({
     () => (estadoAsesor.fase === 'listo' ? previsualizarRecomendacion(estadoAsesor.snapshot, estadoAsesor.recomendacion) : null),
     [estadoAsesor],
   );
+  // La confirmación pertenece a la recomendación que la abrió: si la tarjeta se cierra o se rehace, también se cierra.
+  const faseAsesor = estadoAsesor.fase;
+  useEffect(() => {
+    if (faseAsesor !== 'listo') setPlanAbierto(false);
+  }, [faseAsesor]);
   const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
@@ -276,17 +283,17 @@ function Mesa({
       if (!formulario && !despachoAbierto) abrirLlamadaManual();
     },
     d: () => {
-      if (!incidenteSeleccionado || incidenteSeleccionado.estado === 'Resuelto' || formulario) return;
+      if (!incidenteSeleccionado || incidenteSeleccionado.estado === 'Resuelto' || formulario || planAbierto) return;
       expandirDetalle();
       setDespachoAbierto(true);
     },
     a: () => {
-      if (!incidenteAsesorId || formulario || despachoAbierto) return;
+      if (!incidenteAsesorId || formulario || despachoAbierto || planAbierto) return;
       expandirDetalle();
       asesor.alternar();
     },
     Escape: () => {
-      if (despachoAbierto) return; // el propio diálogo de despacho se cierra con Esc
+      if (despachoAbierto || planAbierto) return; // el propio diálogo (despacho o confirmación del asesor) se cierra con Esc
       if (estadoAsesor.fase !== 'inactivo' && !dibujando) {
         asesor.cerrar();
         return;
@@ -295,6 +302,24 @@ function Mesa({
       setUnidadId(null);
     },
   }, !ajustesAbiertos && !atajosAbiertos);
+
+  // Lo que el operador está viendo en la tarjeta del asesor; con ello se aplica o se descarta.
+  const sugerencia =
+    estadoAsesor.fase === 'listo' && incidenteSeleccionado
+      ? { incidente: incidenteSeleccionado, snapshot: estadoAsesor.snapshot, recomendacion: estadoAsesor.recomendacion }
+      : null;
+  const abrirPlan = useCallback(() => setPlanAbierto(true), []);
+  const descartarSugerencia = () => {
+    if (!sugerencia) return;
+    acciones.descartarSugerenciaAsesor(sugerencia);
+    asesor.cerrar();
+  };
+  const confirmarPlan = (marcadas: ReadonlySet<string>) => {
+    if (!sugerencia) return;
+    acciones.aplicarSugerenciaAsesor({ ...sugerencia, marcadas, recursos: recursos.datos });
+    setPlanAbierto(false);
+    asesor.cerrar();
+  };
 
   const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
@@ -430,7 +455,13 @@ function Mesa({
               perimetro={perimetro}
               onResaltar={setResaltado}
               onAbrirDespacho={() => setDespachoAbierto(true)}
-              asesor={{ estado: estadoAsesor, onAlternar: asesor.alternar, onCerrar: asesor.cerrar }}
+              asesor={{
+                estado: estadoAsesor,
+                onAlternar: asesor.alternar,
+                onAplicar: abrirPlan,
+                onDescartar: descartarSugerencia,
+                onCerrar: asesor.cerrar,
+              }}
               sla={sla.porRecurso}
               reducirMovimiento={reducirMovimiento}
             />
@@ -444,6 +475,17 @@ function Mesa({
                     setDespachoAbierto(false);
                   }}
                   onCancelar={() => setDespachoAbierto(false)}
+                />
+              </div>
+            )}
+            {planAbierto && sugerencia && !formulario && (
+              <div className="absolute inset-0 z-panel">
+                <ConfirmacionPlan
+                  key={sugerencia.recomendacion.idRecomendacion}
+                  snapshot={sugerencia.snapshot}
+                  recomendacion={sugerencia.recomendacion}
+                  onConfirmar={confirmarPlan}
+                  onCancelar={() => setPlanAbierto(false)}
                 />
               </div>
             )}

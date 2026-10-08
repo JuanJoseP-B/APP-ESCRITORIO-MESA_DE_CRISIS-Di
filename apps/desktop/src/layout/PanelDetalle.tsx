@@ -36,8 +36,10 @@ export interface AsesorDetalle {
   readonly estado: EstadoAsesor;
   /** Botón [ASESOR] y atajo A: abre la tarjeta o la cierra. */
   readonly onAlternar: () => void;
-  readonly onAplicar?: () => void;
-  readonly onDescartar?: () => void;
+  /** [APLICAR SUGERENCIA]: abre la confirmación por acción. */
+  readonly onAplicar: () => void;
+  /** [DESCARTAR]: rechaza la sugerencia y lo registra. */
+  readonly onDescartar: () => void;
   readonly onCerrar: () => void;
 }
 

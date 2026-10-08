@@ -10,9 +10,10 @@ export interface TarjetaAsesorProps {
   readonly estado: EstadoAsesor;
   /** Menos movimiento: el esqueleto de «analizando» no se anima. */
   readonly reducirMovimiento?: boolean;
-  /** Abre la confirmación por acción; no cambia nada por sí solo. Sin él no se ofrece aplicar. */
-  readonly onAplicar?: () => void;
-  readonly onDescartar?: () => void;
+  /** Abre la confirmación por acción; no cambia nada por sí solo. */
+  readonly onAplicar: () => void;
+  /** Rechaza la sugerencia y lo deja en la bitácora. */
+  readonly onDescartar: () => void;
   /** Cierra la tarjeta sin registrar nada (Esc). */
   readonly onCerrar: () => void;
 }
@@ -151,16 +152,12 @@ export function TarjetaAsesor({ estado, reducirMovimiento = false, onAplicar, on
       )}
 
       <div className="flex flex-wrap gap-2 px-4 pb-3 pt-4">
-        {onAplicar && (
-          <Button size="sm" variant="primary" onClick={onAplicar}>
-            {t('asesor.aplicar')}
-          </Button>
-        )}
-        {onDescartar && (
-          <Button size="sm" variant="ghost" onClick={onDescartar}>
-            {t('asesor.descartar')}
-          </Button>
-        )}
+        <Button size="sm" variant="primary" onClick={onAplicar}>
+          {t('asesor.aplicar')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDescartar}>
+          {t('asesor.descartar')}
+        </Button>
         <Button size="sm" variant="ghost" aria-keyshortcuts="Escape" onClick={onCerrar}>
           {t('asesor.cerrar')} <Kbd>Esc</Kbd>
         </Button>
