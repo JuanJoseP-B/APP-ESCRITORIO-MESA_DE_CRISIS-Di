@@ -23,11 +23,23 @@ import {
 } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { indicativosDe } from '../domain/unidades';
+import type { EstadoAsesor } from '../hooks/useAsesor';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
 import { CronometroUnidad } from './CronometroUnidad';
 import { SeccionPerimetro } from './SeccionPerimetro';
+import { TarjetaAsesor } from './TarjetaAsesor';
 import { ESTADO_INCIDENTE_UI, ESTADO_RECURSO_UI, SEVERIDAD_UI } from './presentacion';
+
+/** Asesor táctico del incidente mostrado: su estado y lo que el operador puede hacer con la tarjeta. */
+export interface AsesorDetalle {
+  readonly estado: EstadoAsesor;
+  /** Botón [ASESOR] y atajo A: abre la tarjeta o la cierra. */
+  readonly onAlternar: () => void;
+  readonly onAplicar?: () => void;
+  readonly onDescartar?: () => void;
+  readonly onCerrar: () => void;
+}
 
 export interface PanelDetalleProps {
   /** Incidente seleccionado; sin él no hay ficha ni se puede despachar. */
@@ -46,6 +58,8 @@ export interface PanelDetalleProps {
   onResaltar?: (objetivo: ObjetivoResaltado | null) => void;
   /** Abre el despacho con el teclado (atajo D): unidad libre más cercana preseleccionada. */
   onAbrirDespacho?: () => void;
+  /** Copiloto táctico; sin él no hay botón [ASESOR] ni tarjeta. */
+  asesor?: AsesorDetalle;
   /** SLA de las unidades con despacho en curso, por id de recurso; las asignadas llevan su cronómetro. */
   sla?: ReadonlyMap<string, EstadoSla>;
   /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
@@ -75,6 +89,7 @@ export function PanelDetalle({
   perimetro = null,
   onResaltar = () => undefined,
   onAbrirDespacho,
+  asesor,
   sla = SIN_SLA,
   reducirMovimiento = false,
 }: PanelDetalleProps) {
@@ -148,13 +163,39 @@ export function PanelDetalle({
               </Button>
             ))}
           </div>
-          {onAbrirDespacho && incidente.estado !== 'Resuelto' && (
-            <Button size="sm" variant="secondary" className="mt-3" aria-keyshortcuts="D" onClick={onAbrirDespacho}>
-              {t('detalle.despacharUnidad')} <Kbd>D</Kbd>
-            </Button>
+          {(onAbrirDespacho || asesor) && incidente.estado !== 'Resuelto' && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {onAbrirDespacho && (
+                <Button size="sm" variant="secondary" aria-keyshortcuts="D" onClick={onAbrirDespacho}>
+                  {t('detalle.despacharUnidad')} <Kbd>D</Kbd>
+                </Button>
+              )}
+              {asesor && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-keyshortcuts="A"
+                  aria-pressed={asesor.estado.fase !== 'inactivo'}
+                  aria-label={t('asesor.boton.aria')}
+                  onClick={asesor.onAlternar}
+                >
+                  {t('asesor.boton')} <Kbd>A</Kbd>
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </section>
+
+      {asesor && incidente.estado !== 'Resuelto' && (
+        <TarjetaAsesor
+          estado={asesor.estado}
+          reducirMovimiento={reducirMovimiento}
+          onAplicar={asesor.onAplicar}
+          onDescartar={asesor.onDescartar}
+          onCerrar={asesor.onCerrar}
+        />
+      )}
 
       {perimetro && (
         <SeccionPerimetro

@@ -12,6 +12,7 @@ import {
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
+import type { PrevisualizacionAsesor } from '../domain/asesor';
 import { CAPAS_POR_DEFECTO, alternarCapa, zonasVisibles, type CapaMapa } from '../domain/capasMapa';
 import { anillosAFeatureCollection, type AnilloGenerado } from '../domain/perimetro';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
@@ -27,6 +28,8 @@ const FUENTE_REPORTES = 'reportes';
 const FUENTE_UBICACION = 'llamada-ubicacion';
 const FUENTE_RUTAS = 'rutas';
 const FUENTE_ANILLOS = 'anillos';
+const FUENTE_ASESOR_PERIMETRO = 'asesor-perimetro';
+const FUENTE_ASESOR_UNIDADES = 'asesor-unidades';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
@@ -112,6 +115,8 @@ interface Props {
   readonly sla?: ReadonlyMap<string, EstadoSla>;
   /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
   readonly reducirMovimiento?: boolean;
+  /** Lo que sugiere el asesor (perímetro y unidades), en trazo discontinuo; `null` si su tarjeta está cerrada. */
+  readonly previsualizacion?: PrevisualizacionAsesor | null;
 }
 
 export function MapaTactico({
@@ -138,6 +143,7 @@ export function MapaTactico({
   resaltado = null,
   sla = SIN_SLA,
   reducirMovimiento = false,
+  previsualizacion = null,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -301,6 +307,22 @@ export function MapaTactico({
         layout: { 'line-cap': 'butt' },
         paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [2, 2] },
       });
+      // Previsualización del asesor: solo trazos discontinuos, sin relleno, para no esconder lo que ya hay en el mapa.
+      m.addSource(FUENTE_ASESOR_PERIMETRO, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'asesor-perimetro-linea',
+        type: 'line',
+        source: FUENTE_ASESOR_PERIMETRO,
+        paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [3, 2] },
+      });
+      m.addSource(FUENTE_ASESOR_UNIDADES, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'asesor-unidades-linea',
+        type: 'line',
+        source: FUENTE_ASESOR_UNIDADES,
+        layout: { 'line-cap': 'butt' },
+        paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [1, 2] },
+      });
       m.addSource(FUENTE_UBICACION, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'llamada-ubicacion-anillo',
@@ -382,6 +404,13 @@ export function MapaTactico({
     if (!mapa || !listo) return;
     mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutasVisibles, leerToken) as never);
   }, [mapa, listo, rutasVisibles, versionTema]);
+
+  // Perímetro y líneas hacia las unidades que sugiere el asesor mientras su tarjeta está abierta.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    mapa.getSource<GeoJSONSource>(FUENTE_ASESOR_PERIMETRO)?.setData(colorearFeatures(previsualizacion?.perimetro ?? VACIO, leerToken) as never);
+    mapa.getSource<GeoJSONSource>(FUENTE_ASESOR_UNIDADES)?.setData(colorearFeatures(previsualizacion?.unidades ?? VACIO, leerToken) as never);
+  }, [mapa, listo, previsualizacion, versionTema]);
 
   // La opacidad de cada anillo parte de la del tema activo, así que se recalcula al cambiar de turno.
   useEffect(() => {

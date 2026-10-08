@@ -22,12 +22,12 @@ const montar = (onCerrar = vi.fn(), idioma: 'es' | 'en' = 'es') => {
 };
 
 describe('HojaAtajos', () => {
-  it('es un diálogo modal con las cuatro secciones, en orden', () => {
+  it('es un diálogo modal con las cinco secciones, en orden', () => {
     montar();
     const hoja = screen.getByRole('dialog', { name: 'Atajos de teclado' });
     expect(hoja.getAttribute('aria-modal')).toBe('true');
     const secciones = within(hoja).getAllByRole('region').map((r) => r.getAttribute('aria-label'));
-    expect(secciones).toEqual(['Navegación', 'Llamadas', 'Despacho', 'Paneles y ayuda']);
+    expect(secciones).toEqual(['Navegación', 'Llamadas', 'Despacho', 'Asesor táctico', 'Paneles y ayuda']);
   });
 
   it('lista todas las teclas, cada una dentro de un <kbd> legible', () => {
@@ -37,7 +37,7 @@ describe('HojaAtajos', () => {
     const teclas = [...hoja.querySelectorAll('kbd')];
     expect(teclas.map((k) => k.textContent)).toEqual(esperadas);
     expect(teclas.every((k) => !k.hasAttribute('aria-hidden'))).toBe(true);
-    for (const tecla of ['J', 'K', 'F2', 'D', 'Enter', 'Ctrl+Enter', '[', ']', 'F1', '?']) {
+    for (const tecla of ['J', 'K', 'F2', 'D', 'A', 'Enter', 'Ctrl+Enter', '[', ']', 'F1', '?']) {
       expect(esperadas).toContain(tecla);
     }
   });
@@ -91,7 +91,7 @@ describe('HojaAtajos', () => {
   it('está traducida al inglés', () => {
     montar(vi.fn(), 'en');
     const hoja = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
-    expect(within(hoja).getAllByRole('region').map((r) => r.getAttribute('aria-label'))).toEqual(['Navigation', 'Calls', 'Dispatch', 'Panels and help']);
+    expect(within(hoja).getAllByRole('region').map((r) => r.getAttribute('aria-label'))).toEqual(['Navigation', 'Calls', 'Dispatch', 'Tactical advisor', 'Panels and help']);
     expect(within(hoja).getByText('Next incident in the queue')).toBeTruthy();
   });
 });

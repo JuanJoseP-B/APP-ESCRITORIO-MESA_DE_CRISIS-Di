@@ -121,3 +121,49 @@ describe('App: hoja de atajos', () => {
     expect(await screen.findByRole('dialog', { name: 'Atajos de teclado' })).toBeTruthy();
   });
 });
+
+describe('App: asesor táctico', () => {
+  const REGION = { name: 'Asesor táctico · motor de reglas' };
+
+  it('A sin incidente seleccionado no hace nada', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('a');
+    expect(screen.queryByRole('region', REGION)).toBeNull();
+  });
+
+  it('A analiza unos instantes y muestra la recomendación del motor de reglas', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('j');
+    await userEvent.keyboard('a');
+    expect(await screen.findByText('Analizando el incidente…')).toBeTruthy();
+    expect(await screen.findByText('Sin unidades que despachar.', undefined, { timeout: 3000 })).toBeTruthy();
+    const tarjeta = screen.getByRole('region', REGION);
+    expect(within(tarjeta).getByText('100 / 300 / 800 m')).toBeTruthy();
+    expect(within(tarjeta).getByText('Colegio Central · cupo libre 110')).toBeTruthy();
+    expect(within(tarjeta).getByText('Alta')).toBeTruthy();
+  });
+
+  it('el botón [ASESOR] hace lo mismo y A o Esc cierran la tarjeta sin cambiar nada', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('j');
+    await userEvent.click(await screen.findByRole('button', { name: 'Pedir una recomendación al asesor táctico' }));
+    await screen.findByText('Sin unidades que despachar.', undefined, { timeout: 3000 });
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('region', REGION)).toBeNull();
+    await userEvent.keyboard('a');
+    expect(await screen.findByRole('region', REGION)).toBeTruthy();
+    await userEvent.keyboard('a');
+    expect(screen.queryByRole('region', REGION)).toBeNull();
+    // Nada cambió: la unidad libre sigue libre.
+    expect(screen.getByRole('button', { name: 'P01, Policía, Disponible' })).toBeTruthy();
+  });
+
+  it('el despacho manual sigue funcionando con la tarjeta abierta', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('j');
+    await userEvent.keyboard('a');
+    await screen.findByText('Sin unidades que despachar.', undefined, { timeout: 3000 });
+    await userEvent.keyboard('d');
+    expect(await screen.findByRole('dialog', { name: /^Despachar · #/ })).toBeTruthy();
+  });
+});

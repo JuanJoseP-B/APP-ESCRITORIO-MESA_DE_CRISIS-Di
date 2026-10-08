@@ -12,6 +12,7 @@ import {
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
 import { useAccionesLlamada } from './hooks/useAccionesLlamada';
+import { useAsesor } from './hooks/useAsesor';
 import { useAtajos } from './hooks/useAtajos';
 import { usePreferencias } from './hooks/usePreferencias';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
@@ -24,6 +25,8 @@ import { dividirCola, filtrarPorIds, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
+import { construirSnapshot, previsualizarRecomendacion } from './domain/asesor';
+import { crearMotorReglas } from './domain/motorReglas';
 import { unidadesParaMapa } from './domain/unidadesMapa';
 import { indicativosDe } from './domain/unidades';
 import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
@@ -235,6 +238,22 @@ function Mesa({
     () => (anillos.length > 0 ? { anillos, analisis: analizarPerimetro(anillos, zonas.datos, unidadesMapa, seleccionadoId) } : null),
     [anillos, zonas.datos, unidadesMapa, seleccionadoId],
   );
+  // Copiloto táctico: motor de reglas local. Solo recomienda; nada cambia hasta que el operador confirma.
+  const motorAsesor = useMemo(() => crearMotorReglas({ t }), [t]);
+  const incidenteAsesorId = incidenteSeleccionado && incidenteSeleccionado.estado !== 'Resuelto' ? incidenteSeleccionado.id : null;
+  const construirAsesor = useCallback(
+    () =>
+      incidenteSeleccionado
+        ? construirSnapshot({ incidente: incidenteSeleccionado, llamadas: llamadas.datos, unidades: unidadesMapa, zonas: zonas.datos, sla: sla.porRecurso, ahoraMs: ahora })
+        : null,
+    [incidenteSeleccionado, llamadas.datos, unidadesMapa, zonas.datos, sla.porRecurso, ahora],
+  );
+  const asesor = useAsesor({ motor: motorAsesor, incidenteId: incidenteAsesorId, construir: construirAsesor });
+  const estadoAsesor = asesor.estado;
+  const previsualizacion = useMemo(
+    () => (estadoAsesor.fase === 'listo' ? previsualizarRecomendacion(estadoAsesor.snapshot, estadoAsesor.recomendacion) : null),
+    [estadoAsesor],
+  );
   const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
@@ -261,8 +280,17 @@ function Mesa({
       expandirDetalle();
       setDespachoAbierto(true);
     },
+    a: () => {
+      if (!incidenteAsesorId || formulario || despachoAbierto) return;
+      expandirDetalle();
+      asesor.alternar();
+    },
     Escape: () => {
       if (despachoAbierto) return; // el propio diálogo de despacho se cierra con Esc
+      if (estadoAsesor.fase !== 'inactivo' && !dibujando) {
+        asesor.cerrar();
+        return;
+      }
       setDibujando(false);
       setUnidadId(null);
     },
@@ -297,6 +325,7 @@ function Mesa({
         reducirMovimiento={reducirMovimiento}
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
+        previsualizacion={previsualizacion}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -401,6 +430,7 @@ function Mesa({
               perimetro={perimetro}
               onResaltar={setResaltado}
               onAbrirDespacho={() => setDespachoAbierto(true)}
+              asesor={{ estado: estadoAsesor, onAlternar: asesor.alternar, onCerrar: asesor.cerrar }}
               sla={sla.porRecurso}
               reducirMovimiento={reducirMovimiento}
             />

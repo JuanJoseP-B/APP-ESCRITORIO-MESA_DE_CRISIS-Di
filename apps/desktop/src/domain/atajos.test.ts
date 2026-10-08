@@ -87,8 +87,8 @@ describe('resolverAtajo', () => {
 });
 
 describe('GRUPOS_ATAJOS', () => {
-  it('agrupa en Navegación, Llamadas, Despacho y Paneles, en ese orden', () => {
-    expect(GRUPOS_ATAJOS.map((g) => g.id)).toEqual(['navegacion', 'llamadas', 'despacho', 'paneles']);
+  it('agrupa en Navegación, Llamadas, Despacho, Asesor y Paneles, en ese orden', () => {
+    expect(GRUPOS_ATAJOS.map((g) => g.id)).toEqual(['navegacion', 'llamadas', 'despacho', 'asesor', 'paneles']);
   });
 
   it('no repite un atajo dentro de su grupo ni deja grupos vacíos', () => {
@@ -98,8 +98,8 @@ describe('GRUPOS_ATAJOS', () => {
     }
   });
 
-  it('recoge los atajos que la consola atiende: J, K, F2, D, [, ], F1, ? y Esc', () => {
+  it('recoge los atajos que la consola atiende: J, K, F2, D, A, [, ], F1, ? y Esc', () => {
     const teclas = new Set<string>(GRUPOS_ATAJOS.flatMap((g) => g.atajos.flatMap((a) => a.teclas)));
-    for (const t of ['J', 'K', 'F2', 'D', '[', ']', 'F1', '?', 'Esc', 'Enter', 'Ctrl+Enter']) expect(teclas.has(t)).toBe(true);
+    for (const t of ['J', 'K', 'F2', 'D', 'A', '[', ']', 'F1', '?', 'Esc', 'Enter', 'Ctrl+Enter']) expect(teclas.has(t)).toBe(true);
   });
 });

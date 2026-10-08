@@ -212,3 +212,55 @@ describe('PanelDetalle: análisis del perímetro', () => {
     expect(onResaltar).toHaveBeenLastCalledWith({ tipo: 'zona', id: 'z1' });
   });
 });
+
+describe('PanelDetalle: asesor táctico', () => {
+  const asesorBase = (extra: Partial<NonNullable<PanelDetalleProps['asesor']>> = {}): NonNullable<PanelDetalleProps['asesor']> => ({
+    estado: { fase: 'inactivo' },
+    onAlternar: vi.fn(),
+    onCerrar: vi.fn(),
+    ...extra,
+  });
+
+  it('sin asesor no hay botón ni tarjeta', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('button', { name: /asesor/i })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('el botón [ASESOR] lleva el atajo A y alterna la tarjeta', async () => {
+    const onAlternar = vi.fn();
+    render(<PanelDetalle {...base({ asesor: asesorBase({ onAlternar }) })} />);
+    const boton = screen.getByRole('button', { name: 'Pedir una recomendación al asesor táctico' });
+    expect(boton.getAttribute('aria-keyshortcuts')).toBe('A');
+    expect(boton.getAttribute('aria-pressed')).toBe('false');
+    expect(boton.textContent).toContain('ASESOR');
+    await userEvent.click(boton);
+    expect(onAlternar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('con la tarjeta abierta el botón queda pulsado y la tarjeta va justo después de la ficha', () => {
+    render(<PanelDetalle {...base({ asesor: asesorBase({ estado: { fase: 'analizando' } }) })} />);
+    expect(screen.getByRole('button', { name: 'Pedir una recomendación al asesor táctico' }).getAttribute('aria-pressed')).toBe('true');
+    const secciones = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(secciones.slice(0, 2)).toEqual(['Ficha del incidente', 'Asesor táctico · motor de reglas']);
+  });
+
+  it('un incidente resuelto no ofrece el asesor', () => {
+    render(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' }, asesor: asesorBase({ estado: { fase: 'analizando' } }) })} />);
+    expect(screen.queryByRole('button', { name: 'Pedir una recomendación al asesor táctico' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('si el asesor falla, el despacho manual sigue disponible', async () => {
+    const mutar = vi.fn();
+    render(
+      <PanelDetalle
+        {...base({ onCambiarEstadoRecurso: mutar, asesor: asesorBase({ estado: { fase: 'error', error: 'SIN_RECOMENDACION', detalle: '' } }) })}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('No hay una recomendación posible');
+    await userEvent.click(screen.getByRole('button', { name: 'Despachar M11' }));
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'ASIGNADO', 'inc-1-a3f');
+  });
+});
