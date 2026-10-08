@@ -1,33 +1,29 @@
-# PROGRESO · Fase 2 (CAD lógica)
+# PROGRESO · Demo-first (UI/UX)
 
-**Rama:** `feat/cad-fase2-logica` (pushed) · **Último commit de código:** `7c2dfb3` · `npm run check`: 59 archivos, 448 pruebas, 0 errores.
+**Rama:** `feat/cad-fase2-logica` · `npm run check`: 62 archivos, 480 pruebas, 0 errores (al cierre de U1).
 
-## Commits hechos (21)
-d97268a prioridades P1–P4 y canales · 46ab09f contratos Llamada/duplicados · 6bc4d41 Incidente prioridad/tipo/creado_en · fbd1505 ui: estado EN_RUTA · 1f63531 ciclo de vida CAD (F2-03) · 5dcc0d6 Recurso ubicacion/base · a5c7af0 SLA_POR_PRIORIDAD · b3514fc anillos/PROTOCOLOS_PERIMETRO · 134e9bc cola por prioridad · 207a56d/17adb68/c58c76a/099d3dc migración 0006 (eventos, coordenadas, sellado timeline + hora_servidor, RPC transicionar_recurso) · ecf0768 eventos.test.ts · 3de18da cad.test.ts · 965b24c seed Pasto/reset/README · 92d98d9 módulos turf · 3ebc7ca geo.ts Haversine · cd02aca Incidente.perimetro · 1d0aa80 duplicados · 7c2dfb3 servicio (llamadas, eventos, RPC, ubicación) + demo.
+## Enfoque
+El proyecto se evalúa por UI/UX: el **modo demo es el producto principal** (sin credenciales Supabase, servicio en memoria).
+**Backend CONGELADO:** sin más migraciones, RPC, triggers ni sincronización de hora. Las migraciones 0005 y 0006 quedan en el
+repo tal cual y NO se aplican al proyecto real. `medirDesfaseServidor` sigue exportada pero sin uso (desfase fijo en 0).
 
-## Pendiente, en orden
-1. **Paso 22 (en stash):** hora del servidor por RPC `hora_servidor` (mejor de 3 muestras, mitad del RTT), quitar `leerCabeceraDate`.
-2. Bitácora y cola usan `creado_en` (timeline.ts, cola.ts).
-3. F2-11 FormularioLlamada (F2, Esc, Ctrl+Enter) + useAccionesLlamada · F2-12 AvisoDuplicado · F2-13 vinculación e indicador de duplicados en la cola (mostrar P1–P4).
-4. Retirar `Reporte` en favor de `Llamada` (commit propio, antes de docs).
-5. F2-14/15 anillos y análisis espacial (turf) · F2-16 capas + AnalisisPerimetro · F2-17 corrección manual con draw.
-6. F2-18 sla.ts puro · F2-19 CronometroSla (parpadeo accesible) + useSla · F2-20 alertas SLA en BarraEstado con filtro.
-7. Marcadores de unidades, arrastre que corrige posición, clic en chip centra el mapa, reloj acelerado `?reloj=N`.
-8. Docs: ROADMAP_CAD, SPEC, README y CLAUDE.md (regla de `recursos_operativos`: solo operadores, sin anon; glifo flecha de EN_RUTA).
+## Subfases
+- **U1 · Base del demo (hecha):** reloj local, datos en Pasto, guion de escenario y control de simulación.
+- **U2 · Ingesta F2 y duplicados:** FormularioLlamada (F2, Esc, Ctrl+Enter), AvisoDuplicado, vinculación y P1–P4 en la cola.
+- **U3 · Mapa:** unidades animadas, anillos de perímetro y análisis espacial (turf), corrección manual con draw.
+- **U4 · SLA y atajos:** `sla.ts`, CronometroSla, alertas SLA en BarraEstado, atajos F2/D/A.
+- **U5 · Copiloto:** Asesor IA con motor determinista (sin API externa ni secretos).
+- **U6 · Pulido y entrega:** contraste AA en ambos temas, teclado, reduced-motion, docs (ROADMAP, SPEC, README, CLAUDE.md).
 
-## Decisiones vigentes
-- Atajos de la fase: solo F2, Esc y Ctrl+Enter; D, F1 y A van en la Fase 3.
-- `incidentes.tipo` nullable: perímetro con RADIOS_POR_DEFECTO y coincidencia de tipo 0.
-- Trigger del timeline sella solo eventos sin `creado_en`; las cancelaciones generan evento y detienen el SLA (NO_APLICA).
-- Posición: `Recurso.ubicacion`/`base` (jsonb {lat,lng}); EN_ESCENA toma `perimetro.centro` o centroide; DISPONIBLE vuelve a la base.
-- Anillo exterior en `incidentes.geometria` (Polygon verificado en jsonb y trigger de zonas_riesgo).
-- Familias de tipo (duplicados): INCENDIO/FUGA_GAS, CRECIENTE/INUNDACION, DESLIZAMIENTO/VIA_BLOQUEADA. Radios por tipo son orientativos.
-- Servicio demo se fusionó con el commit del servicio; sigue en Santiago (mapa), el seed SQL en Pasto.
+## Hecho en U1
+- `bd6f1e0` reloj local: el cliente real ya no mide el desfase; no había stash ni cambios a medias que descartar.
+- `47470f0` demo en Pasto como el `seed.sql`: 6 unidades (U01, U02, P01, M10, M11, M12), 2 refugios, 1 incidente (fuga de gas P1), mapa centrado allí.
+- `3b4c07c` `domain/escenario.ts`: guion de 8 min (gas ×3 con 2 duplicados, deslizamiento, sensor), `eventosHasta` y `eventosEntre`.
+- `05205e0` `domain/relojSimulado.ts` + `useSimulacion` + control en `BarraEstado` (reproducir/pausar, 1×/5×/10×, reiniciar).
 
-## Problemas abiertos
-- F2-T2 "distinto tipo a 50 m < 0.6" solo se cumple con ≥15 min de antigüedad; la prueba usa 20 min.
-- 0005 y 0006 NO aplicadas al proyecto Supabase real (a la espera de tu orden). La 0006 se validó en Postgres local (PGlite, scratchpad).
-- Archivos del árbol usan CRLF; editar con cuidado.
-
-## Stash
-`stash@{0}` **wip-hora-servidor-rpc**: cambios sin verificar en `supabaseClient.ts/.test.ts` y `domain/reloj.ts/.test.ts` (paso 1 pendiente).
+## Decisiones (el choque se resuelve por lo más simple)
+- El escenario arranca solo, en marcha a 1× (la primera llamada entra a los 20 s). Pausar congela también el reloj de la app.
+- Reiniciar recrea el servicio y el reloj del demo y remonta la consola (`key`); la sesión no se pierde.
+- Sustituye a `?reloj=N`, que nunca llegó a implementarse. `servicioDemo` (singleton) ya no lo usa `App`.
+- Los datos iniciales del demo se calculan respecto a la hora del servicio, para que los tiempos y SLA tengan sentido.
+- Pendiente heredado: retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs.
