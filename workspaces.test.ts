@@ -16,4 +16,9 @@ describe('pivote a escritorio (F1-T1)', () => {
   it('los scripts de la raíz no referencian @argos/web ni apps/web', () => {
     expect(JSON.stringify(raiz['scripts'])).not.toMatch(/apps\/web|@argos\/web/);
   });
+
+  it('no queda el perfil de carga Realtime del portal (test:load)', () => {
+    expect(raiz['scripts']).not.toHaveProperty('test:load');
+    expect(existsSync(new URL('./vitest.load.config.ts', import.meta.url))).toBe(false);
+  });
 });

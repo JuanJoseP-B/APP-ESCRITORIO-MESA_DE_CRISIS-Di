@@ -1,6 +1,6 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 
-// `npm run check` omite el perfil pesado y lo archivado (`archive/`: código fuera de los workspaces).
+// `archive/` guarda código fuera de los workspaces (portal web archivado): `npm run check` no lo ejecuta.
 export default defineConfig({
-  test: { exclude: [...configDefaults.exclude, '**/*.load.test.ts', 'archive/**'] },
+  test: { exclude: [...configDefaults.exclude, 'archive/**'] },
 });
