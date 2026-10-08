@@ -8,6 +8,7 @@ import {
   type Reporte,
   type ZonaPublica,
 } from '@argos/shared';
+import { incidentesActivos } from './cola';
 import { aPosicion } from './geo';
 import type { MovimientoUnidad } from './movimiento';
 
@@ -42,12 +43,13 @@ export const COLOR_CRITICIDAD: Record<NivelCriticidad, TokenColor> = {
   Bajo: 'status-success',
 };
 
+/** Incidentes del mapa: solo los que siguen en curso; uno resuelto sale del mapa (queda en «Cerrados» de la cola). */
 export function incidentesAFeatureCollection(
   incidentes: readonly Incidente[],
 ): FeatureCollectionIncidentes {
   return {
     type: 'FeatureCollection',
-    features: incidentes.map((i) => ({
+    features: incidentesActivos(incidentes).map((i) => ({
       type: 'Feature',
       id: i.id,
       geometry: i.geometria,

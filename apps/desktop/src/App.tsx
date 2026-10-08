@@ -21,7 +21,7 @@ import { useAvisosSla } from './hooks/useAvisosSla';
 import { useSla } from './hooks/useSla';
 import { useSimulacion } from './hooks/useSimulacion';
 import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
-import { dividirCola, filtrarPorIds, moverSeleccion } from './domain/cola';
+import { dividirCola, estaCerrado, filtrarPorIds, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
@@ -236,7 +236,8 @@ function Mesa({
   }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento, retraso]);
   const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
   // Los anillos se generan al crear o seleccionar un incidente; solo cambian si cambia su tipo, su lugar o su perímetro.
-  const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado ?? {};
+  // Un incidente resuelto ya no tiene perímetro de riesgo: no se dibuja ni se analiza.
+  const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado && !estaCerrado(incidenteSeleccionado) ? incidenteSeleccionado : {};
   const anillos = useMemo(
     () => (tipoSel !== undefined && geometriaSel ? perimetroDeIncidente({ tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel }).anillos : []),
     [tipoSel, geometriaSel, perimetroSel],

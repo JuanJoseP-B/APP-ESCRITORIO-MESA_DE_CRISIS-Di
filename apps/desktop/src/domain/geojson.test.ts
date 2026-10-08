@@ -18,6 +18,15 @@ describe('incidentesAFeatureCollection', () => {
     expect(incidentesAFeatureCollection([])).toEqual({ type: 'FeatureCollection', features: [] });
   });
 
+  it('un incidente resuelto sale del mapa; contenido y abierto se quedan (regresión E2)', () => {
+    const incidentes: readonly Incidente[] = [
+      { ...base, id: 'abierto' },
+      { ...base, id: 'contenido', estado: 'Contenido' },
+      { ...base, id: 'resuelto', estado: 'Resuelto' },
+    ];
+    expect(incidentesAFeatureCollection(incidentes).features.map((f) => f.id)).toEqual(['abierto', 'contenido']);
+  });
+
   it('conserva la geometría Point y Polygon', () => {
     const poligono: Incidente = {
       ...base,

@@ -221,3 +221,14 @@ describe('App: sugerencia del asesor', () => {
     expect(screen.queryByRole('button', { name: /^U0\d, Bomberos, Despachado/ })).toBeNull();
   });
 });
+
+describe('App: incidente resuelto', () => {
+  it('al marcarlo resuelto pasa a Cerrados y deja de analizarse su perímetro', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('j');
+    expect(await screen.findByText('Análisis del perímetro')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: /Marcar resuelto/i }));
+    expect(await screen.findByRole('tab', { name: 'Cerrados (1)' })).toBeTruthy();
+    expect(screen.queryByText('Análisis del perímetro')).toBeNull();
+  });
+});
