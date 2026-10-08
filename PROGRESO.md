@@ -1,6 +1,6 @@
 # PROGRESO · Demo-first (UI/UX)
 
-**Rama:** `feat/cad-fase2-logica` · `npm run check`: 84 archivos, 682 pruebas, 0 errores (al cierre de U4).
+**Rama:** `feat/cad-fase2-logica` · `npm run check`: 95 archivos, 804 pruebas, 0 errores (al cierre de U5).
 
 ## Enfoque
 El proyecto se evalúa por UI/UX: el **modo demo es el producto principal** (sin credenciales Supabase, servicio en memoria).
@@ -11,20 +11,21 @@ El proyecto se evalúa por UI/UX: el **modo demo es el producto principal** (sin
 - **U2 · Ingesta F2 y duplicados (hecha):** bandeja Entrantes, FormularioLlamada (F2, Esc, Ctrl+Enter), AvisoDuplicado, P1–P4.
 - **U3 · Ajustes, tema e idioma (hecha):** i18n ES/EN sin librerías, `PanelAjustes` (⚙), preferencias persistentes.
 - **U4 · Mapa táctico (hecha):** marcadores de unidades, movimiento en el demo, anillos, análisis espacial, leyenda y capas.
-- **U5 · SLA y atajos:** `sla.ts`, CronometroSla, alertas SLA en BarraEstado, atajos D/A.
-- **U6 · Copiloto:** Asesor IA con motor determinista (sin API externa ni secretos).
+- **U5 · SLA y atajos (hecha):** `domain/sla.ts`, `CronometroSla`, alertas en la barra, J/K/D/Enter, `DialogoDespacho`, hoja F1.
+- **U6 · Copiloto:** Asesor IA con motor determinista (sin API externa ni secretos); atajo A.
 - **U7 · Tutorial guiado:** recorrido sobre la consola; hoy «Ver tutorial» está deshabilitado con «Próximamente».
 - **U8 · Pulido y entrega:** contraste AA en ambos temas, teclado, reduced-motion, docs (ROADMAP, SPEC, README, CLAUDE.md).
 
 ## Decisiones (el choque se resuelve por lo más simple)
-- U3: todo texto visible usa `t('clave')` (`i18n/es.ts` fuente, `en.ts` tipado contra `es`). Siguen en español los valores del dominio, el texto de la bitácora que escribe la consola y los canales crudos (`123`, `VHF`).
-- U4 · marcadores y anillos son marcadores DOM de MapLibre (el estilo base no trae tipografías): sus colores salen de tokens CSS y siguen solos el cambio de tema; las capas GeoJSON usan `leerToken` y se repintan.
-- U4 · movimiento: `domain/movimiento.ts` interpola en línea recta de la base al incidente (Ambulancia 14, Policía 16, Bomberos 11 m/s) desde el evento EN_RUTA; `useLlegadaUnidades` (solo demo) pasa la unidad a EN_ESCENA y anota «Unidad X llegó a la escena» (autor «Sistema», origen SISTEMA). Con `reducirMovimiento` salta en 4 tramos. En el demo la hora de la consola se refresca cada 250 ms.
-- U4 · anillos: se derivan del incidente seleccionado (`perimetro.radios` o `PROTOCOLOS_PERIMETRO`); no se persisten ni hay corrección manual. Opacidades 2×/1,2×/0,6× de `opacidadZona`; trazo continuo/discontinuo/punteado y etiqueta con el radio.
-- U4 · análisis (`analisisEspacial.ts`): sección 02 de `PanelDetalle`; toda unidad dentro de CALIENTE alerta (también las en escena). Pasar el cursor o enfocar un ítem lo resalta en el mapa.
-- U4 · seleccionar una unidad (mapa o tablero) la resalta en ambos y centra el mapa; repetir el clic la suelta; si tiene incidente asignado también lo selecciona. El mapa ya no se re-encuadra al cambiar solo la bitácora del incidente.
-- U4 · la leyenda se pliega (recuerda `argos.leyendaPlegada`) y lleva los interruptores de capa (unidades, perímetros, refugios, bloqueos); las capas viven en el estado de `MapaTactico`.
+- U3: todo texto visible usa `t('clave')`; siguen en español el dominio, la bitácora que escribe la consola y los canales crudos (`123`, `VHF`).
+- U4: marcadores y anillos son DOM de MapLibre con colores de tokens; el movimiento (`movimiento.ts`) interpola en línea recta y `useLlegadaUnidades` (solo demo) pasa la unidad a EN_ESCENA. Seleccionar una unidad (mapa o tablero) la resalta y centra el mapa.
+- U5 · zona caliente: las unidades EN_ESCENA o EN_RUTA asignadas al incidente seleccionado no alertan (`unidadesAsignadasEnZona`, «en escena» neutro); las demás sí. `UnidadMapa` lleva `incidenteId`.
+- U5 · SLA: `calcularSla` cuenta desde el último ASIGNADO (EN_RUTA y EN_ESCENA se miden desde ahí); ALERTA ≥ 80 %, VENCIDO al superar el límite. `useSla` recalcula a 1 Hz con el reloj de la consola.
+- U5 · escenario: la M12 arranca EN_RUTA (asignada hace 5 min) con `TRAFICO_ESCENARIO` (0,07× de velocidad): su SLA vence hacia el minuto 5 a 1× y llega hacia el 7; el retraso se anota en la bitácora a los 150 s.
+- U5 · barra: el contador «N SLA» suma ALERTA + VENCIDO (color y glifo del más grave). **Desvío:** el filtro de la cola muestra incidentes con unidades en ALERTA o VENCIDO (no solo vencidas) para que coincida con N; se retira solo si N llega a 0. Cada vencimiento nuevo sale en `AvisosSla` (aria-live polite, 8 s).
+- U5 · `CronometroSla` (UI): VENCIDO parpadea a 1 Hz; con `reducirMovimiento` o `prefers-reduced-motion` usa borde grueso con rayas. En el chip la palabra va en una cuarta línea (cabe en los 96 px del tablero).
+- U5 · atajos: `D` abre `DialogoDespacho` (unidades libres por distancia, la más cercana preseleccionada; ↑↓ cambia, Enter despacha, Esc cancela); `F1`/`?` abren `HojaAtajos` (también Ajustes → Ayuda); `Kbd` de `@argos/ui` es la tecla sutil. `useDialogoModal` comparte foco atrapado/Esc entre Ajustes y la hoja. Enter sobre una entrante enfocada ya funcionaba (es un botón). `A` queda para U6.
 
 ## Pendiente heredado
 - Retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs. Supabase solo con `VITE_USAR_SUPABASE=true` (0006 sin aplicar).
-- Sin navegador no se verificó a ojo: contraste AA, foco visible y reduced-motion de lo nuevo (drawer, marcadores, leyenda, `--escala-texto`) quedan para U8.
+- Sin navegador no se verificó a ojo: contraste AA, foco visible y reduced-motion de lo nuevo (cronómetro, avisos, despacho, hoja, `--escala-texto`) quedan para U8.
