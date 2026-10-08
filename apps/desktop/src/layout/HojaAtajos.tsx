@@ -4,6 +4,7 @@ import { Button, Kbd, SectionHeader } from '@argos/ui';
 import { GRUPOS_ATAJOS } from '../domain/atajos';
 import { useDialogoModal } from '../hooks/useDialogoModal';
 import { useTexto } from '../i18n/IdiomaProvider';
+import { useTutorial } from './TutorialProvider';
 
 export interface HojaAtajosProps {
   readonly onCerrar: () => void;
@@ -16,6 +17,7 @@ export interface HojaAtajosProps {
 export function HojaAtajos({ onCerrar }: HojaAtajosProps) {
   const { t } = useTexto();
   const panel = useRef<HTMLElement>(null);
+  const tutorial = useTutorial();
   const alPulsar = useDialogoModal(panel, onCerrar, ['F1', '?']);
 
   return (
@@ -38,6 +40,20 @@ export function HojaAtajos({ onCerrar }: HojaAtajosProps) {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <p className="px-4 py-3 font-ui text-body-sm text-text-secondary">{t('atajos.pista')}</p>
+          {tutorial && (
+            <div className="px-4 pb-3">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  onCerrar();
+                  tutorial.iniciar();
+                }}
+              >
+                {t('tutorial.enlace')}
+              </Button>
+            </div>
+          )}
           {GRUPOS_ATAJOS.map((grupo, n) => (
             <section key={grupo.id} aria-label={t(grupo.titulo)}>
               <SectionHeader index={String(n + 1).padStart(2, '0')} title={t(grupo.titulo)} />

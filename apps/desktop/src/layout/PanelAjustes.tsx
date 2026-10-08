@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { X } from 'lucide-react';
-import { Badge, Button, Kbd, SectionHeader, SegmentedControl, Switch } from '@argos/ui';
+import { Button, Kbd, SectionHeader, SegmentedControl, Switch } from '@argos/ui';
 import { useDialogoModal } from '../hooks/useDialogoModal';
 import { usePreferencias } from '../hooks/usePreferencias';
 import { IDIOMAS, type Idioma } from '../i18n/idioma';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { TEMAS_PREFERIDOS, type TemaPreferido } from '../tema';
+import { useTutorial } from './TutorialProvider';
 
 export interface PanelAjustesProps {
   readonly onCerrar: () => void;
@@ -22,6 +23,7 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
   const { t } = useTexto();
   const { preferencias, fijar } = usePreferencias();
   const panel = useRef<HTMLElement>(null);
+  const tutorial = useTutorial();
 
   const alPulsar = useDialogoModal(panel, onCerrar);
 
@@ -103,12 +105,18 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
                   {t('ajustes.atajos')} <Kbd>F1</Kbd>
                 </Button>
               )}
-              <Button size="sm" variant="secondary" disabled>
-                {t('ajustes.tutorial')}
-              </Button>
-              <Badge tone="neutral" emphasis="outline">
-                {t('ajustes.proximamente')}
-              </Badge>
+              {tutorial && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    onCerrar();
+                    tutorial.iniciar();
+                  }}
+                >
+                  {t('ajustes.tutorial')}
+                </Button>
+              )}
             </div>
           </section>
         </div>

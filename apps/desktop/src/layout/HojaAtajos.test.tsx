@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GRUPOS_ATAJOS } from '../domain/atajos';
 import { IdiomaProvider } from '../i18n/IdiomaProvider';
 import { HojaAtajos } from './HojaAtajos';
+import { TutorialProvider } from './TutorialProvider';
 
 afterEach(cleanup);
 
@@ -86,6 +87,28 @@ describe('HojaAtajos', () => {
     await userEvent.keyboard('j');
     document.removeEventListener('keydown', alDocumento);
     expect(alDocumento).not.toHaveBeenCalled();
+  });
+
+  it('ofrece el tutorial guiado: cierra la hoja y lo inicia; sin tutorial no hay enlace', async () => {
+    const onCerrar = vi.fn();
+    const preparacion = { expandirCola: vi.fn(), expandirDetalle: vi.fn(), seleccionarPrimero: vi.fn(), cerrarFormulario: vi.fn() };
+    const { rerender } = render(
+      <IdiomaProvider>
+        <TutorialProvider preparacion={preparacion}>
+          <HojaAtajos onCerrar={onCerrar} />
+        </TutorialProvider>
+      </IdiomaProvider>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Ver el tutorial guiado' }));
+    expect(onCerrar).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Tutorial guiado' })).toBeTruthy();
+
+    rerender(
+      <IdiomaProvider>
+        <HojaAtajos onCerrar={onCerrar} />
+      </IdiomaProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Ver el tutorial guiado' })).toBeNull();
   });
 
   it('está traducida al inglés', () => {

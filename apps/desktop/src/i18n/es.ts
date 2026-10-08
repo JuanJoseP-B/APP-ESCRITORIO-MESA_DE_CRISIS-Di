@@ -105,7 +105,6 @@ export const es = {
   'atajos.paneles.cola': 'Plegar o desplegar la cola',
   'atajos.paneles.detalle': 'Plegar o desplegar el detalle',
   'atajos.paneles.ayuda': 'Esta hoja de atajos',
-  'ajustes.proximamente': 'Próximamente',
 
   // B · cola de incidentes y bandeja de entrantes
   'cola.rail': 'Cola de incidentes',

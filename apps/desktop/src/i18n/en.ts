@@ -100,7 +100,6 @@ export const en: Diccionario = {
   'atajos.paneles.detalle': 'Collapse or expand the detail',
   'atajos.paneles.ayuda': 'This shortcuts sheet',
   'ajustes.tutorial': 'View tutorial',
-  'ajustes.proximamente': 'Coming soon',
 
   'cola.rail': 'Incident queue',
   'cola.tabs.aria': 'Incidents',

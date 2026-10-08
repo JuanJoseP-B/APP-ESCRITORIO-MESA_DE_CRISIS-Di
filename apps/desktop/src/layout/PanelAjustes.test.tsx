@@ -7,6 +7,7 @@ import { PreferenciasProvider } from '../hooks/usePreferencias';
 import { IdiomaProvider } from '../i18n/IdiomaProvider';
 import { BarraEstado } from './BarraEstado';
 import { PanelAjustes } from './PanelAjustes';
+import { TutorialProvider } from './TutorialProvider';
 
 /** La barra con su engranaje y el panel, tal como los une la consola. */
 function Consola() {
@@ -87,12 +88,33 @@ describe('PanelAjustes', () => {
     expect(document.documentElement.hasAttribute('data-text-large')).toBe(false);
   });
 
-  it('«Ver tutorial» está deshabilitado y lleva la etiqueta «Próximamente»', async () => {
-    montar();
-    const panel = await abrir();
-    const boton = within(panel).getByRole('button', { name: 'Ver tutorial' }) as HTMLButtonElement;
-    expect(boton.disabled).toBe(true);
-    expect(within(panel).getByText('Próximamente')).toBeTruthy();
+  it('«Ver tutorial» cierra los ajustes e inicia el recorrido, y solo se ofrece si hay tutorial', async () => {
+    const cerrar = vi.fn();
+    const preparacion = { expandirCola: vi.fn(), expandirDetalle: vi.fn(), seleccionarPrimero: vi.fn(), cerrarFormulario: vi.fn() };
+    const { rerender } = render(
+      <IdiomaProvider>
+        <PreferenciasProvider>
+          <TutorialProvider preparacion={preparacion}>
+            <PanelAjustes onCerrar={cerrar} />
+          </TutorialProvider>
+        </PreferenciasProvider>
+      </IdiomaProvider>,
+    );
+    const boton = screen.getByRole('button', { name: 'Ver tutorial' }) as HTMLButtonElement;
+    expect(boton.disabled).toBe(false);
+    expect(screen.queryByText('Próximamente')).toBeNull();
+    await userEvent.click(boton);
+    expect(cerrar).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Tutorial guiado' })).toBeTruthy();
+
+    rerender(
+      <IdiomaProvider>
+        <PreferenciasProvider>
+          <PanelAjustes onCerrar={vi.fn()} />
+        </PreferenciasProvider>
+      </IdiomaProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Ver tutorial' })).toBeNull();
   });
 
   it('Ayuda ofrece los atajos de teclado, con su tecla F1, solo si la consola sabe abrirlos', async () => {

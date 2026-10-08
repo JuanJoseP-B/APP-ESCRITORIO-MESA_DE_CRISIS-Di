@@ -46,6 +46,7 @@ import { GrillaTactica } from './layout/GrillaTactica';
 import { HojaAtajos } from './layout/HojaAtajos';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
+import { InvitacionTutorial } from './layout/InvitacionTutorial';
 import { TutorialProvider } from './layout/TutorialProvider';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
@@ -389,6 +390,7 @@ function Mesa({
           </div>
         )}
       </div>
+      <InvitacionTutorial />
       <AvisosSla avisos={avisosSla.avisos} indicativos={indicativos} onDescartar={avisosSla.descartar} />
       {mensaje && (
         <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
