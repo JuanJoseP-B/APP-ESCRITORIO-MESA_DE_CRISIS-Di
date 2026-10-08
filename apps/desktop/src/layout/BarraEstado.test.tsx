@@ -194,6 +194,13 @@ describe('BarraEstado: simulación (modo demo)', () => {
     expect(elegir).toHaveBeenCalledWith('C');
   });
 
+  it('con el selector a la vista no muestra el reloj 00:00 (no hay sitio a 1366 px) y sí lo muestra al iniciar', () => {
+    const { rerender } = render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 0, escenario: { actual: 'A', onElegir: vi.fn() } })} />);
+    expect(screen.getByRole('group', { name: 'Simulación del escenario' }).textContent).not.toContain('00:00');
+    rerender(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: true, tSeg: 12, escenario: { actual: 'A', onElegir: vi.fn() } })} />);
+    expect(screen.getByRole('group', { name: 'Simulación del escenario' }).textContent).toContain('00:12 / 08:00');
+  });
+
   it('a t=0 no ofrece reiniciar: aún no hay nada que reiniciar', () => {
     render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 0 })} />);
     expect(screen.queryByRole('button', { name: 'Reiniciar' })).toBeNull();

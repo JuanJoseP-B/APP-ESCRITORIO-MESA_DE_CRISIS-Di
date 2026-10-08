@@ -72,8 +72,10 @@ export function BarraEstado({
   const nombreTurno = turno === 'carbon' ? t('barra.turno.noche') : t('barra.turno.dia');
   /** Mientras t=0 y en pausa, el escenario aún no ha empezado. */
   const sinIniciar = simulacion !== undefined && !simulacion.reproduciendo && simulacion.tSeg === 0;
+  /** Con el selector a la vista el reloj (siempre 00:00) sobra: la barra no tiene sitio para ambos a 1366 px. */
+  const eligiendoEscenario = sinIniciar && simulacion?.escenario !== undefined;
   return (
-    <header aria-label={t('barra.aria')} className="flex h-full items-center gap-4 whitespace-nowrap px-4 text-text-primary">
+    <header aria-label={t('barra.aria')} className="flex h-full items-center gap-3 whitespace-nowrap px-4 text-text-primary">
       <span className="font-mono text-overline uppercase text-text-primary">
         <span aria-hidden="true">■ </span>ARGOS
       </span>
@@ -85,7 +87,7 @@ export function BarraEstado({
       </span>
       <span className="font-mono text-data-sm uppercase text-text-secondary">
         {t('barra.turno', { turno: nombreTurno })}
-        {operador ? <span className="text-text-muted"> · {operador}</span> : null}
+        {operador ? <span className="inline-block max-w-40 truncate align-bottom text-text-muted" title={operador}> · {operador}</span> : null}
       </span>
       <span role="status" aria-label={t('barra.enlace.aria', { estado: palabraEnlace })} className={`flex items-center gap-2 font-mono text-data-sm uppercase ${estadoEnlace.clase}`}>
         <Glyph shape={estadoEnlace.shape} />
@@ -115,7 +117,7 @@ export function BarraEstado({
       )}
       {simulacion && (
         <div role="group" aria-label={t('barra.sim.aria')} className="flex items-center gap-2">
-          {sinIniciar && simulacion.escenario ? (
+          {eligiendoEscenario && simulacion.escenario ? (
             <span className="flex items-center gap-2" title={t(`escenario.${simulacion.escenario.actual}.desc`)}>
               <SegmentedControl
                 label={t('escenario.aria')}
@@ -123,14 +125,16 @@ export function BarraEstado({
                 value={simulacion.escenario.actual}
                 onChange={simulacion.escenario.onElegir}
               />
-              <span className="font-ui text-body-sm text-text-primary">{t(`escenario.${simulacion.escenario.actual}.titulo`)}</span>
+              <span className="max-w-28 truncate font-ui text-body-sm text-text-primary">{t(`escenario.${simulacion.escenario.actual}.titulo`)}</span>
             </span>
           ) : (
             <span className="font-mono text-overline uppercase text-text-secondary">{t('barra.sim')}</span>
           )}
-          <span className="font-mono text-data-sm tabular text-text-primary">
-            {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
-          </span>
+          {!eligiendoEscenario && (
+            <span className="font-mono text-data-sm tabular text-text-primary">
+              {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
+            </span>
+          )}
           {sinIniciar ? (
             <Button size="sm" variant="primary" onClick={simulacion.onAlternar}>
               <Glyph shape="triangle" /> {t('barra.sim.iniciar')}
