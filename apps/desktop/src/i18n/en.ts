@@ -339,4 +339,51 @@ export const en: Diccionario = {
   'aviso.asesor.descartado': 'Advisor: suggestion discarded and recorded in the log.',
   'atajos.asesor.confirmar': 'Confirm the checked actions of the suggestion',
   'atajos.asesor.marcar': 'Check or uncheck a suggestion action',
+
+  'tutorial.aria': 'Guided tutorial',
+  'tutorial.progreso': 'Step {n} of {total}',
+  'tutorial.anterior': 'Previous',
+  'tutorial.siguiente': 'Next',
+  'tutorial.finalizar': 'Finish',
+  'tutorial.saltar': 'Skip tutorial',
+  'tutorial.teclas': '← → to navigate · Esc to exit',
+  'tutorial.invitacion.aria': 'Tutorial invitation',
+  'tutorial.invitacion.texto': 'First time in ARGOS?',
+  'tutorial.invitacion.aceptar': 'Take the tour',
+  'tutorial.invitacion.rechazar': 'Not now',
+  'tutorial.enlace': 'View the guided tutorial',
+  'tutorial.paso.bienvenida.titulo': 'Welcome to ARGOS',
+  'tutorial.paso.bienvenida.cuerpo':
+    'ARGOS is the dispatch console (CAD) of the Crisis Desk. As an operator you take calls, create incidents, dispatch units and watch response times. This tour takes about 2 minutes and uses the real console with sample data.',
+  'tutorial.paso.barra.titulo': 'Status bar',
+  'tutorial.paso.barra.cuerpo':
+    'Here you find the console clock, the shift, the connection status and the incoming calls. When a unit has its SLA at risk an alert appears that filters the queue. In the demo, the simulation controls pause, speed up or restart the scenario.',
+  'tutorial.paso.entrantes.titulo': 'Incoming',
+  'tutorial.paso.entrantes.cuerpo':
+    'Calls from 123, VHF or sensors wait here until someone takes them. Move through the list and press Enter to open the focused call in the form.',
+  'tutorial.paso.registro.titulo': 'Call entry',
+  'tutorial.paso.registro.cuerpo':
+    'F2 opens a new call: channel, type, description and location. Click the map to set the place and press Ctrl+Enter to create the incident.',
+  'tutorial.paso.registro.pista': 'Press F2 to try it. The tour will move on by itself.',
+  'tutorial.paso.duplicados.titulo': 'Duplicates',
+  'tutorial.paso.duplicados.cuerpo':
+    'While you type, ARGOS looks for nearby, similar incidents. If a possible-duplicate notice appears, link the call to the existing incident instead of creating another one.',
+  'tutorial.paso.cola.titulo': 'Incident queue',
+  'tutorial.paso.cola.cuerpo':
+    'Active incidents are sorted by priority, from P1 to P4. Each row shows how many calls are linked to it. Use J and K to move through the queue.',
+  'tutorial.paso.mapa.titulo': 'Tactical map',
+  'tutorial.paso.mapa.cuerpo':
+    'Units are drawn by type and status. Choosing an incident draws the 100, 300 and 500 m rings. The legend explains the symbols and lets you turn layers on or off.',
+  'tutorial.paso.detalle.titulo': 'Detail panel',
+  'tutorial.paso.detalle.cuerpo':
+    'Analyze the incident perimeter (shelters, blockages and units in the hot zone), dispatch units with the D key and review the log of what happened.',
+  'tutorial.paso.tablero.titulo': 'Units and SLA',
+  'tutorial.paso.tablero.cuerpo':
+    'Every dispatched unit carries its SLA timer: it turns to alert at 80 % and blinks once it expires. From the status bar you can filter the queue to the incidents with an SLA at risk.',
+  'tutorial.paso.asesor.titulo': 'Tactical advisor',
+  'tutorial.paso.asesor.cuerpo':
+    'Press A to ask for a recommendation of units, perimeter and shelter. Review the suggestion, which is previewed on the map, and approve it action by action: nothing changes until you confirm.',
+  'tutorial.paso.cierre.titulo': 'Ready to operate',
+  'tutorial.paso.cierre.cuerpo':
+    'F1 opens the shortcuts sheet. The ⚙ button opens Settings (theme, language and accessibility), and from there you can repeat this tutorial whenever you want.',
 };

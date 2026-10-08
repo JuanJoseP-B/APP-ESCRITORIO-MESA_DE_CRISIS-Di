@@ -350,6 +350,54 @@ export const es = {
   'aviso.asesor.descartado': 'Asesor: sugerencia descartada y registrada en la bitácora.',
   'atajos.asesor.confirmar': 'Confirmar las acciones marcadas de la sugerencia',
   'atajos.asesor.marcar': 'Marcar o desmarcar una acción de la sugerencia',
+
+  // Tutorial guiado
+  'tutorial.aria': 'Tutorial guiado',
+  'tutorial.progreso': 'Paso {n} de {total}',
+  'tutorial.anterior': 'Anterior',
+  'tutorial.siguiente': 'Siguiente',
+  'tutorial.finalizar': 'Finalizar',
+  'tutorial.saltar': 'Saltar tutorial',
+  'tutorial.teclas': '← → para navegar · Esc para salir',
+  'tutorial.invitacion.aria': 'Invitación al tutorial',
+  'tutorial.invitacion.texto': '¿Primera vez en ARGOS?',
+  'tutorial.invitacion.aceptar': 'Hacer recorrido',
+  'tutorial.invitacion.rechazar': 'Ahora no',
+  'tutorial.enlace': 'Ver el tutorial guiado',
+  'tutorial.paso.bienvenida.titulo': 'Bienvenido a ARGOS',
+  'tutorial.paso.bienvenida.cuerpo':
+    'ARGOS es la consola de despacho (CAD) de la Mesa de Crisis. Como operador recibes llamadas, creas incidentes, despachas unidades y vigilas los tiempos de respuesta. Este recorrido dura unos 2 minutos y usa la consola real con datos de ejemplo.',
+  'tutorial.paso.barra.titulo': 'Barra de estado',
+  'tutorial.paso.barra.cuerpo':
+    'Aquí están el reloj de la consola, el turno, el estado de la conexión y las llamadas entrantes. Si una unidad tiene el SLA en riesgo aparece una alerta que filtra la cola. En el demo, los controles de simulación pausan, aceleran o reinician el escenario.',
+  'tutorial.paso.entrantes.titulo': 'Entrantes',
+  'tutorial.paso.entrantes.cuerpo':
+    'Las llamadas del 123, VHF o de sensores esperan aquí hasta que alguien las atienda. Recorre la lista y pulsa Enter para abrir la llamada enfocada en el formulario.',
+  'tutorial.paso.registro.titulo': 'Registro de llamada',
+  'tutorial.paso.registro.cuerpo':
+    'F2 abre una llamada nueva: canal, tipo, descripción y ubicación. Haz clic en el mapa para fijar el lugar y pulsa Ctrl+Enter para crear el incidente.',
+  'tutorial.paso.registro.pista': 'Pulsa F2 para probar. El recorrido avanzará solo.',
+  'tutorial.paso.duplicados.titulo': 'Duplicados',
+  'tutorial.paso.duplicados.cuerpo':
+    'Mientras escribes, ARGOS busca incidentes cercanos y parecidos. Si aparece un aviso de posible duplicado, vincula la llamada al incidente existente en lugar de crear otro.',
+  'tutorial.paso.cola.titulo': 'Cola de incidentes',
+  'tutorial.paso.cola.cuerpo':
+    'Los incidentes activos se ordenan por prioridad, de P1 a P4. Cada fila indica cuántas llamadas tiene vinculadas. Usa J y K para recorrer la cola.',
+  'tutorial.paso.mapa.titulo': 'Mapa táctico',
+  'tutorial.paso.mapa.cuerpo':
+    'Las unidades se pintan por tipo y estado. Al elegir un incidente se dibujan los anillos de 100, 300 y 500 m. La leyenda explica los símbolos y permite encender o apagar capas.',
+  'tutorial.paso.detalle.titulo': 'Panel de detalle',
+  'tutorial.paso.detalle.cuerpo':
+    'Analiza el perímetro del incidente (refugios, bloqueos y unidades en zona caliente), despacha unidades con la tecla D y consulta la bitácora de lo ocurrido.',
+  'tutorial.paso.tablero.titulo': 'Unidades y SLA',
+  'tutorial.paso.tablero.cuerpo':
+    'Cada unidad despachada lleva su cronómetro de SLA: pasa a alerta al 80 % y parpadea al vencer. Desde la barra de estado puedes filtrar la cola por los incidentes con SLA en riesgo.',
+  'tutorial.paso.asesor.titulo': 'Asesor táctico',
+  'tutorial.paso.asesor.cuerpo':
+    'Pulsa A para pedir una recomendación de unidades, perímetro y refugio. Revisa la sugerencia, que se previsualiza en el mapa, y apruébala acción por acción: nada cambia hasta que confirmas.',
+  'tutorial.paso.cierre.titulo': 'Listo para operar',
+  'tutorial.paso.cierre.cuerpo':
+    'F1 abre la hoja de atajos. El botón ⚙ abre Ajustes (tema, idioma y accesibilidad), y desde allí puedes repetir este tutorial cuando quieras.',
 } as const;
 
 export type ClaveTexto = keyof typeof es;
