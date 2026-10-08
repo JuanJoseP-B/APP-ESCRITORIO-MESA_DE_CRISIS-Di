@@ -7,13 +7,6 @@ export function calcularDesfaseMs(horaServidorMs: number, envioMs: number, recep
   return Math.round(horaServidorMs - (envioMs + recepcionMs) / 2);
 }
 
-/** Milisegundos epoch de una cabecera HTTP `Date`; `null` si falta o no es una fecha válida. */
-export function leerCabeceraDate(valor: string | null | undefined): number | null {
-  if (!valor) return null;
-  const ms = Date.parse(valor);
-  return Number.isNaN(ms) ? null : ms;
-}
-
 /** "HH:mm:ss" en 24 h; `zona` es un identificador IANA (por defecto, la del sistema). */
 export function formatearHoraConSegundos(ms: number, zona?: string): string {
   return new Intl.DateTimeFormat('es', {

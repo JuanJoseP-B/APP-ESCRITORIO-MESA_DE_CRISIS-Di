@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularDesfaseMs, etiquetaZonaHoraria, formatearHoraConSegundos, leerCabeceraDate } from './reloj';
+import { calcularDesfaseMs, etiquetaZonaHoraria, formatearHoraConSegundos } from './reloj';
 
 describe('calcularDesfaseMs', () => {
   it('compara la hora del servidor con el punto medio del viaje', () => {
@@ -10,16 +10,6 @@ describe('calcularDesfaseMs', () => {
   it('es negativo si el servidor va atrasado y 0 si coinciden', () => {
     expect(calcularDesfaseMs(800, 1000, 1400)).toBe(-400);
     expect(calcularDesfaseMs(1200, 1000, 1400)).toBe(0);
-  });
-});
-
-describe('leerCabeceraDate', () => {
-  it('interpreta una fecha HTTP', () => {
-    expect(leerCabeceraDate('Wed, 07 Oct 2026 22:15:07 GMT')).toBe(Date.UTC(2026, 9, 7, 22, 15, 7));
-  });
-
-  it.each([null, undefined, '', 'no es una fecha'])('devuelve null para %j', (valor) => {
-    expect(leerCabeceraDate(valor)).toBeNull();
   });
 });
 

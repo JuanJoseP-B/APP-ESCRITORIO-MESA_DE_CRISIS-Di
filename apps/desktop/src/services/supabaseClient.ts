@@ -14,7 +14,7 @@ import type {
   Reporte,
   ZonaPublica,
 } from '@argos/shared';
-import { calcularDesfaseMs, leerCabeceraDate } from '../domain/reloj';
+import { calcularDesfaseMs } from '../domain/reloj';
 import type { CambioRealtime } from '../domain/realtime';
 import { aEventoRecurso, aFilaLlamada, aLlamada, type Fila } from './filas';
 
@@ -249,25 +249,33 @@ export function crearServicioMesa(
   };
 }
 
+const MUESTRAS_HORA = 3;
+
 /**
- * Mide el desfase con la cabecera `Date` de una petición ligera a la API REST (sirve aunque la respuesta
- * sea 401). Si el navegador no expone la cabecera (CORS) o falla la red, devuelve 0.
+ * Mide el desfase (ms) servidor − local con la RPC `hora_servidor` (0006). Toma `MUESTRAS_HORA` muestras y se
+ * queda con la de menor viaje de ida y vuelta, que es la menos distorsionada: asume que el servidor respondió a
+ * mitad del viaje. Si la RPC falla (sin red, base sin la 0006, sin rol), devuelve 0 y la consola usa la hora
+ * del equipo.
  */
 export async function medirDesfaseServidor(
-  url: string,
-  apiKey: string,
-  pedir: typeof fetch = fetch,
+  client: Pick<SupabaseClient, 'rpc'>,
   ahora: () => number = Date.now,
 ): Promise<number> {
-  try {
-    const envio = ahora();
-    const respuesta = await pedir(`${url.replace(/\/+$/, '')}/rest/v1/`, { method: 'HEAD', headers: { apikey: apiKey } });
-    const recepcion = ahora();
-    const servidor = leerCabeceraDate(respuesta.headers.get('date'));
-    return servidor === null ? 0 : calcularDesfaseMs(servidor, envio, recepcion);
-  } catch {
-    return 0;
+  let mejor: { readonly viaje: number; readonly desfase: number } | null = null;
+  for (let n = 0; n < MUESTRAS_HORA; n++) {
+    try {
+      const envio = ahora();
+      const { data, error } = await client.rpc('hora_servidor');
+      const recepcion = ahora();
+      const servidor = error || typeof data !== 'string' ? Number.NaN : Date.parse(data);
+      if (Number.isNaN(servidor)) continue;
+      const viaje = recepcion - envio;
+      if (mejor === null || viaje < mejor.viaje) mejor = { viaje, desfase: calcularDesfaseMs(servidor, envio, recepcion) };
+    } catch {
+      // Una muestra fallida no invalida las demás.
+    }
   }
+  return mejor?.desfase ?? 0;
 }
 
 /** Crea el servicio desde variables de entorno; `null` si no están configuradas. */
@@ -275,5 +283,6 @@ export function crearServicioDesdeEntorno(): ServicioMesa | null {
   const url = import.meta.env['VITE_SUPABASE_URL'] as string | undefined;
   const key = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string | undefined;
   if (!url || !key) return null;
-  return crearServicioMesa(createClient(url, key), () => medirDesfaseServidor(url, key));
+  const client = createClient(url, key);
+  return crearServicioMesa(client, () => medirDesfaseServidor(client));
 }

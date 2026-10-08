@@ -388,7 +388,21 @@ describe('crearServicioMesa', () => {
 
 describe('desfase de la hora del servidor', () => {
   const sinCliente = {} as unknown as SupabaseClient;
-  const respuesta = (date: string | null) => ({ headers: new Headers(date ? { date } : {}) }) as unknown as Response;
+  /** Cliente cuyo `rpc('hora_servidor')` responde en orden con cada elemento de `respuestas`. */
+  const clienteHora = (respuestas: readonly (string | null | Error)[]) => {
+    const rpc = vi.fn();
+    for (const r of respuestas) {
+      rpc.mockImplementationOnce(() =>
+        r instanceof Error ? Promise.reject(r) : Promise.resolve({ data: r, error: r === null ? { message: 'sin permiso' } : null }),
+      );
+    }
+    return { client: { rpc } as unknown as Pick<SupabaseClient, 'rpc'>, rpc };
+  };
+  /** Reloj local que devuelve las marcas dadas, en orden (envío, recepción, envío, ...). */
+  const reloj = (marcas: readonly number[]) => {
+    const cola = [...marcas];
+    return () => cola.shift() ?? 0;
+  };
 
   it('crearServicioMesa devuelve 0 si no se le da medidor', async () => {
     await expect(crearServicioMesa(sinCliente).desfaseHoraServidorMs()).resolves.toBe(0);
@@ -399,17 +413,36 @@ describe('desfase de la hora del servidor', () => {
     await expect(servicio.desfaseHoraServidorMs()).resolves.toBe(1500);
   });
 
-  it('mide con la cabecera Date: servidor 4 s adelantado', async () => {
-    const servidor = Date.UTC(2026, 9, 7, 22, 15, 7);
-    const marcas = [servidor - 4_000 - 100, servidor - 4_000 + 100];
-    const pedir = vi.fn().mockResolvedValue(respuesta(new Date(servidor).toUTCString()));
-    const desfase = await medirDesfaseServidor('https://x.supabase.co/', 'clave', pedir, () => marcas.shift() ?? 0);
-    expect(desfase).toBe(4_000);
-    expect(pedir).toHaveBeenCalledWith('https://x.supabase.co/rest/v1/', { method: 'HEAD', headers: { apikey: 'clave' } });
+  const servidor = Date.UTC(2026, 9, 7, 22, 15, 7);
+  const iso = (ms: number) => new Date(ms).toISOString();
+
+  it('mide con la RPC hora_servidor: servidor 4 s adelantado y viaje simétrico de 200 ms', async () => {
+    const { client, rpc } = clienteHora([iso(servidor), iso(servidor), iso(servidor)]);
+    // Envío en servidor−4000−100 y recepción en servidor−4000+100 → el servidor respondió en el punto medio.
+    const marcas = [-100, 100, -100, 100, -100, 100].map((m) => servidor - 4_000 + m);
+    await expect(medirDesfaseServidor(client, reloj(marcas))).resolves.toBe(4_000);
+    expect(rpc).toHaveBeenCalledWith('hora_servidor');
+    expect(rpc).toHaveBeenCalledTimes(3);
   });
 
-  it('devuelve 0 si la cabecera no está expuesta o la red falla', async () => {
-    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockResolvedValue(respuesta(null)))).resolves.toBe(0);
-    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockRejectedValue(new Error('sin red')))).resolves.toBe(0);
+  it('se queda con la muestra de menor viaje de ida y vuelta', async () => {
+    const { client } = clienteHora([iso(1_000_200), iso(2_000_050), iso(3_000_900)]);
+    // Viajes de 400, 100 y 800 ms: la segunda muestra manda. Envío 2 000 000, recepción 2 000 100, servidor 2 000 050.
+    const marcas = [1_000_000, 1_000_400, 2_000_000, 2_000_100, 3_000_000, 3_000_800];
+    await expect(medirDesfaseServidor(client, reloj(marcas))).resolves.toBe(0);
+    const { client: otro } = clienteHora([iso(1_000_500), iso(2_000_300), iso(3_000_900)]);
+    // Segunda muestra: punto medio 2 000 050, servidor 2 000 300 → +250 ms.
+    await expect(medirDesfaseServidor(otro, reloj(marcas))).resolves.toBe(250);
+  });
+
+  it('devuelve 0 si la RPC falla, no existe todavía o la red cae', async () => {
+    await expect(medirDesfaseServidor(clienteHora([null, null, null]).client)).resolves.toBe(0);
+    await expect(medirDesfaseServidor(clienteHora([new Error('sin red'), new Error('sin red'), new Error('sin red')]).client)).resolves.toBe(0);
+  });
+
+  it('una muestra fallida no invalida las demás', async () => {
+    const { client } = clienteHora([new Error('corte'), iso(servidor), 'no es fecha']);
+    const marcas = [0, servidor - 100, servidor + 100, 0, 0];
+    await expect(medirDesfaseServidor(client, reloj(marcas))).resolves.toBe(0);
   });
 });
