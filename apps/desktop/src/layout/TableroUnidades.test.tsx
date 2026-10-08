@@ -68,6 +68,14 @@ describe('TableroUnidades', () => {
     expect(screen.getByRole('button', { name: /^U01/ }).getAttribute('aria-pressed')).toBe('false');
   });
 
+  it('resalta la unidad elegida, aunque no tenga incidente asignado', () => {
+    render(<TableroUnidades {...base} unidadSeleccionadaId="r1" />);
+    const chip = screen.getByRole('button', { name: /^U01/ });
+    expect(chip.getAttribute('aria-pressed')).toBe('true');
+    expect(chip.classList.contains('ag-unit--foco')).toBe(true);
+    expect(screen.getByRole('button', { name: /^M10/ }).getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('sin unidades lo indica', () => {
     render(<TableroUnidades {...base} recursos={[]} />);
     expect(screen.getByText('Sin unidades registradas')).toBeTruthy();

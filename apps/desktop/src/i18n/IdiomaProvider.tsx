@@ -24,7 +24,7 @@ function crearValor(idioma: Idioma, fijarIdioma: (idioma: Idioma) => void): Valo
 }
 
 /** Sin proveedor (p. ej. en pruebas de un componente suelto) todo se muestra en español. */
-const ContextoIdioma = createContext<ValorIdioma>(crearValor(IDIOMA_POR_DEFECTO, () => undefined));
+export const ContextoIdioma = createContext<ValorIdioma>(crearValor(IDIOMA_POR_DEFECTO, () => undefined));
 
 /** Idioma de la consola: lo recuerda en localStorage y lo publica en `<html lang>`. */
 export function IdiomaProvider({ inicial, children }: { readonly inicial?: Idioma; readonly children: ReactNode }) {

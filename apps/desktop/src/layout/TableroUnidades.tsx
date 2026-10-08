@@ -10,12 +10,14 @@ export interface TableroUnidadesProps {
   recursos: readonly Recurso[];
   /** Resalta las unidades asignadas a este incidente. */
   incidenteSeleccionadoId: string | null;
+  /** Unidad elegida (aqu� o en el mapa): se resalta igual en los dos sitios. */
+  unidadSeleccionadaId?: string | null;
   /** Clic en un chip: la app selecciona el incidente al que está asignada la unidad. */
   onSeleccionarUnidad: (recurso: Recurso) => void;
 }
 
 /** E · tablero de unidades: un chip de ancho fijo por unidad; solo desplaza en horizontal si no caben. */
-export function TableroUnidades({ recursos, incidenteSeleccionadoId, onSeleccionarUnidad }: TableroUnidadesProps) {
+export function TableroUnidades({ recursos, incidenteSeleccionadoId, unidadSeleccionadaId = null, onSeleccionarUnidad }: TableroUnidadesProps) {
   const { t } = useTexto();
   const indicativos = indicativosDe(recursos);
   const { total, disponibles } = resumirUnidades(recursos);
@@ -39,7 +41,8 @@ export function TableroUnidades({ recursos, incidenteSeleccionadoId, onSeleccion
                 status={ESTADO_RECURSO_UI[r.estado_actual]}
                 statusLabel={textoEstadoRecurso(t, r.estado_actual)}
                 statusShort={textoEstadoRecursoCorto(t, r.estado_actual)}
-                selected={incidenteSeleccionadoId !== null && r.incidente_asignado_id === incidenteSeleccionadoId}
+                selected={r.id === unidadSeleccionadaId || (incidenteSeleccionadoId !== null && r.incidente_asignado_id === incidenteSeleccionadoId)}
+                className={r.id === unidadSeleccionadaId ? 'ag-unit--foco' : undefined}
                 onSelect={() => onSeleccionarUnidad(r)}
               />
             </li>

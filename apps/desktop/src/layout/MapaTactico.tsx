@@ -11,7 +11,9 @@ import {
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
+import type { UnidadMapa } from '../domain/unidadesMapa';
 import { LeyendaMapa } from './LeyendaMapa';
+import { useMarcadoresUnidades } from './useMarcadoresUnidades';
 
 const CAPA_BASE = 'base';
 const FUENTE = 'incidentes';
@@ -21,6 +23,9 @@ const FUENTE_UBICACION = 'llamada-ubicacion';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
+const SIN_UNIDADES: readonly UnidadMapa[] = [];
+const NADA = (): void => undefined;
+const ZOOM_UNIDAD = 16;
 
 const MODO_DRAW: Record<ModoTrazado, ModoDibujo> = { poligono: 'draw_polygon', linea: 'draw_line_string' };
 
@@ -75,6 +80,10 @@ interface Props {
   readonly onClicUbicacion?: (ubicacion: Coordenadas) => void;
   /** Incidente al que apunta el aviso de duplicados: se rodea con un anillo para que el operador lo ubique. */
   readonly resaltadoIncidenteId?: string | null;
+  /** Unidades con posición; cada una se pinta como marcador con glifo de tipo, indicativo y estado. */
+  readonly unidades?: readonly UnidadMapa[];
+  readonly unidadSeleccionadaId?: string | null;
+  readonly onSeleccionarUnidad?: (id: string) => void;
 }
 
 export function MapaTactico({
@@ -92,6 +101,9 @@ export function MapaTactico({
   ubicacionLlamada = null,
   onClicUbicacion,
   resaltadoIncidenteId = null,
+  unidades = SIN_UNIDADES,
+  unidadSeleccionadaId = null,
+  onSeleccionarUnidad = NADA,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -340,11 +352,13 @@ export function MapaTactico({
   }, [mapa, listo, foco]);
 
   // Centra el mapa en el incidente seleccionado.
+  // Solo al elegir otro incidente o cambiar su geometría: una nota nueva en la bitácora no debe mover la cámara.
+  const geometriaSeleccionada = incidentes.find((i) => i.id === seleccionadoId)?.geometria;
+  const claveGeometria = JSON.stringify(geometriaSeleccionada ?? null);
   useEffect(() => {
     if (!mapa || !listo || !seleccionadoId) return;
-    const inc = incidentes.find((i) => i.id === seleccionadoId);
-    if (!inc) return;
-    const g = inc.geometria;
+    const g = geometriaSeleccionada;
+    if (!g) return;
     const puntos: readonly Posicion[] = g.type === 'Point' ? [g.coordinates] : (g.coordinates[0] ?? []);
     const primero = puntos[0];
     if (!primero) return;
@@ -353,7 +367,19 @@ export function MapaTactico({
       new LngLatBounds([primero[0], primero[1]], [primero[0], primero[1]]),
     );
     mapa.fitBounds(limites, { padding: 80, maxZoom: 15, duration: 600 });
-  }, [mapa, listo, seleccionadoId, incidentes]);
+  }, [mapa, listo, seleccionadoId, claveGeometria]);
+
+  useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId: unidadSeleccionadaId, onSeleccionar: onSeleccionarUnidad });
+
+  // Centra el mapa en la unidad elegida (en el mapa o en el tablero). Solo al cambiar de unidad: si no, la cámara
+  // perseguiría a una unidad en ruta. Va después del efecto del incidente para que, con ambos a la vez, gane la unidad.
+  const unidadesVigentes = useRef(unidades);
+  unidadesVigentes.current = unidades;
+  useEffect(() => {
+    if (!mapa || !listo || !unidadSeleccionadaId) return;
+    const u = unidadesVigentes.current.find((x) => x.id === unidadSeleccionadaId);
+    if (u) mapa.flyTo({ center: [u.posicion.lng, u.posicion.lat], zoom: Math.max(mapa.getZoom(), ZOOM_UNIDAD), duration: 600 });
+  }, [mapa, listo, unidadSeleccionadaId]);
 
   // Herramienta de dibujo (mapbox-gl-draw): el control solo existe mientras se traza, para que
   // fuera de ese modo no intercepte los clics de selección sobre el mapa.

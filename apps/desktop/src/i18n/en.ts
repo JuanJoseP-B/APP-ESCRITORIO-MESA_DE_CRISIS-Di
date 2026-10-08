@@ -138,6 +138,7 @@ export const en: Diccionario = {
   'leyenda.refugio': 'Shelter',
   'leyenda.bloqueo': 'Road block',
   'leyenda.llamada': 'Unconfirmed call',
+  'marcador.unidad.aria': '{unidad}, {tipo}, {estado}',
 
   'trazado.iniciar': 'Draw zone',
   'trazado.cancelar': 'Cancel drawing',

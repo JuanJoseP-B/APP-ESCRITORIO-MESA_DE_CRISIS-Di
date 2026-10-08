@@ -1,0 +1,17 @@
+/* ── MarcadorUnidad ─────────────────────────────────────────────────────── */
+/* Pieza sólida sobre el mapa: fondo de tarjeta, borde del color del estado y sombra de estructura. */
+.ag-marcador { box-sizing: border-box; display: inline-flex; align-items: center; gap: var(--space-1); height: 24px; padding: 0 var(--space-2); background: var(--card-bg); border: var(--border-hairline) solid var(--marcador-color, var(--card-border-selected)); border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); white-space: nowrap; cursor: pointer; transition: transform 80ms linear; }
+.ag-marcador:focus { outline: none; }
+.ag-marcador:focus-visible { box-shadow: var(--focus-ring); }
+.ag-marcador:hover { background: var(--card-bg-hover); }
+.ag-marcador[aria-pressed="true"] { background: var(--card-bg-selected); border-width: 2px; box-shadow: var(--focus-ring); transform: scale(1.12); }
+.ag-marcador__icono { flex: none; color: var(--marcador-color, var(--text-primary)); }
+.ag-marcador__indicativo { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; }
+.ag-marcador__estado { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: calc(10px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .06em; color: var(--marcador-color, var(--text-secondary)); }
+.ag-marcador--disponible { --marcador-color: var(--status-success); }
+.ag-marcador--despachado,
+.ag-marcador--enruta { --marcador-color: var(--status-warning); }
+.ag-marcador--escena { --marcador-color: var(--status-info); }
+.ag-marcador--inoperativo { --marcador-color: var(--status-offline); }
+/* INOPERATIVO: atenuada y con borde discontinuo para no depender solo de la opacidad. */
+.ag-marcador[data-atenuada="true"] { opacity: .6; border-style: dashed; }

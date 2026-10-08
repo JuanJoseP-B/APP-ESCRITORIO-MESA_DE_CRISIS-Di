@@ -21,6 +21,7 @@ import { dividirCola, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
+import { unidadesParaMapa } from './domain/unidadesMapa';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { BarraEstado } from './layout/BarraEstado';
@@ -66,6 +67,7 @@ function Mesa({
   const recursos = useRecursosRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
+  const [unidadId, setUnidadId] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<FormularioAbierto | null>(null);
   const [ubicacionLlamada, setUbicacionLlamada] = useState<Coordenadas | null>(null);
   const [resaltadoId, setResaltadoId] = useState<string | null>(null);
@@ -170,6 +172,16 @@ function Mesa({
   const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
+  const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos), [recursos.datos]);
+  // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
+  const alSeleccionarUnidad = useCallback(
+    (id: string) => {
+      setUnidadId((actual) => (actual === id ? null : id));
+      const asignado = recursos.datos.find((r) => r.id === id)?.incidente_asignado_id;
+      if (asignado) setSeleccionadoId(asignado);
+    },
+    [recursos.datos],
+  );
 
   const ordenCola = useMemo(() => dividirCola(incidentes.datos).activos.map((i) => i.id), [incidentes.datos]);
   useAtajos({
@@ -178,7 +190,10 @@ function Mesa({
     F2: () => {
       if (!formulario) abrirLlamadaManual();
     },
-    Escape: () => setDibujando(false),
+    Escape: () => {
+      setDibujando(false);
+      setUnidadId(null);
+    },
   }, !ajustesAbiertos);
 
   const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
@@ -201,6 +216,9 @@ function Mesa({
         ubicacionLlamada={formulario ? ubicacionLlamada : null}
         onClicUbicacion={formulario ? setUbicacionLlamada : undefined}
         resaltadoIncidenteId={resaltadoId}
+        unidades={unidadesMapa}
+        unidadSeleccionadaId={unidadId}
+        onSeleccionarUnidad={alSeleccionarUnidad}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -320,9 +338,8 @@ function Mesa({
           <TableroUnidades
             recursos={recursos.datos}
             incidenteSeleccionadoId={seleccionadoId}
-            onSeleccionarUnidad={(unidad) => {
-              if (unidad.incidente_asignado_id) setSeleccionadoId(unidad.incidente_asignado_id);
-            }}
+            unidadSeleccionadaId={unidadId}
+            onSeleccionarUnidad={(unidad) => alSeleccionarUnidad(unidad.id)}
           />
         }
       />
