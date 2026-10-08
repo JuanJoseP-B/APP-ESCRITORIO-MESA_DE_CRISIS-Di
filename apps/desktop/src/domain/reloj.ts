@@ -24,3 +24,11 @@ export function formatearHoraConSegundos(ms: number, zona?: string): string {
     timeZone: zona,
   }).format(ms);
 }
+
+/** Desfase de la zona respecto a UTC, p. ej. "UTC-5"; sin `zona` usa la del sistema. */
+export function etiquetaZonaHoraria(ms: number, zona?: string): string {
+  const partes = new Intl.DateTimeFormat('en', { timeZone: zona, timeZoneName: 'shortOffset' }).formatToParts(ms);
+  const nombre = partes.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
+  const etiqueta = nombre.replace('GMT', 'UTC');
+  return etiqueta === 'UTC+0' ? 'UTC' : etiqueta;
+}
