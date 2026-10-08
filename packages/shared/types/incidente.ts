@@ -1,6 +1,7 @@
 import type { TipoEmergencia } from './emergencia';
 import type { GeoJsonGeometry } from './geo';
 import type { Prioridad } from './llamada';
+import type { OrigenPerimetro, PerimetroRiesgo } from './perimetro';
 
 export const NIVELES_CRITICIDAD = ['Bajo', 'Medio', 'Crítico'] as const;
 export type NivelCriticidad = (typeof NIVELES_CRITICIDAD)[number];
@@ -28,6 +29,10 @@ export interface Incidente {
   readonly timeline: readonly EventoTimeline[];
   /** Fecha y hora ISO 8601 de apertura; la fija la base de datos. */
   readonly creado_en?: string;
+  /** Perímetro de riesgo (centro, radios y origen); `null` si aún no se generó. */
+  readonly perimetro?: PerimetroRiesgo | null;
+  /** Copia de `perimetro.origen` como columna propia (`incidentes.perimetro_origen`). */
+  readonly perimetro_origen?: OrigenPerimetro | null;
 }
 
 /** Vista pública de un incidente: sin `timeline` ni datos tácticos. */

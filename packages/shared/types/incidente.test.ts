@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ESTADOS_INCIDENTE, NIVELES_CRITICIDAD } from './incidente';
-import type { Incidente, NuevoIncidente, Prioridad, Recurso, TipoEmergencia } from './index';
+import type { Incidente, NuevoIncidente, PerimetroRiesgo, Prioridad, Recurso, TipoEmergencia } from './index';
 
 function describirGeometria(incidente: Incidente): string {
   const { geometria } = incidente;
@@ -25,6 +25,7 @@ describe('Incidente', () => {
     expectTypeOf<Incidente['prioridad']>().toEqualTypeOf<Prioridad>();
     expectTypeOf<Incidente['tipo']>().toEqualTypeOf<TipoEmergencia | null>();
     expectTypeOf<NuevoIncidente>().not.toHaveProperty('creado_en');
+    expectTypeOf<Incidente['perimetro']>().toEqualTypeOf<PerimetroRiesgo | null | undefined>();
   });
 
   it('discrimina la geometría por su tipo (Point / Polygon)', () => {
