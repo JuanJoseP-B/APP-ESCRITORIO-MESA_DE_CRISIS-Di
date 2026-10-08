@@ -9,8 +9,11 @@ import {
   reportesAFeatureCollection,
   zonasAFeatureCollection,
 } from '../domain/geojson';
+import { pinturaBasemap } from '../domain/basemap';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
+import { LeyendaMapa } from './LeyendaMapa';
 
+const CAPA_BASE = 'base';
 const FUENTE = 'incidentes';
 const FUENTE_ZONAS = 'zonas-publicas';
 const FUENTE_REPORTES = 'reportes';
@@ -67,7 +70,7 @@ interface Props {
   readonly onErrorDibujo: (mensaje: string) => void;
 }
 
-export function MapView({
+export function MapaTactico({
   incidentes,
   zonas,
   reportes,
@@ -186,6 +189,15 @@ export function MapView({
     };
   }, []);
 
+  // Al plegar o expandir la cola y el detalle cambia el ancho del mapa: el lienzo debe redimensionarse.
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!mapa || !el || typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(() => mapa.resize());
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [mapa]);
+
   // Sincroniza incidentes con la fuente GeoJSON.
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -213,6 +225,16 @@ export function MapView({
     mapa.setPaintProperty('zonas-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('incidentes-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('reportes-puntos', 'circle-stroke-color', leerToken('status-warning'));
+  }, [mapa, listo, versionTema]);
+
+  // Basemap desaturado: la pintura depende del turno activo.
+  useEffect(() => {
+    if (!mapa || !listo || !mapa.getLayer(CAPA_BASE)) return;
+    const pintura = pinturaBasemap(document.documentElement.dataset['theme']);
+    mapa.setPaintProperty(CAPA_BASE, 'raster-saturation', pintura['raster-saturation']);
+    mapa.setPaintProperty(CAPA_BASE, 'raster-contrast', pintura['raster-contrast']);
+    mapa.setPaintProperty(CAPA_BASE, 'raster-brightness-min', pintura['raster-brightness-min']);
+    mapa.setPaintProperty(CAPA_BASE, 'raster-brightness-max', pintura['raster-brightness-max']);
   }, [mapa, listo, versionTema]);
 
   // Vuela al reporte elegido en la bandeja.
@@ -276,5 +298,12 @@ export function MapView({
     };
   }, [mapa, listo, dibujando, modoTrazado, onFigura, onErrorDibujo]);
 
-  return <div ref={contenedor} className="h-full w-full" data-testid="mapa" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={contenedor} className="h-full w-full" data-testid="mapa" />
+      <div className="absolute bottom-4 right-4 z-map-overlay">
+        <LeyendaMapa />
+      </div>
+    </div>
+  );
 }

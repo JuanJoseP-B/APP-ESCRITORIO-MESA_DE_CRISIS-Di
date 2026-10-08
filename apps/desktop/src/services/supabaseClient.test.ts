@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
-import { aCambioRealtime, aSesion, crearServicioMesa } from './supabaseClient';
+import { aCambioRealtime, aSesion, crearServicioMesa, medirDesfaseServidor } from './supabaseClient';
 
 type Fila = Record<string, unknown>;
 
@@ -47,7 +47,7 @@ describe('crearServicioMesa', () => {
     const select = vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
     const servicio = crearServicioMesa({ from: () => ({ select }) } as unknown as SupabaseClient);
 
-    await expect(servicio.listarReportes()).rejects.toThrow('reportes_ciudadanos');
+    await expect(servicio.listarReportes()).rejects.toThrow('llamadas');
   });
 
   it('suscribe a la tabla y elimina el canal al cancelar', () => {
@@ -81,7 +81,7 @@ describe('crearServicioMesa', () => {
     crearServicioMesa(client as unknown as SupabaseClient).suscribirReportes(alCambiar);
     expect(canal.on).toHaveBeenCalledWith(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'reportes_ciudadanos' },
+      { event: '*', schema: 'public', table: 'llamadas' },
       expect.any(Function),
     );
     expect(canal.subscribe).toHaveBeenCalledOnce();
@@ -207,7 +207,7 @@ describe('crearServicioMesa', () => {
 
   it.each([
     ['actualizarIncidente', 'incidentes', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarIncidente('i1', { estado: 'Resuelto' }), { estado: 'Resuelto' }],
-    ['actualizarEstadoReporte', 'reportes_ciudadanos', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarEstadoReporte('i1', 'Confirmado'), { estado_validacion: 'Confirmado' }],
+    ['actualizarEstadoReporte', 'llamadas', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarEstadoReporte('i1', 'Confirmado'), { estado_validacion: 'Confirmado' }],
   ])('%s hace update().eq("id")', async (_nombre, tabla, accion, cambios) => {
     const { from, update, eq } = clienteUpdate({ data: { id: 'i1' }, error: null });
 
@@ -250,5 +250,33 @@ describe('crearServicioMesa', () => {
     const signOut = vi.fn().mockResolvedValue({ error: null });
     await crearServicioMesa({ auth: { signOut } } as unknown as SupabaseClient).cerrarSesion();
     expect(signOut).toHaveBeenCalled();
+  });
+});
+
+describe('desfase de la hora del servidor', () => {
+  const sinCliente = {} as unknown as SupabaseClient;
+  const respuesta = (date: string | null) => ({ headers: new Headers(date ? { date } : {}) }) as unknown as Response;
+
+  it('crearServicioMesa devuelve 0 si no se le da medidor', async () => {
+    await expect(crearServicioMesa(sinCliente).desfaseHoraServidorMs()).resolves.toBe(0);
+  });
+
+  it('crearServicioMesa delega en el medidor recibido', async () => {
+    const servicio = crearServicioMesa(sinCliente, () => Promise.resolve(1500));
+    await expect(servicio.desfaseHoraServidorMs()).resolves.toBe(1500);
+  });
+
+  it('mide con la cabecera Date: servidor 4 s adelantado', async () => {
+    const servidor = Date.UTC(2026, 9, 7, 22, 15, 7);
+    const marcas = [servidor - 4_000 - 100, servidor - 4_000 + 100];
+    const pedir = vi.fn().mockResolvedValue(respuesta(new Date(servidor).toUTCString()));
+    const desfase = await medirDesfaseServidor('https://x.supabase.co/', 'clave', pedir, () => marcas.shift() ?? 0);
+    expect(desfase).toBe(4_000);
+    expect(pedir).toHaveBeenCalledWith('https://x.supabase.co/rest/v1/', { method: 'HEAD', headers: { apikey: 'clave' } });
+  });
+
+  it('devuelve 0 si la cabecera no está expuesta o la red falla', async () => {
+    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockResolvedValue(respuesta(null)))).resolves.toBe(0);
+    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockRejectedValue(new Error('sin red')))).resolves.toBe(0);
   });
 });

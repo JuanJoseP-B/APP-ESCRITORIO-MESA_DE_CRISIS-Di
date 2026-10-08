@@ -4,45 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado del repositorio
 
-Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. `SPEC.md` es la fuente de verdad; léelo antes de implementar. Hecho hasta ahora: monorepo, config TS/ESLint/Vitest, `@argos/shared` (Fase 1), el frontend de `apps/desktop` (Fase 2: servicio Supabase, MapLibre, panel Mesa de Crisis, dibujo de polígonos con Terra Draw y suscripción Realtime; sin credenciales usa `servicioDemo`) y el portal `apps/web` (Fase 3: mapa de solo lectura con zonas de riesgo y refugios, formulario Reporte Rápido con Geolocation y subida de foto a Storage; también con `servicioDemo`). Fase 4: máquina de estados de recursos (`transicionarRecurso` en shared, `PanelRecursos` en desktop), migración `supabase/migrations/0001_esquema_y_rls.sql` con RLS validada por `supabase/rls.test.ts` (el portal lee el espejo `zonas_riesgo`, sin `timeline`) y pruebas de carga Realtime en `apps/web/src/load`. Fase 5 (integración): login de operador (rol en `app_metadata`), confirmar/descartar reportes, persistir polígono/estado de incidentes, panel de refugios (`useAccionesOperador`), y `supabase/reset.sql` + `seed.sql`. Hito B (mapa operativo): el trazado usa `@mapbox/mapbox-gl-draw` sobre MapLibre (polígono o línea; un polígono con incidente seleccionado es su zona de riesgo, el resto se inserta en `zonas_publicas` como "Bloqueo de Vía"), el aforo de refugios se ajusta con la RPC atómica `ajustar_ocupacion_zona` (migración `0004`, aplicada al proyecto real el 2026-10-05), las escrituras del servicio devuelven la fila y la emiten a los suscriptores sin esperar a Realtime, y elegir un reporte de la bandeja centra el mapa. `src/mapaWorker.ts` (en ambas apps) fija la URL del worker de MapLibre 6: sin él Vite no lo sirve y no se pinta ninguna capa GeoJSON. Pendiente: `apps/desktop/src-tauri` (requiere instalar Rust; `npx tauri init`), ejecutar reset/migración/seed en el proyecto Supabase real (orden en `supabase/README.md`) y verificar con sus `curl`, pruebas manuales de ambos roles, despliegue.
+Monorepo con **npm workspaces** (`apps/*`, `packages/*`), git en `main` con remoto `origin`. **Pivote CAD (2026-10-07):** ARGOS es ahora una consola de despacho 100 % de escritorio; `ROADMAP_CAD.md` define alcance, interfaz (Zero-Scroll Tactical Grid), contratos y fases, y manda sobre `SPEC.md` si hay conflicto. El portal ciudadano `apps/web` está archivado en `archive/web/` (fuera de los workspaces; `npm run check` no lo ejecuta ni lo lintea). Hecho hasta ahora: monorepo, config TS/ESLint/Vitest, `@argos/shared`, el frontend de `apps/desktop` (servicio Supabase, MapLibre, panel Mesa de Crisis, trazado con `@mapbox/mapbox-gl-draw`, Realtime; sin credenciales usa `servicioDemo`), design system `@argos/ui`, máquina de estados de recursos, login de operador (rol en `app_metadata`), confirmar/descartar llamadas, persistencia de polígonos/estado de incidentes, panel de refugios (`useAccionesOperador`), RPC atómica `ajustar_ocupacion_zona` (migración `0004`) y `src-tauri` inicializado. **Fase 1 hecha (grilla táctica):** `apps/desktop/src/layout/` tiene `GrillaTactica` (5 áreas fijas sobre 100dvh, B y D colapsables con `[` y `]`), `BarraEstado`, `ColaIncidentes`, `PanelDetalle` (aquí vive DESPACHAR, ligado al incidente seleccionado), `TableroUnidades` y `MapaTactico` (basemap desaturado y leyenda); la lógica pura está en `src/domain/` (`cola`, `timeline`, `atajos`, `reloj`, `conexion`, `unidades`, `basemap`). Atajos activos: `[`, `]`, `J`, `K`, `Esc` (F2, D y A llegan en las Fases 2 y 3). Hasta la Fase 2 la cola ordena por criticidad, no por prioridad P1–P4. `Recurso` no tiene coordenadas, así que el mapa no pinta unidades. La migración `0005` (renombra `reportes_ciudadanos` a `llamadas` y elimina el acceso `anon`) se escribe en la Fase 1 y **no se aplica** al proyecto Supabase real hasta que el usuario lo ordene. `src/mapaWorker.ts` fija la URL del worker de MapLibre 6: sin él Vite no lo sirve y no se pinta ninguna capa GeoJSON. Pendiente: Fases 2 y 3 del roadmap CAD (lógica CAD con SLA y duplicados, Asesor IA), aplicar migraciones al proyecto real (orden en `supabase/README.md`) y despliegue.
 
 ## Comandos
 
 Ejecutar desde la raíz:
 - `npm run check`: lint + typecheck + tests. Definition of Done: debe terminar con 0 errores.
 - `npm run lint` / `npm run typecheck` / `npm run test` por separado.
-- `npm run test:load`: perfil pesado de carga Realtime (`*.load.test.ts`, excluido de `check`; `vitest.config.ts` lo omite).
 - Una sola prueba: `npx vitest run packages/shared/types/incidente.test.ts` (añade `-t "<nombre>"` para un caso concreto).
 
-`typecheck` cubre `packages/shared`, `apps/desktop` y `apps/web`; al crear una app nueva, añade su `tsc --noEmit -p apps/<app>` a ese script.
+`typecheck` cubre `packages/shared`, `packages/ui` y `apps/desktop`; al crear una app nueva, añade su `tsc --noEmit -p apps/<app>` a ese script.
 
 ## Estructura
 
 - `tsconfig.base.json` (estricto, `noUncheckedIndexedAccess`) lo extienden todos los paquetes/apps.
 - `eslint.config.js` (flat config) impone `@typescript-eslint/no-explicit-any: error`, que es lo que hace cumplir la prohibición de `any`.
-- `packages/shared` (`@argos/shared`): tipos TS puros en `types/` (exporta `index.ts`). Cada enum del SPEC es una constante `as const` (p. ej. `NIVELES_CRITICIDAD`) más su tipo derivado. `geometria` es una unión discriminada por `type` (`Point` | `Polygon`). `Recurso` no tiene `lat`/`lng` a propósito; una prueba con `expectTypeOf` lo fija. Tipos públicos: `ZonaPublica` (con `nombre` y `geometria`), `ZonaRiesgo` (incidente sin `timeline`) y `NuevoReporte`.
-- `packages/ui` (`@argos/ui`): design system ARGOS Táctico (tokens CSS, puente Tailwind 4 y 9 componentes React tipados con pruebas). Lo consume `apps/desktop`; `typecheck` ya lo cubre.
-- `apps/web` (`@argos/web`): mismo patrón que desktop (`services/supabaseClient.ts` aislado + `servicioDemo`, hooks Realtime, dominio puro). Solo lee `zonas_publicas` y `zonas_riesgo` (espejo de `incidentes` sin `timeline`, mantenido por trigger) e inserta en `reportes_ciudadanos`; una prueba verifica que nunca toca `recursos_operativos`.
+- `packages/shared` (`@argos/shared`): tipos TS puros en `types/` (exporta `index.ts`). Cada enum del SPEC es una constante `as const` (p. ej. `NIVELES_CRITICIDAD`) más su tipo derivado. `geometria` es una unión discriminada por `type` (`Point` | `Polygon`). `Recurso` no tiene `lat`/`lng` a propósito; una prueba con `expectTypeOf` lo fija. Tipos adicionales: `ZonaPublica` (refugios y bloqueos, con `nombre` y `geometria`), `ZonaRiesgo` (incidente sin `timeline`) y `NuevoReporte`. Las rutas reales son `packages/shared/types/` (no `src/`).
+- `packages/ui` (`@argos/ui`): design system ARGOS Táctico (tokens CSS, puente Tailwind 4 y 11 componentes React tipados con pruebas, incluidos `UnitChip` y `RailColapsable`). Lo consume `apps/desktop`; `typecheck` ya lo cubre.
+- `apps/web` ya no existe en los workspaces: vive en `archive/web/` solo como referencia histórica. No lo modifiques ni lo importes.
 - Las pruebas viven junto al código (`*.test.ts`).
 
 ## Proyecto
 
-"Mesa de Crisis": sistema C4I de respuesta a emergencias con dos aplicaciones sobre un mismo backend Supabase:
-- **Escritorio (operadores):** Tauri + React + TypeScript. CRUD total, cambios de estado, despacho de recursos, trazado de polígonos de zonas de riesgo.
-- **Portal web público (ciudadanos):** React + Vite + TypeScript (Vercel), mobile-first. Mapa de solo lectura (zonas de riesgo, refugios) y formulario de "Reporte Rápido" con Geolocation.
-- **Común:** Tailwind CSS + Shadcn/UI, Mapbox GL JS / MapLibre (únicos motores de mapas permitidos), Supabase (PostgreSQL, Auth por roles Operador vs. Ciudadano/Anónimo, Realtime por WebSockets).
+"Mesa de Crisis": consola CAD (Computer-Aided Dispatch) de respuesta a emergencias, una única aplicación de escritorio sobre un backend Supabase:
+- **Escritorio (operadores/despachadores):** Tauri 2 + React + TypeScript. Registro de llamadas (123, VHF, sensor, presencial), cola de incidentes, despacho de unidades desde el detalle del incidente, trazado de polígonos y perímetros de riesgo.
+- **Común:** Tailwind CSS + design system `@argos/ui`, Mapbox GL JS / MapLibre (únicos motores de mapas permitidos), Supabase (PostgreSQL, Auth email/password con rol `operador`, Realtime por WebSockets).
 
 ## Arquitectura
 
-Flujo: el ciudadano envía un reporte (entra como "No confirmado") → aparece como alerta en la Mesa de Crisis → el operador valida, traza el polígono de riesgo y despacha recursos → Supabase Realtime propaga la zona de riesgo y los refugios al portal público.
+Flujo: el operador registra una llamada (entra como "No confirmado") → la vincula a un incidente existente o crea uno nuevo → traza o genera el perímetro de riesgo y despacha unidades desde `PanelDetalle` → Supabase Realtime sincroniza a todos los puestos.
 
-Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `timeline` JSONB), `reportes_ciudadanos`, `recursos_operativos`, `zonas_publicas`.
+Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `timeline` JSONB), `llamadas` (antes `reportes_ciudadanos`), `recursos_operativos`, `zonas_publicas` y `zonas_riesgo` (espejo de `incidentes` sin `timeline`).
 
-**Restricción de seguridad clave:** `recursos_operativos` nunca debe ser consultable desde el portal público (ni exponer coordenadas tácticas). Esto se impone con RLS en Supabase y debe validarse explícitamente (Fase 4). El portal solo lee `zonas_publicas` y las zonas de riesgo derivadas de incidentes.
+**Restricción de seguridad clave:** no hay acceso anónimo. Todas las tablas y el bucket `reportes` exigen `es_operador()` (rol en `app_metadata` del JWT); ninguna política puede mencionar el rol `anon`. Esto se impone con RLS y lo valida `supabase/rls.test.ts`. `recursos_operativos` no lleva coordenadas tácticas. Los secretos (p. ej. la API key del Asesor IA, Fase 3) viven solo en el backend Rust, nunca en el bundle del frontend.
 
 ## Reglas de código (obligatorias)
 
-- **Tipos compartidos:** `packages/shared/types` exporta `Incidente`, `Recurso` y `Reporte`; ambas apps los consumen (evita contratos duplicados).
+- **Tipos compartidos:** `packages/shared/types` exporta `Incidente`, `Recurso` y `Reporte`; la app y los paquetes los consumen (evita contratos duplicados).
 - **Acceso a Supabase aislado:** todas las llamadas pasan por un servicio unificado (p. ej. `services/supabaseClient.ts`); nunca consultar desde componentes de UI.
 - **Prohibido `any`** en cualquier archivo TypeScript (tipado estricto).
 - **Fuera de alcance (Fase 1):** pasarelas de pago, OAuth/redes sociales (solo email/password y roles internos), gráficos 3D o motores de mapas distintos a Mapbox GL JS / MapLibre.
@@ -55,7 +53,7 @@ Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `time
 
 ## Design System · ARGOS Táctico (Neo-Editorial Táctico)
 
-Fuente de verdad: `packages/ui` (`@argos/ui`): `src/tokens.css` (tokens en 3 capas, temas crema/carbón, fuentes en `fonts/`) → `src/theme.css` (puente Tailwind 4 `@theme inline`, reinicia paleta/radios/sombras por defecto) → `src/components/*`. Las apps lo importan en su `styles.css` (`@import '@argos/ui/tokens.css'; @import '@argos/ui/theme.css'; @source` del paquete). Antes de crear UI, reutiliza `Button`, `TextField`, `Badge`, `StatusIndicator`, `SectionHeader`, `IncidentCard`, `DispatchRow`, `ShelterGauge`, `Masthead` (`import { … } from '@argos/ui'`). Diseño original: artifact «ARGOS Táctico» (claude.ai/artifact/76VQGbSKuuaE5BcfiiByf8). Migrado: `apps/desktop`; `apps/web` sigue con su estilo provisional (pendiente).
+Fuente de verdad: `packages/ui` (`@argos/ui`): `src/tokens.css` (tokens en 3 capas, temas crema/carbón, fuentes en `fonts/`) → `src/theme.css` (puente Tailwind 4 `@theme inline`, reinicia paleta/radios/sombras por defecto) → `src/components/*`. La app lo importa en su `styles.css` (`@import '@argos/ui/tokens.css'; @import '@argos/ui/theme.css'; @source` del paquete). Antes de crear UI, reutiliza `Button`, `TextField`, `Badge`, `StatusIndicator`, `SectionHeader`, `IncidentCard`, `DispatchRow`, `ShelterGauge`, `Masthead` (`import { … } from '@argos/ui'`). Diseño original: artifact «ARGOS Táctico» (claude.ai/artifact/76VQGbSKuuaE5BcfiiByf8). Migrado: `apps/desktop` (única app activa).
 
 ### Paleta activa (un color = un significado)
 | Rol | Token / clase | Crema (día) | Carbón (noche) |

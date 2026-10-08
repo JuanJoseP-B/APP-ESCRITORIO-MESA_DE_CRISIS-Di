@@ -1,88 +1,71 @@
 # SPEC.md: Mesa de Crisis — Sistema de Respuesta a Emergencias
 
+> **Pivote a consola CAD de escritorio (2026-10-07).** ARGOS es ahora una única aplicación de escritorio para despachadores. El portal web ciudadano (`apps/web`) quedó archivado en `archive/web/` y fuera de los workspaces. [`ROADMAP_CAD.md`](ROADMAP_CAD.md) define el alcance, la interfaz, los contratos y las fases; si hay conflicto con este documento, manda `ROADMAP_CAD.md`.
+
 ## 1. Visión General del Sistema
-Sistema C4I (Comando, Control, Comunicaciones, Computación e Inteligencia) compuesto por una aplicación de escritorio para operadores (Mesa de Crisis) y una aplicación web pública para ciudadanos. Orientado a la gestión de incidentes, zonas de riesgo y flujos de información en tiempo real, priorizando la seguridad operativa sin exponer coordenadas tácticas.
+Consola CAD (Computer-Aided Dispatch) de alta densidad para operadores: recibe llamadas del 123, radio VHF y sensores, gestiona incidentes, perímetros de riesgo y unidades en tiempo real, y prioriza la seguridad operativa. No existe superficie pública: toda lectura y escritura exige un operador autenticado.
 
 ## 2. Stack Tecnológico
-* **Frontend Escritorio (Mesa de Crisis):** Tauri + React + TypeScript. (Alta velocidad, bajo consumo de RAM, acceso a APIs nativas del OS).
-* **Frontend Web (Portal Público):** React + Vite + TypeScript. Despliegue recomendado en Vercel.
-* **Estilos y UI:** Tailwind CSS + Shadcn/UI (para componentes rápidos y consistentes).
+* **Aplicación (Mesa de Crisis):** Tauri 2 + React + TypeScript. (Alta velocidad, bajo consumo de RAM, acceso a APIs nativas del OS; los secretos viven solo en el backend Rust.)
+* **Estilos y UI:** Tailwind CSS 4 + design system ARGOS Táctico (`@argos/ui`).
 * **Mapas y GIS:** Mapbox GL JS / MapLibre (Manejo de GeoJSON, capas vectoriales y polígonos).
 * **Backend y Base de Datos:** Supabase (PostgreSQL).
-  * *Realtime:* Supabase WebSockets para sincronización de incidentes.
-  * *Auth:* Autenticación basada en roles (Operador vs. Ciudadano/Anónimo).
+  * *Realtime:* Supabase WebSockets para sincronizar incidentes, llamadas y unidades entre puestos.
+  * *Auth:* email/password con rol `operador` en `app_metadata`; sin acceso anónimo.
 
 ## 3. Arquitectura (Nivel de Contenedores)
 
 ```mermaid
 graph TD
-    A[Ciudadano / Portal Web] -->|Reportes de incidentes| B(Supabase REST/GraphQL)
-    A <-->|Suscripción WebSockets: Zonas de riesgo y Alertas| B
-    C[Operador / App Escritorio Tauri] <-->|CRUD Total, Cambios de Estado, Despacho| B
-    
+    C[Operador / App Escritorio Tauri] <-->|CRUD, cambios de estado, despacho| B(Supabase REST)
+    C <-->|Suscripción WebSockets| B
+
     subgraph Backend Supabase
         B --> D[(PostgreSQL)]
         B --> E[Supabase Auth]
         B --> F[Realtime Engine]
     end
-    
+
     subgraph Integraciones Externas
         C --> G[API Mapbox / MapLibre]
-        A --> G
     end
 ```
 
 ## 4. Modelo de Datos Principal (Esquema Relacional)
 
 * **`incidentes`**: Centraliza el evento.
-  * `id`, `titulo`, `nivel_criticidad` (Bajo, Medio, Crítico).
+  * `id`, `titulo`, `nivel_criticidad` (Bajo, Medio, Crítico; pasa a prioridad P1–P4 en la Fase 2).
   * `estado` (Abierto, Contenido, Resuelto).
   * `geometria` (GeoJSON - Punto o Polígono).
-  * `timeline` (JSONB con el registro de eventos y horas).
-* **`reportes_ciudadanos`**: Ingresan como "No confirmados".
-  * `id`, `tipo` (Incendio, Bloqueo, etc.), `lat`, `lng`, `imagen_url`, `estado_validacion`.
-* **`recursos_operativos`**: Gestión interna sin exposición GPS pública.
+  * `timeline` (JSONB con el registro de eventos, horas y autor).
+* **`llamadas`** (antes `reportes_ciudadanos`): entradas registradas por el operador; ingresan como "No confirmado".
+  * `id`, `tipo`, `lat`, `lng`, `imagen_url`, `estado_validacion`, más `canal` (123, VHF, SENSOR, PRESENCIAL), `prioridad`, `narrativa`, `callback`, `incidente_id` (FK) y `operador_id`.
+* **`recursos_operativos`**: Gestión interna de unidades.
   * `id`, `tipo` (Bomberos, Ambulancia, Policía).
-  * `estado_actual` (Disponible, Despachado, En Escena, Inoperativo).
+  * `estado_actual` (Disponible, Despachado, En Escena, Inoperativo; ciclo CAD con SLA en la Fase 2).
   * `incidente_asignado_id` (FK).
-* **`zonas_publicas`**: Lo que consume el ciudadano.
-  * `id`, `tipo` (Refugio, Bloqueo de Vía).
-  * `capacidad_actual`, `capacidad_maxima`.
+* **`zonas_publicas`**: refugios y bloqueos de vía (`tipo`, `capacidad_actual`, `capacidad_maxima`); ahora de uso interno del operador.
+* **`zonas_riesgo`**: espejo de `incidentes` sin `timeline`, mantenido por trigger.
+
+**Seguridad (RLS):** todas las tablas exigen `es_operador()`. El rol `anon` no tiene políticas ni acceso a tablas ni al bucket `reportes`.
 
 ## 5. Flujo Operativo Principal
-1. **Detección:** Ciudadano envía un reporte vía Web con foto y coordenadas (o llega vía radio al operador).
-2. **Contextualización:** El reporte entra a la Mesa de Crisis (Escritorio) como alerta visual.
-3. **Toma de Decisiones:** El operador valida el incidente, traza un polígono de "Zona de Riesgo" en el mapa y actualiza el estado de los recursos a "Despachado".
-4. **Difusión:** Automáticamente (vía WebSockets), la aplicación Web actualiza el mapa de los ciudadanos mostrando la zona de riesgo delineada y las rutas/refugios seguros sugeridos.
+1. **Ingesta:** el operador registra una llamada (123, VHF, sensor o presencial) con ubicación y narrativa. Desde la Fase 2 el sistema avisa de posibles duplicados.
+2. **Contextualización:** la llamada se vincula a un incidente existente o crea uno nuevo, que entra a la cola por prioridad.
+3. **Toma de Decisiones:** el operador valida el incidente, define el perímetro de riesgo (automático desde la Fase 2, con trazado manual como corrección) y despacha unidades desde el panel de detalle del incidente.
+4. **Seguimiento:** Realtime sincroniza a todos los puestos; las unidades avanzan por su ciclo de vida y, desde la Fase 2, con cronómetros de SLA.
 
 ## 6. Roadmap de Desarrollo y Tareas
 
-El desarrollo debe seguir una estrategia de ramificación **GitFlow** y uso de *Conventional Commits* para mantener el control de versiones organizado.
+El desarrollo sigue **GitFlow** y *Conventional Commits*. El plan vigente (Fases 0 a 3: preparación y grilla táctica, lógica CAD, Asesor de Despacho con IA) está en [`ROADMAP_CAD.md`](ROADMAP_CAD.md). Lo entregado antes del pivote queda como base:
 
-### Fase 1: Setup e Infraestructura (Sprints 1)
-- [ ] Configurar proyecto Supabase (Tablas, RLS - Row Level Security para proteger datos sensibles de recursos).
-- [ ] Inicializar monorepo o repositorios separados (Tauri App y Web App).
-- [ ] Configurar React + Vite + TypeScript + Tailwind CSS en ambos entornos.
-- [ ] Implementar autenticación básica para la Mesa de Crisis.
-
-### Fase 2: Motor Geoespacial y Core de Escritorio (Sprints 2-3)
-- [ ] Integrar Mapbox GL JS en la app de escritorio.
-- [ ] Crear el panel lateral de "Mesa de Crisis" (lista de incidentes, nivel crítico, timeline).
-- [ ] Desarrollar la herramienta de dibujo (Draw) para trazar polígonos de zonas de riesgo en el mapa.
-- [ ] Implementar la suscripción en tiempo real a la tabla de `incidentes` y `reportes_ciudadanos`.
-
-### Fase 3: Portal Ciudadano (Sprints 4)
-- [x] Construir la interfaz pública (Mobile-first).
-- [x] Integrar el mapa de solo lectura que consuma los polígonos de riesgo y refugios seguros.
-- [x] Desarrollar el formulario de "Reporte Rápido" (Uso de API Geolocation del navegador).
-
-### Fase 4: Sincronización y Refinamiento (Sprints 5)
-- [x] Desarrollar la Máquina de Estados para Recursos (Drag & Drop o botones para cambiar de "Disponible" a "Despachado").
-- [x] Validar las políticas de seguridad (RLS) en Supabase para asegurar que el portal público no pueda hacer query a la tabla de recursos operativos.
-- [x] Pruebas de carga de WebSockets simulando usuarios concurrentes recibiendo alertas.
+- [x] Monorepo, tipos compartidos, servicio Supabase aislado y modo demo.
+- [x] Mapa operativo con trazado de polígonos y líneas (mapbox-gl-draw), Realtime, máquina de estados de recursos y refugios.
+- [x] Login de operador, RLS validada por pruebas estáticas y design system ARGOS Táctico.
+- [x] Portal ciudadano (Reporte Rápido y mapa público): **archivado** en `archive/web/`.
 
 ## 7. Reglas de Estructura de Código
-- **Tipos Compartidos:** Crear un paquete/directorio `packages/shared/types` exportando las interfaces de `Incidente`, `Recurso` y `Reporte` para evitar duplicidad de contratos entre la App Web y la App de Escritorio.
+- **Tipos Compartidos:** Crear un paquete/directorio `packages/shared/types` exportando las interfaces de `Incidente`, `Recurso` y `Reporte` para evitar duplicidad de contratos entre módulos de la aplicación de escritorio (y el código archivado).
 - **Sincronización:** Las llamadas a Supabase deben estar aisladas estrictamente en un servicio unificado, por ejemplo `services/supabaseClient.ts`, evitando consultas directas desde los componentes de UI.
 
 ## 8. Restricciones de Alcance (Out of Scope para Fase 1)

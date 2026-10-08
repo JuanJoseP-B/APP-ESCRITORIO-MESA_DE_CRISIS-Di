@@ -98,3 +98,9 @@ describe('servicioDemo (incidentes, reportes y refugios)', () => {
     await expect(crearServicioDemo().sesionActual()).resolves.toMatchObject({ esOperador: true });
   });
 });
+
+describe('servicioDemo: hora del servidor', () => {
+  it('no hay desfase: la hora del equipo es la de referencia', async () => {
+    await expect(crearServicioDemo().desfaseHoraServidorMs()).resolves.toBe(0);
+  });
+});

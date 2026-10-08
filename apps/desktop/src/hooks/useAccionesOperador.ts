@@ -20,6 +20,8 @@ interface Opciones {
   readonly seleccionadoId: string | null;
   readonly alSeleccionar: (id: string) => void;
   readonly alAvisar: (mensaje: string | null) => void;
+  /** Quien opera la consola; queda como autor de cada evento que se añade a la bitácora. */
+  readonly operador?: string;
 }
 
 export interface AccionesOperador {
@@ -34,7 +36,11 @@ export interface AccionesOperador {
   readonly guardarTrazado: (figura: FiguraTrazada) => void;
   /** `delta` relativo (p. ej. +5 / -5); la base lo aplica de forma atómica. */
   readonly cambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
-  readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso) => void;
+  /**
+   * Al despachar, `incidenteId` fija el incidente destino (el que muestra PanelDetalle); sin él se
+   * usa el seleccionado.
+   */
+  readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso, incidenteId?: string) => void;
 }
 
 const mensajeDe = (err: unknown): string => (err instanceof Error ? err.message : 'Error desconocido');
@@ -46,6 +52,7 @@ export function useAccionesOperador({
   seleccionadoId,
   alSeleccionar,
   alAvisar,
+  operador,
 }: Opciones): AccionesOperador {
   const ultimo = useRef({ incidentes, seleccionadoId });
   useEffect(() => {
@@ -74,7 +81,7 @@ export function useAccionesOperador({
           () =>
             servicio.actualizarIncidente(incidente.id, {
               geometria: figura,
-              timeline: agregarEvento(incidente.timeline, 'Zona de riesgo trazada por operador'),
+              timeline: agregarEvento(incidente.timeline, 'Zona de riesgo trazada por operador', new Date(), operador),
             }),
           `Zona de riesgo guardada en "${incidente.titulo}" (${figura.coordinates[0]?.length ?? 0} puntos)`,
         );
@@ -83,7 +90,7 @@ export function useAccionesOperador({
       const zona = zonaDesdeTrazado(figura);
       ejecutar(() => servicio.crearZonaPublica(zona), `"${zona.nombre}" guardado en zonas públicas`);
     },
-    [servicio, ejecutar],
+    [servicio, ejecutar, operador],
   );
 
   return useMemo<AccionesOperador>(
@@ -91,7 +98,10 @@ export function useAccionesOperador({
       guardarTrazado,
       confirmarReporte: (reporte) =>
         ejecutar(async () => {
-          const incidente = await servicio.crearIncidente(incidenteDesdeReporte(reporte));
+          const nuevo = incidenteDesdeReporte(reporte);
+          const incidente = await servicio.crearIncidente(
+            operador ? { ...nuevo, timeline: nuevo.timeline.map((e) => ({ ...e, autor: operador })) } : nuevo,
+          );
           await servicio.actualizarEstadoReporte(reporte.id, 'Confirmado');
           alSeleccionar(incidente.id);
         }),
@@ -100,17 +110,17 @@ export function useAccionesOperador({
         ejecutar(() =>
           servicio.actualizarIncidente(incidente.id, {
             estado,
-            timeline: agregarEvento(incidente.timeline, `Estado cambiado a ${estado}`),
+            timeline: agregarEvento(incidente.timeline, `Estado cambiado a ${estado}`, new Date(), operador),
           }),
         ),
       cambiarOcupacion: (zona, delta) => ejecutar(() => servicio.ajustarOcupacionZona(zona.id, delta)),
-      cambiarEstadoRecurso: (recurso, estado) =>
+      cambiarEstadoRecurso: (recurso, estado, incidenteId) =>
         ejecutar(() => {
-          // Despachar usa el incidente seleccionado; otras transiciones lo conservan o liberan.
-          const siguiente = transicionarRecurso(recurso, estado, ultimo.current.seleccionadoId ?? undefined);
+          // Despachar usa el incidente indicado (o el seleccionado); otras transiciones lo conservan o liberan.
+          const siguiente = transicionarRecurso(recurso, estado, incidenteId ?? ultimo.current.seleccionadoId ?? undefined);
           return servicio.cambiarEstadoRecurso(recurso.id, estado, siguiente.incidente_asignado_id);
         }),
     }),
-    [servicio, ejecutar, alSeleccionar, guardarTrazado],
+    [servicio, ejecutar, alSeleccionar, guardarTrazado, operador],
   );
 }

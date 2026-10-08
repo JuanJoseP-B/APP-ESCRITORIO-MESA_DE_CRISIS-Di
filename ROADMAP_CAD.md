@@ -261,7 +261,7 @@ Con `prefers-reduced-motion`, el parpadeo se sustituye por un borde grueso con e
 
 ## 5. Contratos de datos (TypeScript, `@argos/shared`)
 
-### 5.1 Llamadas y duplicados — `packages/shared/src/llamada.ts`
+### 5.1 Llamadas y duplicados — `packages/shared/types/llamada.ts`
 
 ```ts
 export const CANALES_LLAMADA = ['123', 'VHF', 'SENSOR', 'PRESENCIAL'] as const;
@@ -304,7 +304,7 @@ export interface ParametrosDuplicados {
 }
 ```
 
-### 5.2 Perímetros — `packages/shared/src/perimetro.ts`
+### 5.2 Perímetros — `packages/shared/types/perimetro.ts`
 
 ```ts
 export const ANILLOS = ['CALIENTE', 'TIBIA', 'EVACUACION'] as const;
@@ -328,7 +328,7 @@ export interface AnalisisPerimetro {
 }
 ```
 
-### 5.3 Ciclo de vida y SLA — `packages/shared/src/sla.ts`
+### 5.3 Ciclo de vida y SLA — `packages/shared/types/sla.ts`
 
 ```ts
 export const ESTADOS_RECURSO = ['DISPONIBLE', 'ASIGNADO', 'EN_RUTA', 'EN_ESCENA', 'INOPERATIVO'] as const;
@@ -358,7 +358,7 @@ export interface EstadoSla {
 }
 ```
 
-### 5.4 Snapshot del Asesor (entrada) — `packages/shared/src/asesor.ts`
+### 5.4 Snapshot del Asesor (entrada) — `packages/shared/types/asesor.ts`
 
 ```ts
 export interface SnapshotAsesor {
@@ -380,7 +380,7 @@ export interface SnapshotAsesor {
 }
 ```
 
-### 5.5 Recomendación (salida JSON) — `packages/shared/src/asesor.ts`
+### 5.5 Recomendación (salida JSON) — `packages/shared/types/asesor.ts`
 
 ```ts
 export interface RecomendacionAsesor {
@@ -448,9 +448,9 @@ Rama: `feat/cad-fase1-grilla`
 | Crear | `apps/desktop/src/domain/cola.ts` (orden y filtros, puro) |
 | Modificar | `apps/desktop/src/domain/timeline.ts` (orden por `creadoEn`, cortes por fecha, autor) |
 | Modificar | `apps/desktop/src/App.tsx` (reemplaza `PanelMesa`/paneles flotantes por la grilla) |
-| Modificar | `apps/desktop/src/MapView.tsx` → `layout/MapaTactico.tsx` (basemap desaturado, marcadores de unidades, leyenda) |
-| Crear | `packages/ui/src/UnitChip/`, `packages/ui/src/RailColapsable/` (componentes con prueba) |
-| Eliminar | `apps/desktop/src/PanelMesa.tsx` (sus partes se reparten en cola y detalle) |
+| Modificar | `apps/desktop/src/components/MapView.tsx` → `layout/MapaTactico.tsx` (basemap desaturado, marcadores de unidades, leyenda) |
+| Crear | `packages/ui/src/components/UnitChip.{tsx,css,test.tsx}` y `RailColapsable.*` (componentes planos, con prueba) |
+| Eliminar | `apps/desktop/src/components/PanelMesa.tsx` (sus partes se reparten en cola y detalle) |
 
 #### Migración 0005 (idempotente)
 
@@ -494,6 +494,19 @@ Rama: `feat/cad-fase1-grilla`
 | F1-T7 | `PanelDetalle.test.tsx`: DESPACHAR solo aparece con incidente seleccionado y llama a la mutación con su `incidenteId` | Componente |
 | F1-T8 | Manual: la Mesa en modo demo, crema y carbón, a 1280×720 y 1920×1080, sin scroll de página | Manual |
 
+#### Ajustes de la Fase 1 respecto al plan original
+
+Decisiones tomadas al contrastar el roadmap con el código real:
+
+- **Rutas reales:** los tipos compartidos viven en `packages/shared/types/` (no `src/`); en desktop, `MapView` y `PanelMesa` estaban en `src/components/`; los componentes de `@argos/ui` son planos en `src/components/` (`UnitChip.tsx`, `UnitChip.css`, `UnitChip.test.tsx`, sin subcarpeta). No existe `vitest.workspace.ts`: la configuración es `vitest.config.ts` en la raíz, que además excluye `archive/**` (como ESLint). `PanelRecursos` también se eliminó: sus acciones viven en `PanelDetalle`.
+- **Prioridad diferida a la Fase 2:** `Prioridad` (P1–P4) llega con F2-01 y `incidentes.prioridad` con F2-06. En la Fase 1 `domain/cola.ts` ordena por `nivel_criticidad` (Crítico, Medio, Bajo) y luego por antigüedad, con `// TODO(F2-01): migrar a Prioridad P1–P4`. F1-T5 se verifica con ese orden.
+- **`creado_en` para la migración 0006 (F2-06):** hoy `incidentes` no tiene `creado_en` y los eventos de `timeline` llevan `timestamp` escrito por el cliente. La 0006 debe añadir `creado_en timestamptz not null default now()` a `incidentes` y a `eventos_recurso` para usar la hora del servidor; hasta entonces la antigüedad sale del evento más antiguo de la bitácora y la bitácora se ordena por `timestamp`. Los eventos antiguos sin fecha (`{hora, evento}`) van primero, ordenados por hora.
+- **Hora del servidor:** `useReloj(desfaseMs)` recibe el desfase que mide `medirDesfaseServidor` con la cabecera `Date`; el navegador puede no exponerla (CORS) y entonces el desfase es 0. Para una medida fiable, añadir en la 0006 una RPC `hora_servidor()`.
+- **Tabla `llamadas`:** la 0005 conserva las columnas de `reportes_ciudadanos` (`tipo`, `lat`, `lng`, `imagen_url`, `estado_validacion`) y añade `canal`, `prioridad`, `narrativa`, `reportante`, `callback`, `incidente_id` y `operador_id`. El servicio usa `llamadas` (`refactor(desktop): el servicio usa la tabla llamadas`), pero el tipo `Reporte` y los nombres `listarReportes` no cambian hasta la Fase 2.
+- **F1-T3:** jsdom no calcula layout (`scrollHeight` e `innerHeight` valen 0), así que la prueba verifica la hoja de estilos: raíz de `100dvh` con `overflow: hidden`, filas fijas y ninguna regla con scroll de página.
+- **Marcadores de unidades (pendiente de decisión):** `Recurso` no tiene `lat`/`lng` por diseño (una prueba lo fija) y la Fase 2 no define de dónde saldrían, aunque el Asesor IA (`SnapshotAsesor.recursos[].ubicacion`) las necesita. `MapaTactico` queda sin marcadores de unidades; en el tablero, el clic en una unidad selecciona el incidente al que está asignada.
+- **Commits adicionales:** F1-10 se dividió en F1-10a (`useAtajos`) y F1-10b (`usePanelColapsable`); F1-16 en tablero y mapa; se añadió el refactor de `llamadas` tras F1-06 y un `fix(ui)` que hace efectivas las pruebas de CSS (`vitest.config.ts` deja pasar los `?raw`).
+
 ---
 
 ### Fase 2 — Lógica CAD
@@ -504,8 +517,8 @@ Rama: `feat/cad-fase2-logica`
 
 | Acción | Ruta |
 |---|---|
-| Crear | `packages/shared/src/llamada.ts`, `perimetro.ts`, `sla.ts` (+ pruebas); reexportar en `index.ts` |
-| Modificar | `packages/shared/src/recurso.ts` (`TRANSICIONES_RECURSO` con el nuevo ciclo) |
+| Crear | `packages/shared/types/llamada.ts`, `perimetro.ts`, `sla.ts` (+ pruebas); reexportar en `index.ts` |
+| Modificar | `packages/shared/types/recurso.ts` (`TRANSICIONES_RECURSO` con el nuevo ciclo) |
 | Crear | `supabase/migrations/0006_cad_eventos_y_perimetro.sql` |
 | Crear | `supabase/eventos.test.ts` |
 | Crear | `apps/desktop/src/domain/geo.ts` (Haversine), `duplicados.ts`, `perimetro.ts`, `sla.ts` (+ pruebas) |
@@ -574,7 +587,7 @@ Rama: `feat/cad-fase3-asesor`
 
 | Acción | Ruta |
 |---|---|
-| Crear | `packages/shared/src/asesor.ts` (+ prueba) |
+| Crear | `packages/shared/types/asesor.ts` (+ prueba) |
 | Crear | `apps/desktop/src-tauri/src/asesor/mod.rs` (comando), `cliente.rs` (HTTP), `esquema.rs` (tipos serde), `clave.rs` (llavero), `prompt.md`, `schema.json` |
 | Modificar | `apps/desktop/src-tauri/Cargo.toml` (`reqwest` con rustls, `serde`, `keyring`, `uuid`, `tokio`), `main.rs` (registro del comando), `capabilities/*.json` |
 | Crear | `apps/desktop/src/domain/asesor.ts` (`construirSnapshot`, `validarRecomendacion`, `planDesdeRecomendacion`) (+ pruebas) |

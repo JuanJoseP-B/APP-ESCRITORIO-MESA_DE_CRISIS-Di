@@ -145,6 +145,7 @@ export function crearServicioDemo(): ServicioMesa {
     iniciarSesion: () => Promise.resolve(sesion),
     cerrarSesion: () => Promise.resolve(),
     sesionActual: () => Promise.resolve(sesion),
+    desfaseHoraServidorMs: () => Promise.resolve(0),
   };
 }
 
