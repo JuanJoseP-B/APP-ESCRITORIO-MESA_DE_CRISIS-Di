@@ -10,4 +10,5 @@ export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
 export { ShelterGauge, type ShelterGaugeProps } from './components/ShelterGauge';
 export { Masthead, type MastheadProps } from './components/Masthead';
 export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps, type NivelCronometro } from './components/UnitChip';
+export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';
 export { leerToken, observarTema, opacidadZona } from './mapaTema';
