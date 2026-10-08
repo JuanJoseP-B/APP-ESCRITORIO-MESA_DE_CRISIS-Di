@@ -10,6 +10,7 @@ import {
 import { Badge, Button, DispatchRow, SectionHeader, type VarianteBoton } from '@argos/ui';
 import { codigoIncidente, minutosAbierto } from '../domain/cola';
 import { bitacora } from '../domain/timeline';
+import { indicativosDe } from '../domain/unidades';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
 import { ESTADO_INCIDENTE_UI, ESTADO_RECURSO_UI, SEVERIDAD_UI } from './presentacion';
@@ -42,8 +43,6 @@ const VARIANTE_ACCION: Record<EstadoRecurso, VarianteBoton> = {
   Inoperativo: 'ghost',
 };
 
-const nombreUnidad = (r: Recurso): string => r.etiqueta ?? r.id;
-
 /** D · detalle del incidente: ficha, unidades (aquí vive DESPACHAR), línea de tiempo y refugios. */
 export function PanelDetalle({
   incidente,
@@ -66,6 +65,10 @@ export function PanelDetalle({
       </div>
     );
   }
+
+  // Indicativo completo ("B-02", "M11"): el id de base de datos no sirve para dictar por radio.
+  const indicativos = indicativosDe(recursos);
+  const nombreUnidad = (r: Recurso): string => indicativos.get(r.id) ?? r.id;
 
   const accionesDe = (r: Recurso) =>
     TRANSICIONES_RECURSO[r.estado_actual].map((destino) => (

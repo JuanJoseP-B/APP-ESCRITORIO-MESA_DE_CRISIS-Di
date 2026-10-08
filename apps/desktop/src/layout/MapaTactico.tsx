@@ -189,6 +189,15 @@ export function MapaTactico({
     };
   }, []);
 
+  // Al plegar o expandir la cola y el detalle cambia el ancho del mapa: el lienzo debe redimensionarse.
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!mapa || !el || typeof ResizeObserver === 'undefined') return;
+    const observador = new ResizeObserver(() => mapa.resize());
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [mapa]);
+
   // Sincroniza incidentes con la fuente GeoJSON.
   useEffect(() => {
     if (!mapa || !listo) return;

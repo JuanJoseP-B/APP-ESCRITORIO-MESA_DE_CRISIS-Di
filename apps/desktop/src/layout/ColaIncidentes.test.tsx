@@ -125,7 +125,7 @@ describe('bandeja de llamadas entrantes', () => {
   it('lista solo las llamadas por confirmar, con su contador', () => {
     render(<ColaIncidentes {...conReportes} />);
     const bandeja = screen.getByRole('region', { name: 'Bandeja de llamadas entrantes' });
-    expect(within(bandeja).getByText(/1 sin confirmar/)).toBeTruthy();
+    expect(within(bandeja).getByText(/1 por confirmar/)).toBeTruthy();
     expect(within(bandeja).getAllByRole('listitem')).toHaveLength(1);
     expect(bandeja.textContent).toContain('#ABC12345');
   });

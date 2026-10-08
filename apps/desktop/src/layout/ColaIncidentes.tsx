@@ -113,7 +113,7 @@ export function ColaIncidentes({
       <section aria-label="Bandeja de llamadas entrantes" className={`shrink-0 ${pendientes.length > 0 ? 'bg-status-warning-bg' : ''}`}>
         <div className="flex items-center">
           <div className="flex-1">
-            <SectionHeader index="01" title="Llamadas entrantes" count={`${pendientes.length} sin confirmar`} />
+            <SectionHeader index="01" title="Llamadas" count={`${pendientes.length} por confirmar`} />
           </div>
           <Button
             size="sm"
