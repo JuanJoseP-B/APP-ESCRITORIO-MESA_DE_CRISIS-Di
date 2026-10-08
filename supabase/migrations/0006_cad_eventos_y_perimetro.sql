@@ -146,3 +146,77 @@ alter table public.recursos_operativos drop constraint if exists recursos_ubicac
 alter table public.recursos_operativos add constraint recursos_ubicacion_valida check (public.coordenada_valida(ubicacion));
 alter table public.recursos_operativos drop constraint if exists recursos_base_valida;
 alter table public.recursos_operativos add constraint recursos_base_valida check (public.coordenada_valida(base));
+
+-- ---------------------------------------------------------------- 5) hora del servidor
+create or replace function public.iso_utc(p timestamptz) returns text
+language sql immutable set search_path = '' as $$
+  select to_char(p at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+$$;
+
+create or replace function public.timestamptz_o_null(p text) returns timestamptz
+language plpgsql stable set search_path = '' as $$
+begin
+  return p::timestamptz;
+exception when others then
+  return null;
+end;
+$$;
+
+-- Hora del servidor para corregir el reloj de la consola (se mide el viaje de ida y vuelta en el cliente).
+create or replace function public.hora_servidor() returns timestamptz
+language sql volatile security invoker set search_path = '' as $$
+  select clock_timestamp()
+$$;
+revoke all on function public.hora_servidor() from public, anon;
+grant execute on function public.hora_servidor() to authenticated;
+
+-- ---------------------------------------------------------------- 6) creado_en de incidentes y sellado del timeline
+alter table public.incidentes add column if not exists creado_en timestamptz not null default now();
+
+-- Los incidentes anteriores toman como apertura su evento más antiguo con fecha válida.
+update public.incidentes i set creado_en = m.minimo
+  from (select i2.id, min(public.timestamptz_o_null(e ->> 'timestamp')) as minimo
+          from public.incidentes i2,
+               jsonb_array_elements(case when jsonb_typeof(i2.timeline) = 'array' then i2.timeline else '[]'::jsonb end) e
+         group by i2.id) m
+  where m.id = i.id and m.minimo is not null and m.minimo < i.creado_en;
+
+-- Los eventos anteriores (sin `creado_en`) reciben su propia fecha, o la apertura del incidente si no la
+-- tienen (formato antiguo `{hora, evento}`), para que el sellado de abajo no los date con la hora de hoy.
+update public.incidentes i set timeline = (
+    select jsonb_agg(
+             case when jsonb_typeof(e.evento) = 'object' and not (e.evento ? 'creado_en')
+                  then e.evento || jsonb_build_object(
+                         'creado_en', public.iso_utc(coalesce(public.timestamptz_o_null(e.evento ->> 'timestamp'), i.creado_en)))
+                  else e.evento end
+             order by e.n)
+      from jsonb_array_elements(i.timeline) with ordinality as e(evento, n))
+  where jsonb_typeof(i.timeline) = 'array'
+    and exists (select 1 from jsonb_array_elements(i.timeline) x
+                 where jsonb_typeof(x) = 'object' and not (x ? 'creado_en'));
+
+-- `timeline` es jsonb y no admite `default now()`: este trigger sella con la hora del servidor SOLO los
+-- eventos que llegan sin `creado_en`. Un evento que ya lo trae (los existentes, que el cliente reenvía al
+-- añadir uno nuevo) pasa intacto: nunca se reescribe.
+create or replace function public.sellar_timeline() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if new.timeline is null or jsonb_typeof(new.timeline) <> 'array' then
+    return new;
+  end if;
+  new.timeline := coalesce((
+    select jsonb_agg(
+             case when jsonb_typeof(e.evento) = 'object' and not (e.evento ? 'creado_en')
+                  then e.evento || jsonb_build_object('creado_en', public.iso_utc(now()))
+                  else e.evento end
+             order by e.n)
+      from jsonb_array_elements(new.timeline) with ordinality as e(evento, n)
+  ), '[]'::jsonb);
+  return new;
+end;
+$$;
+
+drop trigger if exists incidentes_sella_timeline on public.incidentes;
+create trigger incidentes_sella_timeline
+  before insert or update of timeline on public.incidentes
+  for each row execute function public.sellar_timeline();
