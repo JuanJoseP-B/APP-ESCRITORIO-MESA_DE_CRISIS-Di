@@ -8,9 +8,21 @@ function relojReal(inicio = 1_000_000) {
 }
 
 describe('crearRelojSimulado', () => {
-  it('arranca en marcha a 1× con la hora del equipo', () => {
+  it('arranca en pausa a 1× y no avanza hasta reproducir', () => {
     const real = relojReal();
     const reloj = crearRelojSimulado(real.ahora);
+    expect(reloj).toMatchObject({ velocidad: 1, reproduciendo: false });
+    real.avanzar(10_000);
+    expect(reloj.ahora()).toBe(1_000_000);
+    expect(reloj.transcurridoSeg()).toBe(0);
+    reloj.reproducir();
+    real.avanzar(2_000);
+    expect(reloj.transcurridoSeg()).toBe(2);
+  });
+
+  it('en marcha desde el inicio sigue la hora del equipo', () => {
+    const real = relojReal();
+    const reloj = crearRelojSimulado(real.ahora, true);
     expect(reloj).toMatchObject({ velocidad: 1, reproduciendo: true });
     expect(reloj.ahora()).toBe(1_000_000);
     expect(reloj.transcurridoSeg()).toBe(0);
@@ -21,7 +33,7 @@ describe('crearRelojSimulado', () => {
 
   it('acelera el tiempo según la velocidad', () => {
     const real = relojReal();
-    const reloj = crearRelojSimulado(real.ahora);
+    const reloj = crearRelojSimulado(real.ahora, true);
     reloj.fijarVelocidad(10);
     real.avanzar(2_000);
     expect(reloj.transcurridoSeg()).toBe(20);
@@ -30,7 +42,7 @@ describe('crearRelojSimulado', () => {
 
   it('cambiar de velocidad no salta en el tiempo ya transcurrido', () => {
     const real = relojReal();
-    const reloj = crearRelojSimulado(real.ahora);
+    const reloj = crearRelojSimulado(real.ahora, true);
     real.avanzar(4_000);
     reloj.fijarVelocidad(5);
     expect(reloj.transcurridoSeg()).toBe(4);
@@ -43,7 +55,7 @@ describe('crearRelojSimulado', () => {
 
   it('en pausa el tiempo se congela y al reanudar continúa desde ahí', () => {
     const real = relojReal();
-    const reloj = crearRelojSimulado(real.ahora);
+    const reloj = crearRelojSimulado(real.ahora, true);
     real.avanzar(5_000);
     reloj.pausar();
     expect(reloj.reproduciendo).toBe(false);
@@ -56,7 +68,7 @@ describe('crearRelojSimulado', () => {
 
   it('pausar o reproducir dos veces seguidas no altera el tiempo', () => {
     const real = relojReal();
-    const reloj = crearRelojSimulado(real.ahora);
+    const reloj = crearRelojSimulado(real.ahora, true);
     reloj.reproducir();
     real.avanzar(1_000);
     reloj.pausar();
@@ -67,7 +79,7 @@ describe('crearRelojSimulado', () => {
 
   it('cambiar la velocidad en pausa se aplica al reanudar', () => {
     const real = relojReal();
-    const reloj = crearRelojSimulado(real.ahora);
+    const reloj = crearRelojSimulado(real.ahora, true);
     reloj.pausar();
     reloj.fijarVelocidad(5);
     expect(reloj.velocidad).toBe(5);

@@ -17,8 +17,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function montar() {
-  const reloj = crearRelojSimulado();
+function montar(enMarcha = true) {
+  const reloj = crearRelojSimulado(Date.now, enMarcha);
   const servicio = crearServicioDemo({ ahora: reloj.ahora });
   const registrar = vi.spyOn(servicio, 'registrarLlamada');
   const hook = renderHook(() => useSimulacion(servicio, reloj, GUION, 100));
@@ -33,6 +33,16 @@ describe('useSimulacion', () => {
     act(() => void vi.advanceTimersByTime(60_000));
     expect(result.current).toBeNull();
     expect(registrar).not.toHaveBeenCalled();
+  });
+
+  it('el escenario arranca en pausa: no inyecta nada hasta que se inicia', () => {
+    const { registrar, result } = montar(false);
+    act(() => void vi.advanceTimersByTime(60_000));
+    expect(registrar).not.toHaveBeenCalled();
+    expect(result.current).toMatchObject({ reproduciendo: false, tSeg: 0 });
+    act(() => result.current?.alternar());
+    act(() => void vi.advanceTimersByTime(11_000));
+    expect(registrar).toHaveBeenCalledTimes(1);
   });
 
   it('inyecta cada llamada del guion una sola vez, por el servicio y en su momento', () => {

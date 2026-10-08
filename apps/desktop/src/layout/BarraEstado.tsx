@@ -53,6 +53,8 @@ export function BarraEstado({
 }: BarraEstadoProps) {
   const estadoEnlace = ENLACE_UI[enlace];
   const nombreTurno = turno === 'carbon' ? 'Noche' : 'Día';
+  /** Mientras t=0 y en pausa, el escenario aún no ha empezado. */
+  const sinIniciar = simulacion !== undefined && !simulacion.reproduciendo && simulacion.tSeg === 0;
   return (
     <header aria-label="Barra de estado" className="flex h-full items-center gap-4 px-4 text-text-primary">
       <span className="font-mono text-overline uppercase text-text-primary">
@@ -90,9 +92,15 @@ export function BarraEstado({
           <span className="font-mono text-data-sm tabular text-text-primary">
             {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
           </span>
-          <Button size="sm" variant="secondary" onClick={simulacion.onAlternar}>
-            <Glyph shape={simulacion.reproduciendo ? 'square' : 'triangle'} /> {simulacion.reproduciendo ? 'Pausar' : 'Reproducir'}
-          </Button>
+          {sinIniciar ? (
+            <Button size="sm" variant="primary" onClick={simulacion.onAlternar}>
+              <Glyph shape="triangle" /> Iniciar escenario
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={simulacion.onAlternar}>
+              <Glyph shape={simulacion.reproduciendo ? 'square' : 'triangle'} /> {simulacion.reproduciendo ? 'Pausar' : 'Reproducir'}
+            </Button>
+          )}
           <span role="group" aria-label="Velocidad" className="flex items-center gap-1">
             {VELOCIDADES.map((v) => (
               <Button

@@ -1,7 +1,7 @@
 export const VELOCIDADES = [1, 5, 10] as const;
 export type Velocidad = (typeof VELOCIDADES)[number];
 
-/** Reloj del demo: puede pausarse y correr a 1×, 5× o 10×. Al crearse marca la hora del equipo y empieza en marcha. */
+/** Reloj del demo: puede pausarse y correr a 1×, 5× o 10×. Al crearse marca la hora del equipo y empieza en pausa. */
 export interface RelojSimulado {
   /** Hora simulada (ms epoch); es la que usan la consola y el servicio demo. */
   readonly ahora: () => number;
@@ -15,12 +15,12 @@ export interface RelojSimulado {
 }
 
 /** `ahoraReal` se inyecta en las pruebas. */
-export function crearRelojSimulado(ahoraReal: () => number = Date.now): RelojSimulado {
+export function crearRelojSimulado(ahoraReal: () => number = Date.now, enMarcha = false): RelojSimulado {
   const inicio = ahoraReal();
   let anclaReal = inicio;
   let anclaSim = inicio;
   let velocidad: Velocidad = 1;
-  let reproduciendo = true;
+  let reproduciendo = enMarcha;
 
   const ahora = (): number => (reproduciendo ? anclaSim + (ahoraReal() - anclaReal) * velocidad : anclaSim);
   /** Fija la hora simulada actual antes de cambiar de marcha, para que el cambio no salte en el tiempo. */

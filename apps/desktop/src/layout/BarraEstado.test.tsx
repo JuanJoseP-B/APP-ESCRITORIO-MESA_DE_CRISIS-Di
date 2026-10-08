@@ -98,6 +98,20 @@ describe('BarraEstado: simulación (modo demo)', () => {
     expect(screen.getByRole('button', { name: /Pausar/ })).toBeTruthy();
   });
 
+  it('con el escenario sin iniciar (t=0, en pausa) destaca INICIAR ESCENARIO', async () => {
+    const alternar = vi.fn();
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 0, onAlternar: alternar })} />);
+    expect(screen.queryByRole('button', { name: /Reproducir/ })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /Iniciar escenario/i }));
+    expect(alternar).toHaveBeenCalledTimes(1);
+  });
+
+  it('pausado a mitad del escenario no vuelve a ofrecer iniciar', () => {
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 40 })} />);
+    expect(screen.queryByRole('button', { name: /Iniciar escenario/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /Reproducir/ })).toBeTruthy();
+  });
+
   it('en pausa ofrece reproducir', async () => {
     const alternar = vi.fn();
     render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, onAlternar: alternar })} />);
