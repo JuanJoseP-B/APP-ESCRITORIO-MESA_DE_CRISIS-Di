@@ -7,6 +7,7 @@ import {
   type Prioridad,
   type Recurso,
 } from '@argos/shared';
+import { estaCerrado } from './cola';
 
 /** De menor a mayor gravedad: el contador de la barra de estado toma el nivel más alto presente. */
 const GRAVEDAD: Readonly<Record<NivelSla, number>> = { NO_APLICA: 0, EN_TIEMPO: 1, ALERTA: 2, VENCIDO: 3 };
@@ -60,7 +61,8 @@ export function slaDeRecursos(
   for (const r of recursos) {
     if (r.estado_actual !== 'ASIGNADO' && r.estado_actual !== 'EN_RUTA') continue;
     const incidente = incidentes.find((i) => i.id === r.incidente_asignado_id);
-    if (!incidente) continue;
+    // Un incidente resuelto ya no corre contra el reloj: aunque quede una unidad asignada, no cuenta como vencida.
+    if (!incidente || estaCerrado(incidente)) continue;
     const estado = calcularSla(r.id, eventos, incidente.prioridad, ahoraMs);
     if (estado.nivel !== 'NO_APLICA') mapa.set(r.id, estado);
   }

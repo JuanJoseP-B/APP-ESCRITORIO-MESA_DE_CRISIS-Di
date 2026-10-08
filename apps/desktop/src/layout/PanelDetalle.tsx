@@ -11,7 +11,7 @@ import {
 } from '@argos/shared';
 import { Badge, Button, DispatchRow, Kbd, SectionHeader, type VarianteBoton } from '@argos/ui';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
-import { codigoIncidente, minutosAbierto } from '../domain/cola';
+import { codigoIncidente, estaCerrado, minutosAbierto } from '../domain/cola';
 import type { AnilloGenerado } from '../domain/perimetro';
 import { bitacora } from '../domain/timeline';
 import {
@@ -139,6 +139,8 @@ export function PanelDetalle({
     </li>
   );
 
+  // Un incidente resuelto ya no admite despachos: solo se pueden liberar las unidades que aún tenga.
+  const cerrado = estaCerrado(incidente);
   const asignadas = recursos.filter((r) => r.incidente_asignado_id === incidente.id);
   const disponibles = recursos.filter((r) => r.estado_actual === 'DISPONIBLE');
   const inoperativas = recursos.filter((r) => r.estado_actual === 'INOPERATIVO');
@@ -220,23 +222,25 @@ export function PanelDetalle({
         )}
       </section>
 
-      <section aria-label={t('detalle.disponibles.aria')} className="shrink-0">
-        <SectionHeader index={perimetro ? '04' : '03'} title={t('detalle.disponibles')} count={disponibles.length} />
-        {disponibles.length === 0 ? (
-          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.disponibles.vacio')}</p>
-        ) : (
-          <ul>{disponibles.map(fila)}</ul>
-        )}
-        {inoperativas.length > 0 && (
-          <>
-            <p className="px-4 pt-2 font-mono text-overline uppercase text-text-muted">{t('detalle.fuera')}</p>
-            <ul>{inoperativas.map(fila)}</ul>
-          </>
-        )}
-      </section>
+      {!cerrado && (
+        <section aria-label={t('detalle.disponibles.aria')} className="shrink-0">
+          <SectionHeader index={perimetro ? '04' : '03'} title={t('detalle.disponibles')} count={disponibles.length} />
+          {disponibles.length === 0 ? (
+            <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.disponibles.vacio')}</p>
+          ) : (
+            <ul>{disponibles.map(fila)}</ul>
+          )}
+          {inoperativas.length > 0 && (
+            <>
+              <p className="px-4 pt-2 font-mono text-overline uppercase text-text-muted">{t('detalle.fuera')}</p>
+              <ul>{inoperativas.map(fila)}</ul>
+            </>
+          )}
+        </section>
+      )}
 
       <section aria-label={t('detalle.timeline')} className="shrink-0">
-        <SectionHeader index={perimetro ? '05' : '04'} title={t('detalle.timeline')} count={totalEventos} />
+        <SectionHeader index={perimetro ? '05' : cerrado ? '03' : '04'} title={t('detalle.timeline')} count={totalEventos} />
         <ol className="px-4 pb-3 font-mono text-data-sm text-text-secondary">
           {entradas.map((e, n) =>
             e.tipo === 'fecha' ? (

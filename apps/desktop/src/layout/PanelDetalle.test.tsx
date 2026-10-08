@@ -69,6 +69,13 @@ describe('PanelDetalle: despacho contextual', () => {
     expect(screen.getByText(/Selecciona un incidente/)).toBeTruthy();
   });
 
+  it('un incidente resuelto no ofrece despachar: sin lista de disponibles ni botones DESPACHAR (regresión)', () => {
+    render(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' } })} />);
+    expect(screen.queryByRole('region', { name: 'Unidades disponibles' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Despachar/i })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Unidades asignadas' })).toBeTruthy();
+  });
+
   it('con incidente, cada unidad disponible tiene DESPACHAR y llama a la mutación con su incidenteId', async () => {
     const mutar = vi.fn();
     render(<PanelDetalle {...base({ onCambiarEstadoRecurso: mutar })} />);

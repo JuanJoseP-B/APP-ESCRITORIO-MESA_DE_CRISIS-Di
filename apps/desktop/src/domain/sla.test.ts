@@ -119,6 +119,13 @@ describe('slaDeRecursos y resumirSla', () => {
     expect(mapa.get('r2')).toMatchObject({ nivel: 'EN_TIEMPO', limiteSeg: 900, hito: 'EN_ESCENA' });
   });
 
+  it('un incidente resuelto no corre contra el reloj: sus unidades asignadas no cuentan en el SLA', () => {
+    const cerrados = [{ ...incidente('i1', 'P1'), estado: 'Resuelto' as const }, incidente('i2', 'P2')];
+    const mapa = slaDeRecursos(recursos, eventos, cerrados, T0 + 130_000);
+    expect([...mapa.keys()]).toEqual(['r2']);
+    expect(resumirSla(recursos, mapa)).toMatchObject({ vencidos: 0, nivel: 'EN_TIEMPO' });
+  });
+
   it('el resumen cuenta vencidos y alertas, toma el nivel más grave y lista incidentes y unidades afectados', () => {
     const resumen = resumirSla(recursos, slaDeRecursos(recursos, eventos, incidentes, T0 + 130_000));
     expect(resumen).toMatchObject({ vencidos: 1, alertas: 0, nivel: 'VENCIDO', unidadesVencidas: ['r1'] });
