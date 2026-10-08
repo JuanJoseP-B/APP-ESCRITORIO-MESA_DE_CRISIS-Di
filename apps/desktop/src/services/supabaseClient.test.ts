@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RealtimePostgresChangesPayload, SupabaseClient } from '@supabase/supabase-js';
-import { aCambioRealtime, aSesion, crearServicioMesa } from './supabaseClient';
+import { aCambioRealtime, aSesion, crearServicioMesa, medirDesfaseServidor } from './supabaseClient';
 
 type Fila = Record<string, unknown>;
 
@@ -250,5 +250,33 @@ describe('crearServicioMesa', () => {
     const signOut = vi.fn().mockResolvedValue({ error: null });
     await crearServicioMesa({ auth: { signOut } } as unknown as SupabaseClient).cerrarSesion();
     expect(signOut).toHaveBeenCalled();
+  });
+});
+
+describe('desfase de la hora del servidor', () => {
+  const sinCliente = {} as unknown as SupabaseClient;
+  const respuesta = (date: string | null) => ({ headers: new Headers(date ? { date } : {}) }) as unknown as Response;
+
+  it('crearServicioMesa devuelve 0 si no se le da medidor', async () => {
+    await expect(crearServicioMesa(sinCliente).desfaseHoraServidorMs()).resolves.toBe(0);
+  });
+
+  it('crearServicioMesa delega en el medidor recibido', async () => {
+    const servicio = crearServicioMesa(sinCliente, () => Promise.resolve(1500));
+    await expect(servicio.desfaseHoraServidorMs()).resolves.toBe(1500);
+  });
+
+  it('mide con la cabecera Date: servidor 4 s adelantado', async () => {
+    const servidor = Date.UTC(2026, 9, 7, 22, 15, 7);
+    const marcas = [servidor - 4_000 - 100, servidor - 4_000 + 100];
+    const pedir = vi.fn().mockResolvedValue(respuesta(new Date(servidor).toUTCString()));
+    const desfase = await medirDesfaseServidor('https://x.supabase.co/', 'clave', pedir, () => marcas.shift() ?? 0);
+    expect(desfase).toBe(4_000);
+    expect(pedir).toHaveBeenCalledWith('https://x.supabase.co/rest/v1/', { method: 'HEAD', headers: { apikey: 'clave' } });
+  });
+
+  it('devuelve 0 si la cabecera no está expuesta o la red falla', async () => {
+    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockResolvedValue(respuesta(null)))).resolves.toBe(0);
+    await expect(medirDesfaseServidor('https://x', 'k', vi.fn().mockRejectedValue(new Error('sin red')))).resolves.toBe(0);
   });
 });

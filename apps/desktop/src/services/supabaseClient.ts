@@ -9,6 +9,7 @@ import type {
   Reporte,
   ZonaPublica,
 } from '@argos/shared';
+import { calcularDesfaseMs, leerCabeceraDate } from '../domain/reloj';
 import type { CambioRealtime } from '../domain/realtime';
 
 export interface SesionOperador {
@@ -51,6 +52,11 @@ export interface ServicioMesa {
   iniciarSesion(email: string, password: string): Promise<SesionOperador>;
   cerrarSesion(): Promise<void>;
   sesionActual(): Promise<SesionOperador | null>;
+  /**
+   * Desfase (ms) servidor − local para corregir el reloj de la consola. Nunca rechaza: si no se puede
+   * medir, devuelve 0 y el reloj usa la hora del equipo.
+   */
+  desfaseHoraServidorMs(): Promise<number>;
 }
 
 type Fila = Record<string, unknown>;
@@ -73,7 +79,10 @@ export function aSesion(email: string | undefined, appMetadata: Record<string, u
 const describir = (error: { readonly message: string; readonly code?: string }): string =>
   error.code === 'PGRST116' ? 'la fila no existe o la sesión no tiene rol de operador' : error.message;
 
-export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
+export function crearServicioMesa(
+  client: SupabaseClient,
+  medirDesfase: () => Promise<number> = () => Promise.resolve(0),
+): ServicioMesa {
   type Oyente = (cambio: CambioRealtime<{ readonly id: string }>) => void;
   const oyentes = new Map<string, Set<Oyente>>();
 
@@ -159,7 +168,29 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
       const user = data.session?.user;
       return user ? aSesion(user.email, user.app_metadata) : null;
     },
+    desfaseHoraServidorMs: medirDesfase,
   };
+}
+
+/**
+ * Mide el desfase con la cabecera `Date` de una petición ligera a la API REST (sirve aunque la respuesta
+ * sea 401). Si el navegador no expone la cabecera (CORS) o falla la red, devuelve 0.
+ */
+export async function medirDesfaseServidor(
+  url: string,
+  apiKey: string,
+  pedir: typeof fetch = fetch,
+  ahora: () => number = Date.now,
+): Promise<number> {
+  try {
+    const envio = ahora();
+    const respuesta = await pedir(`${url.replace(/\/+$/, '')}/rest/v1/`, { method: 'HEAD', headers: { apikey: apiKey } });
+    const recepcion = ahora();
+    const servidor = leerCabeceraDate(respuesta.headers.get('date'));
+    return servidor === null ? 0 : calcularDesfaseMs(servidor, envio, recepcion);
+  } catch {
+    return 0;
+  }
 }
 
 /** Crea el servicio desde variables de entorno; `null` si no están configuradas. */
@@ -167,5 +198,5 @@ export function crearServicioDesdeEntorno(): ServicioMesa | null {
   const url = import.meta.env['VITE_SUPABASE_URL'] as string | undefined;
   const key = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string | undefined;
   if (!url || !key) return null;
-  return crearServicioMesa(createClient(url, key));
+  return crearServicioMesa(createClient(url, key), () => medirDesfaseServidor(url, key));
 }
