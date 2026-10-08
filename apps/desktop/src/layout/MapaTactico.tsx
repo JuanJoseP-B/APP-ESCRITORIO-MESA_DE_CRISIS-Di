@@ -17,6 +17,7 @@ const CAPA_BASE = 'base';
 const FUENTE = 'incidentes';
 const FUENTE_ZONAS = 'zonas-publicas';
 const FUENTE_REPORTES = 'reportes';
+const FUENTE_UBICACION = 'llamada-ubicacion';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
@@ -68,6 +69,10 @@ interface Props {
   readonly modoTrazado: ModoTrazado;
   readonly onFigura: (figura: FiguraTrazada) => void;
   readonly onErrorDibujo: (mensaje: string) => void;
+  /** Ubicación de la llamada que se está registrando; se marca con una mira en el mapa. */
+  readonly ubicacionLlamada?: Coordenadas | null;
+  /** Si se pasa, un clic en el mapa fija la ubicación (y no selecciona incidentes). Solo con el formulario abierto. */
+  readonly onClicUbicacion?: (ubicacion: Coordenadas) => void;
 }
 
 export function MapaTactico({
@@ -82,6 +87,8 @@ export function MapaTactico({
   modoTrazado,
   onFigura,
   onErrorDibujo,
+  ubicacionLlamada = null,
+  onClicUbicacion,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -90,6 +97,8 @@ export function MapaTactico({
   alSeleccionar.current = onSeleccionar;
   const trazando = useRef(dibujando);
   trazando.current = dibujando;
+  const alUbicar = useRef(onClicUbicacion);
+  alUbicar.current = onClicUbicacion;
   // Sube cada vez que cambia el turno (crema/carbón) para repintar con los tokens del tema nuevo.
   const [versionTema, setVersionTema] = useState(0);
   useEffect(() => observarTema(() => setVersionTema((v) => v + 1)), []);
@@ -171,10 +180,38 @@ export function MapaTactico({
           'circle-stroke-width': ['case', ['get', 'seleccionado'], 4, 2],
         },
       });
+      m.addSource(FUENTE_UBICACION, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'llamada-ubicacion-anillo',
+        type: 'circle',
+        source: FUENTE_UBICACION,
+        paint: {
+          'circle-radius': 12,
+          'circle-opacity': 0,
+          'circle-stroke-color': leerToken('action-secondary'),
+          'circle-stroke-width': 3,
+        },
+      });
+      m.addLayer({
+        id: 'llamada-ubicacion-centro',
+        type: 'circle',
+        source: FUENTE_UBICACION,
+        paint: {
+          'circle-radius': 4,
+          'circle-color': leerToken('action-secondary'),
+          'circle-stroke-color': leerToken('map-marker-halo'),
+          'circle-stroke-width': 2,
+        },
+      });
+      m.on('click', (e) => {
+        // Con el formulario de llamada abierto el clic fija la ubicación; mientras se traza, son vértices.
+        if (trazando.current) return;
+        alUbicar.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+      });
       for (const capa of ['incidentes-relleno', 'incidentes-puntos']) {
         m.on('click', capa, (e) => {
-          // Mientras se traza, los clics son vértices: no deben cambiar el incidente seleccionado.
-          if (trazando.current) return;
+          // Mientras se traza, los clics son vértices; con el formulario abierto fijan la ubicación.
+          if (trazando.current || alUbicar.current) return;
           const id = e.features?.[0]?.properties?.['id'];
           if (typeof id === 'string') alSeleccionar.current(id);
         });
@@ -218,6 +255,29 @@ export function MapaTactico({
       ?.setData(colorearFeatures(reportesAFeatureCollection(reportes, reporteSeleccionadoId), leerToken) as never);
   }, [mapa, listo, reportes, reporteSeleccionadoId, versionTema]);
 
+  // Mira de la ubicación de la llamada en curso.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    const datos = ubicacionLlamada
+      ? {
+          type: 'FeatureCollection',
+          features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [ubicacionLlamada.lng, ubicacionLlamada.lat] } }],
+        }
+      : VACIO;
+    mapa.getSource<GeoJSONSource>(FUENTE_UBICACION)?.setData(datos as never);
+  }, [mapa, listo, ubicacionLlamada]);
+
+  // Cursor de mira mientras el clic fija la ubicación (el trazado pone el suyo).
+  const capturandoUbicacion = onClicUbicacion !== undefined;
+  useEffect(() => {
+    if (!mapa || !listo || dibujando || !capturandoUbicacion) return;
+    const lienzo = mapa.getCanvas();
+    lienzo.style.cursor = 'crosshair';
+    return () => {
+      lienzo.style.cursor = '';
+    };
+  }, [mapa, listo, dibujando, capturandoUbicacion]);
+
   // Los trazos de los marcadores dependen del tema: se reasignan al cambiar de turno.
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -225,6 +285,9 @@ export function MapaTactico({
     mapa.setPaintProperty('zonas-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('incidentes-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('reportes-puntos', 'circle-stroke-color', leerToken('status-warning'));
+    mapa.setPaintProperty('llamada-ubicacion-anillo', 'circle-stroke-color', leerToken('action-secondary'));
+    mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-color', leerToken('action-secondary'));
+    mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-stroke-color', halo);
   }, [mapa, listo, versionTema]);
 
   // Basemap desaturado: la pintura depende del turno activo.

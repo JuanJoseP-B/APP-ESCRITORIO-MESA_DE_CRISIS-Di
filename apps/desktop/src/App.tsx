@@ -9,24 +9,34 @@ import {
   useRecursosRealtime,
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
+import { useAccionesLlamada } from './hooks/useAccionesLlamada';
 import { useAtajos } from './hooks/useAtajos';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
 import { useSimulacion } from './hooks/useSimulacion';
-import type { Coordenadas, Llamada } from '@argos/shared';
+import type { Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
 import { dividirCola, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
+import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
+import { FormularioLlamada } from './layout/FormularioLlamada';
 import { GrillaTactica } from './layout/GrillaTactica';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearServicioDemo } from './services/servicioDemo';
 import { aplicarTema, temaGuardado, type Tema } from './tema';
+
+/** Formulario de llamada abierto: vacío (F2) o precargado desde una entrante. `clave` lo remonta al cambiar de llamada. */
+interface FormularioAbierto {
+  readonly clave: number;
+  readonly inicial: Borrador;
+  readonly llamadaId: string | null;
+}
 
 const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
@@ -55,7 +65,9 @@ function Mesa({
   const recursos = useRecursosRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
-  const [llamadaAbiertaId, setLlamadaAbiertaId] = useState<string | null>(null);
+  const [formulario, setFormulario] = useState<FormularioAbierto | null>(null);
+  const [ubicacionLlamada, setUbicacionLlamada] = useState<Coordenadas | null>(null);
+  const llamadaAbiertaId = formulario?.llamadaId ?? null;
   const [foco, setFoco] = useState<Coordenadas | null>(null);
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
@@ -103,18 +115,45 @@ function Mesa({
     },
     [guardarTrazado],
   );
-  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
-  const alAbrirLlamada = useCallback((l: Llamada) => {
-    setLlamadaAbiertaId(l.id);
-    setFoco({ lat: l.ubicacion.lat, lng: l.ubicacion.lng });
+  const accionesLlamada = useAccionesLlamada({
+    servicio,
+    alSeleccionar: setSeleccionadoId,
+    alAvisar: setAviso,
+    operador,
+    ahora: reloj?.ahora,
+  });
+  const abrirFormulario = useCallback(
+    (inicial: Borrador, llamadaId: string | null, ubicacion: Coordenadas | null) => {
+      setFormulario((actual) => ({ clave: (actual?.clave ?? 0) + 1, inicial, llamadaId }));
+      setUbicacionLlamada(ubicacion);
+      expandirDetalle();
+    },
+    [expandirDetalle],
+  );
+  const cerrarFormulario = useCallback(() => {
+    setFormulario(null);
+    setUbicacionLlamada(null);
   }, []);
+  const abrirLlamadaManual = useCallback(() => abrirFormulario(BORRADOR_VACIO, null, null), [abrirFormulario]);
+  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
+  const alAbrirLlamada = useCallback(
+    (l: Llamada) => {
+      abrirFormulario(borradorDesdeLlamada(l), l.id, l.ubicacion);
+      setFoco({ lat: l.ubicacion.lat, lng: l.ubicacion.lng });
+    },
+    [abrirFormulario],
+  );
   const { descartarReporte } = acciones;
   const alDescartarLlamada = useCallback(
     (l: Llamada) => {
-      setLlamadaAbiertaId((abierta) => (abierta === l.id ? null : abierta));
+      setFormulario((actual) => (actual?.llamadaId === l.id ? null : actual));
       descartarReporte(reporteDeLlamada(l));
     },
     [descartarReporte],
+  );
+  const alCrearIncidenteDesdeLlamada = useCallback(
+    (datos: NuevaLlamada) => accionesLlamada.crearIncidente(datos, formulario?.llamadaId ?? null),
+    [accionesLlamada, formulario?.llamadaId],
   );
   const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
   const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
@@ -125,6 +164,9 @@ function Mesa({
   useAtajos({
     j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
     k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
+    F2: () => {
+      if (!formulario) abrirLlamadaManual();
+    },
     Escape: () => setDibujando(false),
   });
 
@@ -145,6 +187,8 @@ function Mesa({
         modoTrazado={modoTrazado}
         onFigura={alFigura}
         onErrorDibujo={alErrorDibujo}
+        ubicacionLlamada={formulario ? ubicacionLlamada : null}
+        onClicUbicacion={formulario ? setUbicacionLlamada : undefined}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -230,15 +274,30 @@ function Mesa({
       }
       mapa={mapa}
       detalle={
-        <PanelDetalle
-          incidente={incidenteSeleccionado}
-          recursos={recursos.datos}
-          zonas={zonas.datos}
-          ahora={ahora}
-          onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
-          onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
-          onCambiarOcupacion={acciones.cambiarOcupacion}
-        />
+        <div className="relative min-h-0 flex-1">
+          <PanelDetalle
+            incidente={incidenteSeleccionado}
+            recursos={recursos.datos}
+            zonas={zonas.datos}
+            ahora={ahora}
+            onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
+            onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
+            onCambiarOcupacion={acciones.cambiarOcupacion}
+          />
+          {formulario && (
+            <div className="absolute inset-0 z-panel">
+              <FormularioLlamada
+                key={formulario.clave}
+                inicial={formulario.inicial}
+                entrante={formulario.llamadaId !== null}
+                ubicacion={ubicacionLlamada}
+                onUbicacionCambia={setUbicacionLlamada}
+                onCerrar={cerrarFormulario}
+                onCrearIncidente={alCrearIncidenteDesdeLlamada}
+              />
+            </div>
+          )}
+        </div>
       }
       tablero={
         <TableroUnidades

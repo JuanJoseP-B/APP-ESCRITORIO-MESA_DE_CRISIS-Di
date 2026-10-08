@@ -1,0 +1,3 @@
+/* ── SelectField / TextAreaField ─ comparten el aspecto de TextField ───────── */
+.ag-field__input--select { cursor: pointer; }
+.ag-field__input--area { height: auto; min-height: 96px; padding: var(--space-2) var(--space-3); resize: vertical; }
