@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
 import type { Anillo, Coordenadas, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
@@ -12,6 +12,7 @@ import {
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
+import { CAPAS_POR_DEFECTO, alternarCapa, zonasVisibles, type CapaMapa } from '../domain/capasMapa';
 import { anillosAFeatureCollection, type AnilloGenerado } from '../domain/perimetro';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
 import type { UnidadMapa } from '../domain/unidadesMapa';
@@ -142,6 +143,12 @@ export function MapaTactico({
   alUbicar.current = onClicUbicacion;
   // Sube cada vez que cambia el turno (crema/carbón) para repintar con los tokens del tema nuevo.
   const [versionTema, setVersionTema] = useState(0);
+  // Capas que el operador enciende o apaga desde la leyenda.
+  const [capas, setCapas] = useState(CAPAS_POR_DEFECTO);
+  const alternarCapaMapa = useCallback((capa: CapaMapa) => setCapas((actuales) => alternarCapa(actuales, capa)), []);
+  const unidadesVisibles = capas.unidades ? unidades : SIN_UNIDADES;
+  const rutasVisibles = capas.unidades ? rutas : SIN_RUTAS;
+  const anillosVisibles = capas.perimetros ? anillos : SIN_ANILLOS;
   useEffect(() => observarTema(() => setVersionTema((v) => v + 1)), []);
 
   // Inicializa el mapa una sola vez.
@@ -352,8 +359,10 @@ export function MapaTactico({
   // Sincroniza zonas públicas (refugios y figuras trazadas) y reportes pendientes.
   useEffect(() => {
     if (!mapa || !listo) return;
-    mapa.getSource<GeoJSONSource>(FUENTE_ZONAS)?.setData(colorearFeatures(zonasAFeatureCollection(zonas), leerToken) as never);
-  }, [mapa, listo, zonas, versionTema]);
+    mapa
+      .getSource<GeoJSONSource>(FUENTE_ZONAS)
+      ?.setData(colorearFeatures(zonasAFeatureCollection(zonasVisibles(zonas, capas)), leerToken) as never);
+  }, [mapa, listo, zonas, capas, versionTema]);
 
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -364,17 +373,17 @@ export function MapaTactico({
 
   useEffect(() => {
     if (!mapa || !listo) return;
-    mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutas, leerToken) as never);
-  }, [mapa, listo, rutas, versionTema]);
+    mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutasVisibles, leerToken) as never);
+  }, [mapa, listo, rutasVisibles, versionTema]);
 
   // La opacidad de cada anillo parte de la del tema activo, así que se recalcula al cambiar de turno.
   useEffect(() => {
     if (!mapa || !listo) return;
     mapa
       .getSource<GeoJSONSource>(FUENTE_ANILLOS)
-      ?.setData(colorearFeatures(anillosAFeatureCollection(anillos, opacidadZona()), leerToken) as never);
-  }, [mapa, listo, anillos, versionTema]);
-  useEtiquetasAnillos({ mapa, listo, anillos });
+      ?.setData(colorearFeatures(anillosAFeatureCollection(anillosVisibles, opacidadZona()), leerToken) as never);
+  }, [mapa, listo, anillosVisibles, versionTema]);
+  useEtiquetasAnillos({ mapa, listo, anillos: anillosVisibles });
 
   // Resalta la zona señalada en el análisis (las unidades se resaltan en su propio marcador).
   useEffect(() => {
@@ -468,7 +477,7 @@ export function MapaTactico({
   useMarcadoresUnidades({
     mapa,
     listo,
-    unidades,
+    unidades: unidadesVisibles,
     seleccionadaId: unidadSeleccionadaId,
     enAlerta: unidadesEnAlerta,
     resaltadaId: resaltado?.tipo === 'unidad' ? resaltado.id : null,
@@ -528,7 +537,7 @@ export function MapaTactico({
     <div className="relative h-full w-full">
       <div ref={contenedor} className="h-full w-full" data-testid="mapa" />
       <div className="absolute bottom-4 right-4 z-map-overlay">
-        <LeyendaMapa />
+        <LeyendaMapa capas={capas} onCambiarCapa={alternarCapaMapa} />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { CandidatoDuplicado, NuevaLlamada } from '@argos/shared';
+import { IdiomaProvider } from '../i18n/IdiomaProvider';
 import { crearServicioDemo } from '../services/servicioDemo';
 import type { ServicioMesa } from '../services/supabaseClient';
 import { useAccionesLlamada } from './useAccionesLlamada';
@@ -122,5 +123,23 @@ describe('useAccionesLlamada · vincular', () => {
     expect(alAvisar).toHaveBeenLastCalledWith('El incidente ya no está disponible');
     expect(alSeleccionar).not.toHaveBeenCalled();
     expect((await servicio.listarLlamadas()).find((l) => l.id === entrante.id)?.incidenteId).toBeNull();
+  });
+});
+
+describe('useAccionesLlamada · idioma', () => {
+  it('los avisos salen en el idioma activo', async () => {
+    const servicio = crearServicioDemo({ ahora: () => AHORA });
+    const incidentes = await servicio.listarIncidentes();
+    const alAvisar = vi.fn();
+    const { result } = renderHook(
+      () => useAccionesLlamada({ servicio, incidentes, alSeleccionar: vi.fn(), alAvisar, ahora: () => AHORA }),
+      { wrapper: ({ children }) => <IdiomaProvider inicial="en">{children}</IdiomaProvider> },
+    );
+
+    await result.current.vincular(DATOS, null, 'demo-1');
+    expect(alAvisar).toHaveBeenLastCalledWith(expect.stringMatching(/^Call linked to incident #/));
+
+    await result.current.vincular(DATOS, null, 'no-existe');
+    expect(alAvisar).toHaveBeenLastCalledWith('The incident is no longer available');
   });
 });

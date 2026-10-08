@@ -7,7 +7,7 @@ import type { UnidadMapa } from '../domain/unidadesMapa';
 import { ESTADO_RECURSO_UI } from './presentacion';
 import './MarcadorUnidad.css';
 
-const ICONO_TIPO: Readonly<Record<TipoRecurso, LucideIcon>> = {
+export const ICONO_TIPO_UNIDAD: Readonly<Record<TipoRecurso, LucideIcon>> = {
   Bomberos: Flame,
   Ambulancia: Ambulance,
   Policía: Shield,
@@ -29,7 +29,7 @@ export interface MarcadorUnidadProps {
  */
 export function MarcadorUnidad({ unidad, seleccionada, onSeleccionar, alerta = false, resaltada = false }: MarcadorUnidadProps) {
   const { t } = useTexto();
-  const Icono = ICONO_TIPO[unidad.tipo];
+  const Icono = ICONO_TIPO_UNIDAD[unidad.tipo];
   const estadoUi = ESTADO_RECURSO_UI[unidad.estado];
   const tipo = textoTipoRecurso(t, unidad.tipo);
   const estado = textoEstadoRecurso(t, unidad.estado);

@@ -3,6 +3,7 @@ import { agregarEvento, type CandidatoDuplicado, type EventoTimeline, type Incid
 import { codigoIncidente } from '../domain/cola';
 import { describirCandidato } from '../domain/duplicados';
 import { incidenteDesdeLlamada } from '../domain/llamadas';
+import { useTexto } from '../i18n/IdiomaProvider';
 import type { ServicioMesa } from '../services/supabaseClient';
 
 interface Opciones {
@@ -32,10 +33,10 @@ export interface AccionesLlamada {
   readonly vincular: (datos: NuevaLlamada, llamadaId: string | null, incidenteId: string) => Promise<boolean>;
 }
 
-const mensajeDe = (err: unknown): string => (err instanceof Error ? err.message : 'Error desconocido');
-
 /** Casos de uso del formulario de llamada; los errores se muestran como aviso y nunca rechazan. */
 export function useAccionesLlamada({ servicio, incidentes, alSeleccionar, alAvisar, operador, ahora = Date.now }: Opciones): AccionesLlamada {
+  const { t } = useTexto();
+  const mensajeDe = useCallback((err: unknown): string => (err instanceof Error ? err.message : t('aviso.errorDesconocido')), [t]);
   const vigentes = useRef(incidentes);
   useEffect(() => {
     vigentes.current = incidentes;
@@ -55,14 +56,14 @@ export function useAccionesLlamada({ servicio, incidentes, alSeleccionar, alAvis
         if (llamadaId) await servicio.vincularLlamada(llamadaId, incidente.id);
         else await servicio.registrarLlamada(datos, incidente.id);
         alSeleccionar(incidente.id);
-        alAvisar(`Incidente #${codigoIncidente(incidente.id)} creado desde la llamada`);
+        alAvisar(t('aviso.incidente.creado', { codigo: codigoIncidente(incidente.id) }));
         return true;
       } catch (err) {
         alAvisar(mensajeDe(err));
         return false;
       }
     },
-    [servicio, alSeleccionar, alAvisar, operador, ahora],
+    [servicio, alSeleccionar, alAvisar, operador, ahora, t, mensajeDe],
   );
 
   const vincular = useCallback<AccionesLlamada['vincular']>(
@@ -70,7 +71,7 @@ export function useAccionesLlamada({ servicio, incidentes, alSeleccionar, alAvis
       alAvisar(null);
       try {
         const incidente = vigentes.current.find((i) => i.id === incidenteId);
-        if (!incidente) throw new Error('El incidente ya no está disponible');
+        if (!incidente) throw new Error(t('aviso.incidente.noDisponible'));
         if (llamadaId) await servicio.vincularLlamada(llamadaId, incidenteId);
         else await servicio.registrarLlamada(datos, incidenteId);
         const quien = datos.reportante ? ` de ${datos.reportante}` : '';
@@ -78,14 +79,14 @@ export function useAccionesLlamada({ servicio, incidentes, alSeleccionar, alAvis
           timeline: agregarEvento(incidente.timeline, `Llamada ${datos.canal}${quien} vinculada al incidente (${datos.prioridad})`, new Date(ahora()), operador),
         });
         alSeleccionar(incidenteId);
-        alAvisar(`Llamada vinculada al incidente #${codigoIncidente(incidenteId)}`);
+        alAvisar(t('aviso.llamada.vinculada', { codigo: codigoIncidente(incidenteId) }));
         return true;
       } catch (err) {
         alAvisar(mensajeDe(err));
         return false;
       }
     },
-    [servicio, alSeleccionar, alAvisar, operador, ahora],
+    [servicio, alSeleccionar, alAvisar, operador, ahora, t, mensajeDe],
   );
 
   return useMemo(() => ({ crearIncidente, vincular }), [crearIncidente, vincular]);

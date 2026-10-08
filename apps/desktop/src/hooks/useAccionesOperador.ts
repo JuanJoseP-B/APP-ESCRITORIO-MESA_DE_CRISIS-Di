@@ -12,6 +12,7 @@ import {
   type ZonaPublica,
 } from '@argos/shared';
 import type { FiguraTrazada } from '../domain/trazado';
+import { useTexto } from '../i18n/IdiomaProvider';
 import type { ServicioMesa } from '../services/supabaseClient';
 
 interface Opciones {
@@ -43,8 +44,6 @@ export interface AccionesOperador {
   readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso, incidenteId?: string) => void;
 }
 
-const mensajeDe = (err: unknown): string => (err instanceof Error ? err.message : 'Error desconocido');
-
 /** Casos de uso del operador sobre el servicio; los errores se muestran como aviso. */
 export function useAccionesOperador({
   servicio,
@@ -54,6 +53,7 @@ export function useAccionesOperador({
   alAvisar,
   operador,
 }: Opciones): AccionesOperador {
+  const { t } = useTexto();
   const ultimo = useRef({ incidentes, seleccionadoId });
   useEffect(() => {
     ultimo.current = { incidentes, seleccionadoId };
@@ -61,6 +61,7 @@ export function useAccionesOperador({
 
   const ejecutar = useCallback(
     (tarea: () => Promise<unknown>, exito?: string) => {
+      const mensajeDe = (err: unknown): string => (err instanceof Error ? err.message : t('aviso.errorDesconocido'));
       alAvisar(null);
       new Promise<unknown>((resolver) => resolver(tarea())).then(
         () => {
@@ -69,7 +70,7 @@ export function useAccionesOperador({
         (err: unknown) => alAvisar(mensajeDe(err)),
       );
     },
-    [alAvisar],
+    [alAvisar, t],
   );
 
   const guardarTrazado = useCallback(
@@ -83,14 +84,14 @@ export function useAccionesOperador({
               geometria: figura,
               timeline: agregarEvento(incidente.timeline, 'Zona de riesgo trazada por operador', new Date(), operador),
             }),
-          `Zona de riesgo guardada en "${incidente.titulo}" (${figura.coordinates[0]?.length ?? 0} puntos)`,
+          t('aviso.zonaRiesgo.guardada', { titulo: incidente.titulo, n: figura.coordinates[0]?.length ?? 0 }),
         );
         return;
       }
       const zona = zonaDesdeTrazado(figura);
-      ejecutar(() => servicio.crearZonaPublica(zona), `"${zona.nombre}" guardado en zonas públicas`);
+      ejecutar(() => servicio.crearZonaPublica(zona), t('aviso.zonaPublica.guardada', { nombre: zona.nombre }));
     },
-    [servicio, ejecutar, operador],
+    [servicio, ejecutar, operador, t],
   );
 
   return useMemo<AccionesOperador>(
