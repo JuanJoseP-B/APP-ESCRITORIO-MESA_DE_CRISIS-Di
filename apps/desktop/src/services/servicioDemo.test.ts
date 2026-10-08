@@ -143,19 +143,19 @@ describe('servicioDemo: ciclo de vida, eventos y llamadas', () => {
 
   it('cancelar un despacho deja el evento con el incidente liberado y devuelve la unidad a su base', async () => {
     const servicio = servicioFijo();
-    await servicio.cambiarEstadoRecurso('demo-rec-4', 'ASIGNADO', 'demo-2');
+    await servicio.cambiarEstadoRecurso('demo-rec-4', 'ASIGNADO', 'demo-1');
     const liberada = await servicio.cambiarEstadoRecurso('demo-rec-4', 'DISPONIBLE', null);
     expect(liberada).toMatchObject({ incidente_asignado_id: null, ubicacion: liberada.base });
     const ultimo = (await servicio.listarEventosRecurso()).at(-1);
-    expect(ultimo).toMatchObject({ desde: 'ASIGNADO', hacia: 'DISPONIBLE', incidenteId: 'demo-2' });
+    expect(ultimo).toMatchObject({ desde: 'ASIGNADO', hacia: 'DISPONIBLE', incidenteId: 'demo-1' });
   });
 
   it('al llegar a la escena la unidad toma la ubicación del incidente', async () => {
     const servicio = servicioFijo();
-    await servicio.cambiarEstadoRecurso('demo-rec-4', 'ASIGNADO', 'demo-2');
+    await servicio.cambiarEstadoRecurso('demo-rec-4', 'ASIGNADO', 'demo-1');
     await servicio.cambiarEstadoRecurso('demo-rec-4', 'EN_RUTA', null);
     const enEscena = await servicio.cambiarEstadoRecurso('demo-rec-4', 'EN_ESCENA', null);
-    expect(enEscena.ubicacion).toEqual({ lng: -70.61, lat: -33.43 });
+    expect(enEscena.ubicacion).toEqual({ lng: -77.2811, lat: 1.2136 });
   });
 
   it('las unidades que arrancan ocupadas traen su historia respecto a la hora del servicio', async () => {

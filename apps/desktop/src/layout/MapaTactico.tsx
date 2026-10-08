@@ -17,7 +17,7 @@ const CAPA_BASE = 'base';
 const FUENTE = 'incidentes';
 const FUENTE_ZONAS = 'zonas-publicas';
 const FUENTE_REPORTES = 'reportes';
-const CENTRO_INICIAL: [number, number] = [-70.65, -33.45];
+const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
 

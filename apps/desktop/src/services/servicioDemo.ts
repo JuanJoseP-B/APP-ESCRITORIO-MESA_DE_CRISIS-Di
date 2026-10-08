@@ -1,6 +1,7 @@
 import {
   ajustarOcupacion,
   transicionarRecurso,
+  type Coordenadas,
   type EventoRecurso,
   type EventoTimeline,
   type Incidente,
@@ -13,61 +14,48 @@ import type { CambioRealtime } from '../domain/realtime';
 import { ubicacionDeIncidente } from '../domain/geo';
 import type { ServicioMesa } from './supabaseClient';
 
-const incidentes: readonly Incidente[] = [
-  {
-    id: 'demo-1',
-    titulo: 'Incendio forestal cerro San Cristóbal',
-    nivel_criticidad: 'Crítico',
-    prioridad: 'P1',
-    tipo: 'INCENDIO',
-    estado: 'Abierto',
-    geometria: {
-      type: 'Polygon',
-      coordinates: [
-        [
-          [-70.64, -33.42],
-          [-70.62, -33.42],
-          [-70.62, -33.4],
-          [-70.64, -33.4],
-          [-70.64, -33.42],
-        ],
+const hace = (ahoraMs: number, min: number): string => new Date(ahoraMs - min * 60_000).toISOString();
+
+/** Un incidente en curso, el mismo del `seed.sql` (Pasto, Nariño). Las horas se refieren a la del servicio. */
+function incidentesIniciales(ahoraMs: number): readonly Incidente[] {
+  return [
+    {
+      id: 'demo-1',
+      titulo: 'Fuga de gas en sector',
+      nivel_criticidad: 'Crítico',
+      prioridad: 'P1',
+      tipo: 'FUGA_GAS',
+      estado: 'Abierto',
+      geometria: { type: 'Point', coordinates: [-77.2811, 1.2136] },
+      timeline: [
+        { timestamp: hace(ahoraMs, 9), creado_en: hace(ahoraMs, 9), descripcion: 'Incidente registrado' },
+        { timestamp: hace(ahoraMs, 7), creado_en: hace(ahoraMs, 7), descripcion: 'Validado por operador' },
       ],
+      creado_en: hace(ahoraMs, 9),
     },
-    timeline: [
-      { timestamp: '2026-10-02T08:05:00Z', descripcion: 'Reporte ciudadano recibido' },
-      { timestamp: '2026-10-02T08:12:00Z', descripcion: 'Validado por operador' },
-    ],
-  },
-  {
-    id: 'demo-2',
-    titulo: 'Bloqueo de vía Av. Providencia',
-    nivel_criticidad: 'Medio',
-    prioridad: 'P2',
-    tipo: 'VIA_BLOQUEADA',
-    estado: 'Contenido',
-    geometria: { type: 'Point', coordinates: [-70.61, -33.43] },
-    timeline: [{ timestamp: '2026-10-02T07:40:00Z', descripcion: 'Corte de tránsito' }],
-  },
-];
+  ];
+}
 
 const OPERADOR_DEMO = 'demo-op';
 
-const llamadasIniciales: readonly Llamada[] = [
-  {
-    id: 'demo-r1',
-    canal: '123',
-    tipo: 'INCENDIO',
-    prioridad: 'P2',
-    ubicacion: { lat: -33.45, lng: -70.66 },
-    narrativa: 'Humo visible desde una bodega, sin confirmar.',
-    reportante: null,
-    callback: null,
-    incidenteId: null,
-    estadoValidacion: 'No confirmado',
-    operadorId: OPERADOR_DEMO,
-    creadoEn: '2026-10-02T08:20:00Z',
-  },
-];
+function llamadasIniciales(ahoraMs: number): readonly Llamada[] {
+  return [
+    {
+      id: 'demo-r1',
+      canal: 'VHF',
+      tipo: 'INCENDIO',
+      prioridad: 'P2',
+      ubicacion: { lat: 1.2162, lng: -77.2798 },
+      narrativa: 'Humo visible desde una bodega, sin confirmar.',
+      reportante: null,
+      callback: null,
+      incidenteId: null,
+      estadoValidacion: 'No confirmado',
+      operadorId: OPERADOR_DEMO,
+      creadoEn: hace(ahoraMs, 2),
+    },
+  ];
+}
 
 /** Vista de una llamada con la forma de `Reporte`, mientras la bandeja siga consumiendo ese tipo. */
 const aReporte = (l: Llamada): Reporte => ({
@@ -80,64 +68,39 @@ const aReporte = (l: Llamada): Reporte => ({
   creado_en: l.creadoEn,
 });
 
-/** Posiciones de ejemplo alrededor del incidente `demo-1` (Santiago, como el resto del demo). */
+const unidad = (
+  n: number,
+  etiqueta: string,
+  tipo: Recurso['tipo'],
+  estado: Recurso['estado_actual'],
+  base: Coordenadas,
+  incidenteId: string | null = null,
+  ubicacion: Coordenadas = base,
+): Recurso => ({ id: `demo-rec-${n}`, etiqueta, tipo, estado_actual: estado, incidente_asignado_id: incidenteId, base, ubicacion });
+
+/** Mismas unidades y bases que el `seed.sql` (más la M12); la M11 ya está en la escena del incidente. */
 const recursosIniciales: readonly Recurso[] = [
-  {
-    id: 'demo-rec-1',
-    tipo: 'Bomberos',
-    estado_actual: 'DISPONIBLE',
-    incidente_asignado_id: null,
-    base: { lat: -33.425, lng: -70.615 },
-    ubicacion: { lat: -33.425, lng: -70.615 },
-  },
-  {
-    id: 'demo-rec-2',
-    tipo: 'Bomberos',
-    estado_actual: 'ASIGNADO',
-    incidente_asignado_id: 'demo-1',
-    base: { lat: -33.436, lng: -70.634 },
-    ubicacion: { lat: -33.436, lng: -70.634 },
-  },
-  {
-    id: 'demo-rec-3',
-    tipo: 'Ambulancia',
-    estado_actual: 'EN_ESCENA',
-    incidente_asignado_id: 'demo-1',
-    base: { lat: -33.4405, lng: -70.6506 },
-    ubicacion: { lat: -33.41, lng: -70.63 },
-  },
-  {
-    id: 'demo-rec-4',
-    tipo: 'Policía',
-    estado_actual: 'DISPONIBLE',
-    incidente_asignado_id: null,
-    base: { lat: -33.432, lng: -70.645 },
-    ubicacion: { lat: -33.432, lng: -70.645 },
-  },
-  {
-    id: 'demo-rec-5',
-    tipo: 'Ambulancia',
-    estado_actual: 'INOPERATIVO',
-    incidente_asignado_id: null,
-    base: { lat: -33.447, lng: -70.601 },
-    ubicacion: { lat: -33.447, lng: -70.601 },
-  },
+  unidad(1, 'U01', 'Bomberos', 'DISPONIBLE', { lat: 1.2142, lng: -77.279 }),
+  unidad(2, 'U02', 'Bomberos', 'ASIGNADO', { lat: 1.2105, lng: -77.2838 }, 'demo-1'),
+  unidad(3, 'M11', 'Ambulancia', 'EN_ESCENA', { lat: 1.2168, lng: -77.2815 }, 'demo-1', { lat: 1.2136, lng: -77.2811 }),
+  unidad(4, 'P01', 'Policía', 'DISPONIBLE', { lat: 1.2128, lng: -77.2805 }),
+  unidad(5, 'M10', 'Ambulancia', 'INOPERATIVO', { lat: 1.212, lng: -77.276 }),
+  unidad(6, 'M12', 'Ambulancia', 'DISPONIBLE', { lat: 1.2184, lng: -77.2778 }),
 ];
 
 /** Historia de los recursos que arrancan ocupados, referida a la hora del servicio para que sus SLA tengan sentido. */
 function eventosIniciales(ahoraMs: number): readonly EventoRecurso[] {
-  const hace = (min: number): string => new Date(ahoraMs - min * 60_000).toISOString();
   const evento = (
     n: number,
     recursoId: string,
     desde: EventoRecurso['desde'],
     hacia: EventoRecurso['hacia'],
     min: number,
-  ): EventoRecurso => ({ id: `demo-ev${n}`, recursoId, incidenteId: 'demo-1', desde, hacia, origen: 'MANUAL', creadoEn: hace(min) });
+  ): EventoRecurso => ({ id: `demo-ev${n}`, recursoId, incidenteId: 'demo-1', desde, hacia, origen: 'MANUAL', creadoEn: hace(ahoraMs, min) });
   return [
-    evento(1, 'demo-rec-3', 'DISPONIBLE', 'ASIGNADO', 14),
-    evento(2, 'demo-rec-3', 'ASIGNADO', 'EN_RUTA', 12),
-    evento(3, 'demo-rec-3', 'EN_RUTA', 'EN_ESCENA', 8),
+    evento(1, 'demo-rec-3', 'DISPONIBLE', 'ASIGNADO', 7),
+    evento(2, 'demo-rec-3', 'ASIGNADO', 'EN_RUTA', 6),
+    evento(3, 'demo-rec-3', 'EN_RUTA', 'EN_ESCENA', 3),
     evento(4, 'demo-rec-2', 'DISPONIBLE', 'ASIGNADO', 1),
   ];
 }
@@ -147,7 +110,7 @@ const zonasIniciales: readonly ZonaPublica[] = [
     id: 'demo-z1',
     tipo: 'Refugio',
     nombre: 'Coliseo Municipal',
-    geometria: { type: 'Point', coordinates: [-70.65, -33.44] },
+    geometria: { type: 'Point', coordinates: [-77.283, 1.215] },
     capacidad_actual: 45,
     capacidad_maxima: 200,
   },
@@ -155,7 +118,7 @@ const zonasIniciales: readonly ZonaPublica[] = [
     id: 'demo-z2',
     tipo: 'Refugio',
     nombre: 'Colegio Central',
-    geometria: { type: 'Point', coordinates: [-70.63, -33.41] },
+    geometria: { type: 'Point', coordinates: [-77.279, 1.211] },
     capacidad_actual: 10,
     capacidad_maxima: 120,
   },
@@ -199,8 +162,8 @@ export interface OpcionesDemo {
 
 /** Datos locales de ejemplo para desarrollar la UI sin backend; no hace consultas de red. */
 export function crearServicioDemo({ ahora = Date.now }: OpcionesDemo = {}): ServicioMesa {
-  const tIncidentes = crearTabla<Incidente>(incidentes);
-  const tLlamadas = crearTabla<Llamada>(llamadasIniciales);
+  const tIncidentes = crearTabla<Incidente>(incidentesIniciales(ahora()));
+  const tLlamadas = crearTabla<Llamada>(llamadasIniciales(ahora()));
   const tRecursos = crearTabla<Recurso>(recursosIniciales);
   const tEventos = crearTabla<EventoRecurso>(eventosIniciales(ahora()));
   const tZonas = crearTabla<ZonaPublica>(zonasIniciales);

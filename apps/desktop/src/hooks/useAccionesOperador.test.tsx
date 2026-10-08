@@ -73,7 +73,7 @@ describe('useAccionesOperador', () => {
 
     await waitFor(() => expect(alAvisar).toHaveBeenLastCalledWith(expect.stringContaining('guardado en zonas públicas')));
     expect((await servicio.listarZonasPublicas()).at(-1)?.geometria).toEqual(linea);
-    expect((await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.geometria.type).toBe('Polygon');
+    expect((await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.geometria.type).toBe('Point');
   });
 
   it('cambia la ocupación de un refugio enviando el delta al servicio', async () => {
