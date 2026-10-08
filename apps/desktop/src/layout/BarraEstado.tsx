@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react';
 import { Button, Glyph, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
 import { useTexto } from '../i18n/IdiomaProvider';
@@ -22,8 +23,8 @@ export interface BarraEstadoProps {
   hora: number;
   /** Zona IANA; por defecto la del sistema. */
   zona?: string;
+  /** Tema que se pinta: de él sale el turno (crema = día, carbón = noche). */
   turno: Tema;
-  onAlternarTurno: () => void;
   operador: string;
   enlace: EstadoEnlace;
   /** Unidades con SLA vencido; si falta, el contador no se muestra (llega con la lógica CAD). */
@@ -33,6 +34,7 @@ export interface BarraEstadoProps {
   onFiltrarSla?: () => void;
   simulacion?: SimulacionBarra;
   onCerrarSesion?: () => void;
+  onAbrirAjustes?: () => void;
 }
 
 const ENLACE_UI: Record<EstadoEnlace, { shape: FormaGlifo; clase: string }> = {
@@ -46,7 +48,6 @@ export function BarraEstado({
   hora,
   zona,
   turno,
-  onAlternarTurno,
   operador,
   enlace,
   slaVencidos,
@@ -54,6 +55,7 @@ export function BarraEstado({
   onFiltrarSla,
   simulacion,
   onCerrarSesion,
+  onAbrirAjustes,
 }: BarraEstadoProps) {
   const { t, idioma } = useTexto();
   const estadoEnlace = ENLACE_UI[enlace];
@@ -137,9 +139,19 @@ export function BarraEstado({
         </div>
       )}
       <span className="ml-auto flex items-center gap-2">
-        <Button size="sm" variant="ghost" onClick={onAlternarTurno}>
-          {turno === 'carbon' ? t('barra.turno.aDia') : t('barra.turno.aNoche')}
-        </Button>
+        {onAbrirAjustes && (
+          <Button
+            size="sm"
+            variant="ghost"
+            square
+            aria-label={t('barra.ajustes')}
+            aria-haspopup="dialog"
+            title={t('barra.ajustes')}
+            onClick={onAbrirAjustes}
+          >
+            <Settings aria-hidden="true" size={16} />
+          </Button>
+        )}
         {onCerrarSesion && (
           <Button size="sm" variant="ghost" onClick={onCerrarSesion}>
             {t('barra.salir')}

@@ -1,0 +1,16 @@
+/* ── Switch ─────────────────────────────────────────────────────────────── */
+.ag-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.ag-switch__texto { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.ag-switch__label { font-family: var(--font-body); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 500; color: var(--input-label); }
+.ag-switch__hint { font-family: var(--font-body); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--input-hint); }
+.ag-switch__control { display: inline-flex; align-items: center; gap: var(--space-2); flex: none; min-width: 112px; height: var(--control-md); padding: 0 var(--space-2); background: transparent; color: var(--text-primary); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ag-switch__control:focus { outline: none; }
+.ag-switch__control:focus-visible { box-shadow: var(--focus-ring); }
+.ag-switch__track { position: relative; display: inline-block; flex: none; width: 36px; height: 20px; background: var(--surface-sunken); border: var(--border-hairline) solid var(--border-strong); border-radius: var(--radius-xs); transition: background-color 80ms linear; }
+.ag-switch__thumb { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--border-strong); border-radius: var(--radius-none); transition: transform 80ms linear; }
+.ag-switch__control[aria-checked="true"] .ag-switch__track { background: var(--button-secondary-bg); }
+.ag-switch__control[aria-checked="true"] .ag-switch__thumb { background: var(--button-secondary-fg); transform: translateX(16px); }
+.ag-switch__state { font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.ag-switch--disabled .ag-switch__control { cursor: not-allowed; color: var(--text-disabled); }
+.ag-switch--disabled .ag-switch__track { background: var(--button-disabled-bg); border-color: var(--button-disabled-bg); }
+.ag-switch--disabled .ag-switch__thumb { background: var(--button-disabled-fg); }

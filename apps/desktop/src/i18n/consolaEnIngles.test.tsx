@@ -48,13 +48,14 @@ const llamada: Llamada = {
 describe('la consola en inglés', () => {
   it('la barra de estado', () => {
     enIngles(
-      <BarraEstado hora={AHORA} zona="UTC" turno="carbon" onAlternarTurno={vi.fn()} operador="op@argos.test" enlace="EN_VIVO" entrantes={2} onCerrarSesion={vi.fn()} />,
+      <BarraEstado hora={AHORA} zona="UTC" turno="carbon" operador="op@argos.test" enlace="EN_VIVO" entrantes={2} onCerrarSesion={vi.fn()} onAbrirAjustes={vi.fn()} />,
     );
     expect(screen.getByRole('banner', { name: 'Status bar' })).toBeTruthy();
     expect(screen.getByText(/Night shift/)).toBeTruthy();
     expect(screen.getByRole('status', { name: 'Link: Live' })).toBeTruthy();
     expect(screen.getByRole('status', { name: '2 incoming calls' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
   });
 
   it('la cola y la bandeja de entrantes', () => {

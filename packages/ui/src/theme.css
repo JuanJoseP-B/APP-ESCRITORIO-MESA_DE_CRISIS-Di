@@ -161,6 +161,9 @@
 @utility z-popover {
   z-index: var(--z-popover);
 }
+@utility z-modal {
+  z-index: var(--z-modal);
+}
 
 @layer base {
   html {

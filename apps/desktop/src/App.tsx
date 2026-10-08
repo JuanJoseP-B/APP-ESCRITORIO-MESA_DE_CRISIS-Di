@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@argos/ui';
 import { Login } from './components/Login';
 import { MapaTactico } from './layout/MapaTactico';
+import { PanelAjustes } from './layout/PanelAjustes';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
   useIncidentesRealtime,
@@ -73,8 +74,10 @@ function Mesa({
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
-  const { temaEfectivo, fijar } = usePreferencias();
-  const alternarTema = useCallback(() => fijar({ tema: temaEfectivo === 'crema' ? 'carbon' : 'crema' }), [fijar, temaEfectivo]);
+  const { temaEfectivo } = usePreferencias();
+  const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
+  const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
+  const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
 
   const [desfaseMs, setDesfaseMs] = useState(0);
   useEffect(() => {
@@ -176,7 +179,7 @@ function Mesa({
       if (!formulario) abrirLlamadaManual();
     },
     Escape: () => setDibujando(false),
-  });
+  }, !ajustesAbiertos);
 
   const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
@@ -241,87 +244,90 @@ function Mesa({
   );
 
   return (
-    <GrillaTactica
-      panelCola={panelCola}
-      panelDetalle={panelDetalle}
-      barra={
-        <BarraEstado
-          hora={ahora}
-          turno={temaEfectivo}
-          onAlternarTurno={alternarTema}
-          operador={operador}
-          enlace={enlace}
-          entrantes={totalEntrantes}
-          simulacion={
-            simulacion && onReiniciarSimulacion
-              ? {
-                  reproduciendo: simulacion.reproduciendo,
-                  velocidad: simulacion.velocidad,
-                  tSeg: simulacion.tSeg,
-                  duracionSeg: simulacion.duracionSeg,
-                  onAlternar: simulacion.alternar,
-                  onVelocidad: simulacion.fijarVelocidad,
-                  onReiniciar: onReiniciarSimulacion,
-                }
-              : undefined
-          }
-          onCerrarSesion={onCerrarSesion}
-        />
-      }
-      cola={
-        <ColaIncidentes
-          incidentes={incidentes.datos}
-          recursos={recursos.datos}
-          llamadas={llamadas.datos}
-          ahora={ahora}
-          seleccionadoId={seleccionadoId}
-          onSeleccionar={setSeleccionadoId}
-          llamadaAbiertaId={llamadaAbiertaId}
-          onAbrirLlamada={alAbrirLlamada}
-          onDescartarLlamada={alDescartarLlamada}
-        />
-      }
-      mapa={mapa}
-      detalle={
-        <div className="relative min-h-0 flex-1">
-          <PanelDetalle
-            incidente={incidenteSeleccionado}
-            recursos={recursos.datos}
-            zonas={zonas.datos}
-            ahora={ahora}
-            onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
-            onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
-            onCambiarOcupacion={acciones.cambiarOcupacion}
+    <>
+      <GrillaTactica
+        panelCola={panelCola}
+        panelDetalle={panelDetalle}
+        barra={
+          <BarraEstado
+            hora={ahora}
+            turno={temaEfectivo}
+            operador={operador}
+            enlace={enlace}
+            entrantes={totalEntrantes}
+            simulacion={
+              simulacion && onReiniciarSimulacion
+                ? {
+                    reproduciendo: simulacion.reproduciendo,
+                    velocidad: simulacion.velocidad,
+                    tSeg: simulacion.tSeg,
+                    duracionSeg: simulacion.duracionSeg,
+                    onAlternar: simulacion.alternar,
+                    onVelocidad: simulacion.fijarVelocidad,
+                    onReiniciar: onReiniciarSimulacion,
+                  }
+                : undefined
+            }
+            onCerrarSesion={onCerrarSesion}
+            onAbrirAjustes={abrirAjustes}
           />
-          {formulario && (
-            <div className="absolute inset-0 z-panel">
-              <FormularioLlamada
-                key={formulario.clave}
-                inicial={formulario.inicial}
-                entrante={formulario.llamadaId !== null}
-                ubicacion={ubicacionLlamada}
-                onUbicacionCambia={setUbicacionLlamada}
-                incidentes={incidentes.datos}
-                ahora={ahora}
-                onCerrar={cerrarFormulario}
-                onCrearIncidente={alCrearIncidenteDesdeLlamada}
-                onVincular={alVincularLlamada}
-                onResaltarIncidente={setResaltadoId}
-              />
-            </div>
-          )}
-        </div>
-      }
-      tablero={
-        <TableroUnidades
-          recursos={recursos.datos}
-          incidenteSeleccionadoId={seleccionadoId}
-          onSeleccionarUnidad={(unidad) => {
-            if (unidad.incidente_asignado_id) setSeleccionadoId(unidad.incidente_asignado_id);
-          }}
-        />
-      }
-    />
+        }
+        cola={
+          <ColaIncidentes
+            incidentes={incidentes.datos}
+            recursos={recursos.datos}
+            llamadas={llamadas.datos}
+            ahora={ahora}
+            seleccionadoId={seleccionadoId}
+            onSeleccionar={setSeleccionadoId}
+            llamadaAbiertaId={llamadaAbiertaId}
+            onAbrirLlamada={alAbrirLlamada}
+            onDescartarLlamada={alDescartarLlamada}
+          />
+        }
+        mapa={mapa}
+        detalle={
+          <div className="relative min-h-0 flex-1">
+            <PanelDetalle
+              incidente={incidenteSeleccionado}
+              recursos={recursos.datos}
+              zonas={zonas.datos}
+              ahora={ahora}
+              onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
+              onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
+              onCambiarOcupacion={acciones.cambiarOcupacion}
+            />
+            {formulario && (
+              <div className="absolute inset-0 z-panel">
+                <FormularioLlamada
+                  key={formulario.clave}
+                  inicial={formulario.inicial}
+                  entrante={formulario.llamadaId !== null}
+                  ubicacion={ubicacionLlamada}
+                  onUbicacionCambia={setUbicacionLlamada}
+                  incidentes={incidentes.datos}
+                  ahora={ahora}
+                  onCerrar={cerrarFormulario}
+                  onCrearIncidente={alCrearIncidenteDesdeLlamada}
+                  onVincular={alVincularLlamada}
+                  onResaltarIncidente={setResaltadoId}
+                />
+              </div>
+            )}
+          </div>
+        }
+        tablero={
+          <TableroUnidades
+            recursos={recursos.datos}
+            incidenteSeleccionadoId={seleccionadoId}
+            onSeleccionarUnidad={(unidad) => {
+              if (unidad.incidente_asignado_id) setSeleccionadoId(unidad.incidente_asignado_id);
+            }}
+          />
+        }
+      />
+      {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} />}
+    </>
   );
 }
 

@@ -11,7 +11,6 @@ const base: BarraEstadoProps = {
   hora: HORA,
   zona: 'America/Bogota',
   turno: 'carbon',
-  onAlternarTurno: vi.fn(),
   operador: 'operador@argos.test',
   enlace: 'EN_VIVO',
 };
@@ -29,7 +28,26 @@ describe('BarraEstado', () => {
   it('el turno de día aparece con el tema crema', () => {
     render(<BarraEstado {...base} turno="crema" />);
     expect(screen.getByText(/Turno Día/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Turno noche' })).toBeTruthy();
+  });
+
+  it('el tema ya no se cambia desde la barra', () => {
+    render(<BarraEstado {...base} />);
+    expect(screen.queryByRole('button', { name: /turno/i })).toBeNull();
+  });
+
+  it('el engranaje abre los ajustes, con nombre accesible y tooltip', async () => {
+    const abrir = vi.fn();
+    render(<BarraEstado {...base} onAbrirAjustes={abrir} />);
+    const boton = screen.getByRole('button', { name: 'Ajustes' });
+    expect(boton.getAttribute('title')).toBe('Ajustes');
+    expect(boton.querySelector('svg')).not.toBeNull();
+    await userEvent.click(boton);
+    expect(abrir).toHaveBeenCalledTimes(1);
+  });
+
+  it('sin onAbrirAjustes no hay engranaje', () => {
+    render(<BarraEstado {...base} />);
+    expect(screen.queryByRole('button', { name: 'Ajustes' })).toBeNull();
   });
 
   it.each([
@@ -44,13 +62,10 @@ describe('BarraEstado', () => {
     expect(container.querySelector(`.ag-glyph--${forma}`)).not.toBeNull();
   });
 
-  it('alterna el turno y cierra sesión', async () => {
-    const alternar = vi.fn();
+  it('cierra sesión', async () => {
     const salir = vi.fn();
-    render(<BarraEstado {...base} onAlternarTurno={alternar} onCerrarSesion={salir} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Turno día' }));
+    render(<BarraEstado {...base} onCerrarSesion={salir} />);
     await userEvent.click(screen.getByRole('button', { name: 'Salir' }));
-    expect(alternar).toHaveBeenCalledTimes(1);
     expect(salir).toHaveBeenCalledTimes(1);
   });
 
