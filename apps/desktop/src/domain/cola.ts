@@ -6,23 +6,27 @@ const aMs = (valor: unknown): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
+/** Instante de cada evento: `creado_en` (hora del servidor) y, si falta, `timestamp` (filas antiguas). */
 const marcasDeTiempo = (i: Pick<Incidente, 'timeline'>): number[] =>
   (Array.isArray(i.timeline) ? i.timeline : []).flatMap((e) => {
-    const ms = aMs((e as { timestamp?: unknown } | null)?.timestamp);
+    const evento = e as { creado_en?: unknown; timestamp?: unknown } | null;
+    const ms = aMs(evento?.creado_en) ?? aMs(evento?.timestamp);
     return ms === null ? [] : [ms];
   });
 
 /**
- * Cuándo se abrió el incidente (ms epoch): su evento más antiguo. `incidentes` no tiene `creado_en`
- * (llega con la migración 0006), así que se deriva de la línea de tiempo; `null` si no hay fechas.
+ * Cuándo se abrió el incidente (ms epoch): su `creado_en` (hora del servidor, migración 0006) y, si falta,
+ * el evento más antiguo de la línea de tiempo; `null` si no hay fechas.
  */
-export function aperturaDeIncidente(i: Pick<Incidente, 'timeline'>): number | null {
+export function aperturaDeIncidente(i: Pick<Incidente, 'timeline' | 'creado_en'>): number | null {
+  const creado = aMs(i.creado_en);
+  if (creado !== null) return creado;
   const marcas = marcasDeTiempo(i);
   return marcas.length === 0 ? null : Math.min(...marcas);
 }
 
 /** Minutos enteros que lleva abierto; `null` si no se conoce la apertura. Nunca negativo. */
-export function minutosAbierto(i: Pick<Incidente, 'timeline'>, ahoraMs: number): number | null {
+export function minutosAbierto(i: Pick<Incidente, 'timeline' | 'creado_en'>, ahoraMs: number): number | null {
   const apertura = aperturaDeIncidente(i);
   return apertura === null ? null : Math.max(0, Math.floor((ahoraMs - apertura) / 60_000));
 }

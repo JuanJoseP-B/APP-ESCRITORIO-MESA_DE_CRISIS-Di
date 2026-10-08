@@ -115,6 +115,39 @@ describe('apertura y tiempo abierto', () => {
     expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:29:00Z'));
   });
 
+  it('el creado_en del incidente manda sobre su línea de tiempo', () => {
+    const i: Incidente = {
+      ...inc('x', 'Bajo', '2026-10-07T10:00:00Z'),
+      creado_en: '2026-10-07T10:05:00Z',
+    };
+    expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:05:00Z'));
+  });
+
+  it('en la línea de tiempo manda el creado_en del evento y timestamp es el respaldo', () => {
+    const i: Incidente = {
+      ...inc('x', 'Bajo', null),
+      timeline: [
+        // El reloj del equipo iba 1 h atrasado: gana la hora del servidor.
+        { timestamp: '2026-10-07T09:00:00Z', creado_en: '2026-10-07T10:00:00Z', descripcion: 'a' },
+        { timestamp: '2026-10-07T10:30:00Z', descripcion: 'fila antigua' },
+      ],
+    };
+    expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:00:00Z'));
+  });
+
+  it('la cola ordena por creado_en del servidor, no por el reloj del equipo', () => {
+    const conCreado = (id: string, creado: string, timestamp: string): Incidente => ({
+      ...inc(id, 'Medio', null),
+      creado_en: creado,
+      timeline: [{ timestamp, descripcion: 'Registrado' }],
+    });
+    const cola = ordenarCola([
+      conCreado('b', '2026-10-07T10:00:00Z', '2026-10-07T08:00:00Z'),
+      conCreado('a', '2026-10-07T10:10:00Z', '2026-10-07T07:00:00Z'),
+    ]);
+    expect(ids(cola)).toEqual(['b', 'a']);
+  });
+
   it('sin fechas válidas no hay apertura ni minutos', () => {
     expect(aperturaDeIncidente(inc('x', 'Bajo', null))).toBeNull();
     expect(minutosAbierto(inc('x', 'Bajo', null), Date.now())).toBeNull();

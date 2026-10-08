@@ -35,7 +35,7 @@ export function formatearHora(valor: unknown, zona?: string): string {
 const texto = (valor: unknown): string | null => (typeof valor === 'string' && valor.trim() !== '' ? valor : null);
 
 interface EventoOrdenable extends EventoVisible {
-  /** Milisegundos epoch del `timestamp`; `null` si el evento no trae fecha válida. */
+  /** Milisegundos epoch de `creado_en` (o de `timestamp` si falta); `null` si el evento no trae fecha válida. */
   readonly ms: number | null;
 }
 
@@ -44,8 +44,10 @@ function adaptar(timeline: unknown, zona?: string): EventoOrdenable[] {
   return timeline.flatMap((crudo: unknown): EventoOrdenable[] => {
     if (typeof crudo !== 'object' || crudo === null) return [];
     const e = crudo as Record<string, unknown>;
-    const hora = formatearHora(e['timestamp'], zona);
-    const iso = hora === SIN_HORA ? null : (e['timestamp'] as string);
+    // La hora del servidor (`creado_en`) manda; `timestamp` (reloj del equipo) es el respaldo de filas antiguas.
+    const instante = formatearHora(e['creado_en'], zona) === SIN_HORA ? e['timestamp'] : e['creado_en'];
+    const hora = formatearHora(instante, zona);
+    const iso = hora === SIN_HORA ? null : (instante as string);
     const horaSuelta = texto(e['hora']);
     return [
       {
@@ -60,7 +62,7 @@ function adaptar(timeline: unknown, zona?: string): EventoOrdenable[] {
 }
 
 /**
- * Orden estricto por `timestamp`. Los eventos sin fecha (filas antiguas `{hora, evento}`) no se pueden
+ * Orden estricto por `creado_en` (hora del servidor), con `timestamp` de respaldo. Los eventos sin fecha (filas antiguas `{hora, evento}`) no se pueden
  * situar en el calendario: van primero, ordenados por su hora, y los demás en orden cronológico.
  * Los empates conservan el orden original.
  */

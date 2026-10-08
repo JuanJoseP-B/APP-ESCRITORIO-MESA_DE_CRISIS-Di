@@ -61,6 +61,23 @@ describe('eventosVisibles', () => {
     ]);
   });
 
+  it('ordena y muestra por creado_en del servidor; timestamp solo es respaldo', () => {
+    const visibles = eventosVisibles(
+      [
+        { timestamp: '2026-10-07T08:00:00Z', creado_en: '2026-10-07T11:00:00Z', descripcion: 'servidor' },
+        { timestamp: '2026-10-07T10:00:00Z', descripcion: 'fila antigua' },
+        { timestamp: '2026-10-07T12:00:00Z', creado_en: 'no es fecha', descripcion: 'creado_en roto' },
+      ],
+      'UTC',
+    );
+    expect(visibles.map((e) => `${e.hora} ${e.descripcion}`)).toEqual([
+      '10:00 fila antigua',
+      '11:00 servidor',
+      '12:00 creado_en roto',
+    ]);
+    expect(visibles[1]?.iso).toBe('2026-10-07T11:00:00Z');
+  });
+
   it('los eventos sin fecha van antes que los fechados y los empates conservan el orden', () => {
     const descripciones = eventosVisibles(
       [
