@@ -9,6 +9,7 @@ describe('StatusIndicator', () => {
   it.each([
     ['disponible', 'Disponible', 'circle'],
     ['despachado', 'Despachado', 'triangle'],
+    ['enruta', 'En ruta', 'arrow'],
     ['escena', 'En escena', 'diamond'],
     ['inoperativo', 'Inoperativo', 'ring'],
   ] as const)('%s = glifo + palabra', (status, palabra, forma) => {

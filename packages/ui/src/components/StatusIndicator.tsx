@@ -2,11 +2,12 @@ import { cx } from '../cx';
 import { Glyph, type FormaGlifo } from './Glyph';
 import './StatusIndicator.css';
 
-export type EstadoRecursoUI = 'disponible' | 'despachado' | 'escena' | 'inoperativo';
+export type EstadoRecursoUI = 'disponible' | 'despachado' | 'enruta' | 'escena' | 'inoperativo';
 
 export const ESTADOS_RECURSO_UI: Record<EstadoRecursoUI, { label: string; shape: FormaGlifo }> = {
   disponible: { label: 'Disponible', shape: 'circle' },
   despachado: { label: 'Despachado', shape: 'triangle' },
+  enruta: { label: 'En ruta', shape: 'arrow' },
   escena: { label: 'En escena', shape: 'diamond' },
   inoperativo: { label: 'Inoperativo', shape: 'ring' },
 };

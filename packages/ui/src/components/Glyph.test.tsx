@@ -13,6 +13,11 @@ describe('Glyph', () => {
     expect(el?.classList.contains('ag-glyph--triangle')).toBe(true);
   });
 
+  it('admite la flecha de "en ruta"', () => {
+    const { container } = render(<Glyph shape="arrow" />);
+    expect(container.firstElementChild?.classList.contains('ag-glyph--arrow')).toBe(true);
+  });
+
   it('usa cuadrado por defecto', () => {
     const { container } = render(<Glyph />);
     expect(container.firstElementChild?.classList.contains('ag-glyph--square')).toBe(true);

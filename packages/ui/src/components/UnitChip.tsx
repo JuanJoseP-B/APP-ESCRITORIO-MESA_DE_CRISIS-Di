@@ -7,6 +7,7 @@ import './UnitChip.css';
 export const ABREVIATURA_ESTADO_UNIDAD: Record<EstadoRecursoUI, string> = {
   disponible: 'DISP',
   despachado: 'ASIG',
+  enruta: 'RUTA',
   escena: 'ESC',
   inoperativo: 'INOP',
 };

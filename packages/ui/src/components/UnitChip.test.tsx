@@ -18,12 +18,20 @@ describe('UnitChip', () => {
   it.each([
     ['disponible', 'DISP', 'circle'],
     ['despachado', 'ASIG', 'triangle'],
+    ['enruta', 'RUTA', 'arrow'],
     ['escena', 'ESC', 'diamond'],
     ['inoperativo', 'INOP', 'ring'],
   ] as const)('%s = palabra %s + glifo %s', (status, palabra, forma) => {
     const { container } = render(<UnitChip callsign="B-01" status={status} />);
     expect(container.querySelector('.ag-unit__state')?.textContent).toBe(palabra);
     expect(container.querySelector(`.ag-glyph--${forma}`)).not.toBeNull();
+  });
+
+  it('en ruta se distingue de despachado por forma y palabra, no solo por color', () => {
+    const { container } = render(<UnitChip callsign="M-12" status="enruta" kind="Ambulancia" timer="06:12" />);
+    expect(container.querySelector('.ag-glyph--triangle')).toBeNull();
+    expect(container.querySelector('.ag-glyph--arrow')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'M-12, Ambulancia, En ruta, 06:12' })).toBeTruthy();
   });
 
   it('el cronómetro es opcional y, si hay nivel, añade glifo y palabra al nombre accesible', () => {

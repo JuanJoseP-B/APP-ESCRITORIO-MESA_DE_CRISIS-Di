@@ -1,7 +1,7 @@
 /* ── DispatchRow ────────────────────────────────────────────────────────── */
 .ag-row { box-sizing: border-box; display: grid; grid-template-columns: var(--glyph) 1fr auto; align-items: center; gap: var(--space-3); min-height: var(--row-height); padding: var(--space-2) var(--space-4); background: var(--dispatch-row-bg); border-bottom: var(--border-hairline) solid var(--dispatch-row-divider); }
 .ag-row:hover, .ag-row.is-hover { background: var(--dispatch-row-bg-hover); }
-.ag-row__glyph.ag-status--disponible, .ag-row__glyph.ag-status--despachado, .ag-row__glyph.ag-status--escena, .ag-row__glyph.ag-status--inoperativo { display: flex; }
+.ag-row__glyph.ag-status--disponible, .ag-row__glyph.ag-status--despachado, .ag-row__glyph.ag-status--enruta, .ag-row__glyph.ag-status--escena, .ag-row__glyph.ag-status--inoperativo { display: flex; }
 .ag-row__id { display: flex; flex-direction: column; min-width: 96px; }
 .ag-row__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); font-family: var(--font-display); font-size: 16px; line-height: 20px; font-weight: 600; color: var(--text-primary); }
 .ag-row__code { white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--dispatch-code-fg); }

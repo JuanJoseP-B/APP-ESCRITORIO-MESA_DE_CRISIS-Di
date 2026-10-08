@@ -43,6 +43,16 @@ export function DispatchRow({ kind, code, status, detail, actions, onDispatch, o
         </Button>
       </>
     ),
+    enruta: (
+      <>
+        <Button variant="secondary" size="sm" onClick={onArrive}>
+          En escena
+        </Button>
+        <Button size="sm" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </>
+    ),
     escena: (
       <Button size="sm" onClick={onRelease}>
         Liberar

@@ -11,6 +11,7 @@ button.ag-unit:hover { background: var(--card-bg-hover); border-color: var(--car
 .ag-unit__state { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; }
 .ag-unit--disponible .ag-unit__state { color: var(--status-success); }
 .ag-unit--despachado .ag-unit__state { color: var(--status-warning); }
+.ag-unit--enruta .ag-unit__state { color: var(--status-warning); }
 .ag-unit--escena .ag-unit__state { color: var(--status-info); }
 .ag-unit--inoperativo .ag-unit__state { color: var(--status-offline); }
 .ag-unit__timer { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .02em; color: var(--text-secondary); }

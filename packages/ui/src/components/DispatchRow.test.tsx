@@ -29,6 +29,17 @@ describe('DispatchRow', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('en ruta ofrece En escena y Cancelar', async () => {
+    const onArrive = vi.fn();
+    const onCancel = vi.fn();
+    render(<DispatchRow kind="Ambulancia" code="M12" status="enruta" onArrive={onArrive} onCancel={onCancel} />);
+    expect(screen.getByText('En ruta')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'En escena' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onArrive).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('en escena ofrece Liberar; inoperativo ofrece Habilitar', async () => {
     const onRelease = vi.fn();
     const onToggleOperative = vi.fn();
