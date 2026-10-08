@@ -121,6 +121,9 @@ describe('recomendarPorReglas · unidades', () => {
 });
 
 describe('recomendarPorReglas · perímetro y refugio', () => {
+  // Con las dos unidades que exige una fuga de gas, las únicas advertencias posibles son las del refugio.
+  const unidades = [recurso('b01', 'Bomberos', 100), recurso('m01', 'Ambulancia', 100)];
+
   it('sugiere el perímetro del protocolo del tipo, sin compartir el objeto', () => {
     for (const tipo of TIPOS_EMERGENCIA) {
       const rec = recomendar(snapshot({ tipo }));
@@ -131,15 +134,30 @@ describe('recomendarPorReglas · perímetro y refugio', () => {
 
   it('elige el refugio fuera de los anillos con más cupo libre', () => {
     const rec = recomendar(
-      snapshot({ refugios: [refugio('chico', 90, 100), refugio('grande', 50, 300), refugio('dentro', 0, 1000, 'TIBIA'), refugio('lleno', 100, 100)] }),
+      snapshot({ recursos: unidades, refugios: [refugio('chico', 20, 100), refugio('grande', 50, 300), refugio('dentro', 0, 1000, 'TIBIA'), refugio('lleno', 100, 100)] }),
     );
     expect(rec.refugioSugeridoId).toBe('grande');
+    // El refugio lleno no se sugiere, pero sí se avisa de que está al límite.
+    expect(rec.advertencias).toEqual(['Refugio lleno está al 100 % de su aforo.']);
+  });
+
+  it('prefiere uno fuera de todos los anillos aunque tenga menos cupo que uno en el anillo de evacuación', () => {
+    const rec = recomendar(snapshot({ refugios: [refugio('fuera', 0, 50), refugio('evac', 0, 500, 'EVACUACION')] }));
+    expect(rec.refugioSugeridoId).toBe('fuera');
+  });
+
+  it('si solo hay refugios en el anillo de evacuación, sugiere el de más cupo y lo advierte', () => {
+    const rec = recomendar(
+      snapshot({ recursos: unidades, refugios: [refugio('a', 0, 100, 'EVACUACION'), refugio('b', 0, 300, 'EVACUACION'), refugio('c', 0, 900, 'TIBIA')] }),
+    );
+    expect(rec.refugioSugeridoId).toBe('b');
+    expect(rec.advertencias).toEqual(['Refugio b está dentro de la zona de evacuación: no hay un refugio apto fuera del perímetro.']);
   });
 
   it('sin refugio apto no sugiere ninguno y lo advierte', () => {
-    const rec = recomendar(snapshot({ refugios: [refugio('dentro', 0, 100, 'CALIENTE'), refugio('lleno', 50, 50)] }));
+    const rec = recomendar(snapshot({ refugios: [refugio('dentro', 0, 100, 'CALIENTE'), refugio('tibio', 0, 100, 'TIBIA'), refugio('lleno', 50, 50)] }));
     expect(rec.refugioSugeridoId).toBeNull();
-    expect(rec.advertencias).toContain('Ningún refugio fuera del perímetro tiene cupo.');
+    expect(rec.advertencias).toContain('Ningún refugio apto tiene cupo.');
   });
 });
 

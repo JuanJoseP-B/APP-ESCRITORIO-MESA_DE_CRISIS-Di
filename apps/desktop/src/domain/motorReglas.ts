@@ -26,7 +26,7 @@ export const NECESIDADES_POR_TIPO: Readonly<Record<TipoEmergencia, readonly Tipo
   VIA_BLOQUEADA: ['Policía'],
 };
 
-/** Un refugio con esta fracción de su aforo ocupada se avisa como cercano al límite. */
+/** Un refugio apto con esta fracción de su aforo ocupada se avisa como cercano al límite. */
 export const UMBRAL_REFUGIO_LLENO = 0.8;
 
 /** Confianza según la fracción de necesidades cubiertas: todas = ALTA, la mitad o más = MEDIA, menos = BAJA. */
@@ -85,18 +85,24 @@ export function recomendarPorReglas(snapshot: SnapshotAsesor, { t, generarId = (
   }
 
   const perimetroSugerido = { ...PROTOCOLOS_PERIMETRO[tipo] };
+  // Un refugio es apto fuera de la zona caliente y la tibia. Se prefiere uno fuera de todos los anillos; si no lo hay,
+  // sirve el que está en el anillo de evacuación (con aviso). Entre iguales, el de más cupo libre.
+  const libre = (r: SnapshotAsesor['refugios'][number]): number => r.capacidad - r.ocupacion;
+  const aptos = snapshot.refugios.filter((r) => (r.anillo === 'FUERA' || r.anillo === 'EVACUACION') && libre(r) > 0);
   const refugio =
-    snapshot.refugios
-      .filter((r) => r.anillo === 'FUERA' && r.capacidad - r.ocupacion > 0)
-      .sort((a, b) => b.capacidad - b.ocupacion - (a.capacidad - a.ocupacion) || a.nombre.localeCompare(b.nombre, 'es'))[0] ?? null;
+    [...aptos].sort(
+      (a, b) =>
+        Number(a.anillo !== 'FUERA') - Number(b.anillo !== 'FUERA') || libre(b) - libre(a) || a.nombre.localeCompare(b.nombre, 'es'),
+    )[0] ?? null;
 
   const advertencias = [
     ...sinDisponibles.map((necesidad) => t('asesor.adv.sinUnidades', { tipo: textoTipoRecurso(t, necesidad) })),
     ...snapshot.contexto.unidadesEnZonaCaliente.map((id) => t('asesor.adv.zonaCaliente', { unidad: nombre(id) })),
     ...snapshot.contexto.slaVencidos.map((id) => t('asesor.adv.slaVencido', { unidad: nombre(id) })),
     ...(refugio ? [] : [t('asesor.adv.sinRefugio')]),
+    ...(refugio?.anillo === 'EVACUACION' ? [t('asesor.adv.refugioEnEvacuacion', { refugio: refugio.nombre })] : []),
     ...snapshot.refugios
-      .filter((r) => r.anillo === 'FUERA' && r.capacidad > 0 && r.ocupacion / r.capacidad >= UMBRAL_REFUGIO_LLENO)
+      .filter((r) => (r.anillo === 'FUERA' || r.anillo === 'EVACUACION') && r.capacidad > 0 && r.ocupacion / r.capacidad >= UMBRAL_REFUGIO_LLENO)
       .map((r) => t('asesor.adv.refugioLleno', { refugio: r.nombre, porcentaje: Math.round((r.ocupacion / r.capacidad) * 100) })),
   ];
 
