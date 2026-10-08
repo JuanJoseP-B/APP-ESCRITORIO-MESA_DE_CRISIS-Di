@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreferenciasProvider } from '../hooks/usePreferencias';
 import { IdiomaProvider } from '../i18n/IdiomaProvider';
 import { BarraEstado } from './BarraEstado';
@@ -93,6 +93,31 @@ describe('PanelAjustes', () => {
     const boton = within(panel).getByRole('button', { name: 'Ver tutorial' }) as HTMLButtonElement;
     expect(boton.disabled).toBe(true);
     expect(within(panel).getByText('Próximamente')).toBeTruthy();
+  });
+
+  it('Ayuda ofrece los atajos de teclado, con su tecla F1, solo si la consola sabe abrirlos', async () => {
+    const abrirAtajos = vi.fn();
+    const { rerender } = render(
+      <IdiomaProvider>
+        <PreferenciasProvider>
+          <PanelAjustes onCerrar={vi.fn()} onAbrirAtajos={abrirAtajos} />
+        </PreferenciasProvider>
+      </IdiomaProvider>,
+    );
+    const boton = screen.getByRole('button', { name: 'Atajos de teclado' });
+    expect(boton.querySelector('kbd')?.textContent).toBe('F1');
+    expect(boton.getAttribute('aria-keyshortcuts')).toBe('F1');
+    await userEvent.click(boton);
+    expect(abrirAtajos).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <IdiomaProvider>
+        <PreferenciasProvider>
+          <PanelAjustes onCerrar={vi.fn()} />
+        </PreferenciasProvider>
+      </IdiomaProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Atajos de teclado' })).toBeNull();
   });
 
   it('el foco entra en el panel y Tab da la vuelta sin salir de él', async () => {

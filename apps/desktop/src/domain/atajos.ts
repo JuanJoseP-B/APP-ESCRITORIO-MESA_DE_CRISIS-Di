@@ -1,3 +1,5 @@
+import type { ClaveTexto } from '../i18n/es';
+
 /** Parte de `KeyboardEvent` que usa el dominio; permite probarlo sin DOM. */
 export interface TeclaPulsada {
   readonly key: string;
@@ -40,3 +42,56 @@ export function resolverAtajo(mapa: MapaAtajos, tecla: TeclaPulsada, destino: un
   if (esCampoDeEntrada(destino) && !ATAJOS_EN_CAMPOS.includes(nombre)) return null;
   return Object.hasOwn(mapa, nombre) ? (mapa[nombre] ?? null) : null;
 }
+
+/** Una fila de la hoja de atajos: su texto (clave de i18n) y las teclas, que son alternativas. */
+export interface AtajoDocumentado {
+  readonly clave: ClaveTexto;
+  readonly teclas: readonly string[];
+}
+
+export interface GrupoAtajos {
+  readonly id: string;
+  readonly titulo: ClaveTexto;
+  readonly atajos: readonly AtajoDocumentado[];
+}
+
+/** Todos los atajos de la consola, agrupados como en la hoja de ayuda (F1 o «?»). */
+export const GRUPOS_ATAJOS = [
+  {
+    id: 'navegacion',
+    titulo: 'atajos.grupo.navegacion',
+    atajos: [
+      { clave: 'atajos.navegacion.siguiente', teclas: ['J'] },
+      { clave: 'atajos.navegacion.anterior', teclas: ['K'] },
+      { clave: 'atajos.navegacion.cerrar', teclas: ['Esc'] },
+    ],
+  },
+  {
+    id: 'llamadas',
+    titulo: 'atajos.grupo.llamadas',
+    atajos: [
+      { clave: 'atajos.llamadas.registrar', teclas: ['F2'] },
+      { clave: 'atajos.llamadas.abrir', teclas: ['Enter'] },
+      { clave: 'atajos.llamadas.crear', teclas: ['Ctrl+Enter'] },
+    ],
+  },
+  {
+    id: 'despacho',
+    titulo: 'atajos.grupo.despacho',
+    atajos: [
+      { clave: 'atajos.despacho.abrir', teclas: ['D'] },
+      { clave: 'atajos.despacho.elegir', teclas: ['↑', '↓'] },
+      { clave: 'atajos.despacho.confirmar', teclas: ['Enter'] },
+      { clave: 'atajos.despacho.cancelar', teclas: ['Esc'] },
+    ],
+  },
+  {
+    id: 'paneles',
+    titulo: 'atajos.grupo.paneles',
+    atajos: [
+      { clave: 'atajos.paneles.cola', teclas: ['['] },
+      { clave: 'atajos.paneles.detalle', teclas: [']'] },
+      { clave: 'atajos.paneles.ayuda', teclas: ['F1', '?'] },
+    ],
+  },
+] as const satisfies readonly GrupoAtajos[];

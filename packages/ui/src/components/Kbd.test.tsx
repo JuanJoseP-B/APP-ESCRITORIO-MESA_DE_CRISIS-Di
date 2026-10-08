@@ -24,6 +24,12 @@ describe('Kbd', () => {
     expect(screen.getByRole('button', { name: 'Despachar' }).getAttribute('aria-keyshortcuts')).toBe('D');
   });
 
+  it('con decorative=false la tecla se lee: ya no se oculta', () => {
+    const { container } = render(<Kbd decorative={false}>F1</Kbd>);
+    expect(container.querySelector('kbd')?.hasAttribute('aria-hidden')).toBe(false);
+    expect(screen.getByText('F1')).toBeTruthy();
+  });
+
   it('es sutil: contorno fino, sin relleno, sin opacidad ni colores sueltos', () => {
     expect(css).toContain('background: transparent');
     expect(css).toContain('color: inherit');

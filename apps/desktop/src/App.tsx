@@ -39,6 +39,7 @@ import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
 import { FormularioLlamada } from './layout/FormularioLlamada';
 import { GrillaTactica } from './layout/GrillaTactica';
+import { HojaAtajos } from './layout/HojaAtajos';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
 import { useTexto } from './i18n/IdiomaProvider';
@@ -95,8 +96,16 @@ function Mesa({
   const { reducirMovimiento } = preferencias;
   const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
   const [despachoAbierto, setDespachoAbierto] = useState(false);
+  const [atajosAbiertos, setAtajosAbiertos] = useState(false);
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
+  const abrirAtajos = useCallback(() => setAtajosAbiertos(true), []);
+  const cerrarAtajos = useCallback(() => setAtajosAbiertos(false), []);
+  // Desde Ajustes → Ayuda: los ajustes se cierran y la hoja ocupa su lugar.
+  const abrirAtajosDesdeAjustes = useCallback(() => {
+    setAjustesAbiertos(false);
+    setAtajosAbiertos(true);
+  }, []);
 
   const [desfaseMs, setDesfaseMs] = useState(0);
   useEffect(() => {
@@ -242,6 +251,8 @@ function Mesa({
   useAtajos({
     j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
     k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
+    F1: abrirAtajos,
+    '?': abrirAtajos,
     F2: () => {
       if (!formulario && !despachoAbierto) abrirLlamadaManual();
     },
@@ -255,7 +266,7 @@ function Mesa({
       setDibujando(false);
       setUnidadId(null);
     },
-  }, !ajustesAbiertos);
+  }, !ajustesAbiertos && !atajosAbiertos);
 
   const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
@@ -436,7 +447,8 @@ function Mesa({
           />
         }
       />
-      {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} />}
+      {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} onAbrirAtajos={abrirAtajosDesdeAjustes} />}
+      {atajosAbiertos && <HojaAtajos onCerrar={cerrarAtajos} />}
     </>
   );
 }

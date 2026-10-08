@@ -84,3 +84,40 @@ describe('App: atajos de navegación y despacho', () => {
     expect((campo as HTMLInputElement).value).toContain('d');
   });
 });
+
+describe('App: hoja de atajos', () => {
+  it('F1 abre la hoja y F1 de nuevo la cierra', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('{F1}');
+    expect(await screen.findByRole('dialog', { name: 'Atajos de teclado' })).toBeTruthy();
+    await userEvent.keyboard('{F1}');
+    expect(screen.queryByRole('dialog', { name: 'Atajos de teclado' })).toBeNull();
+  });
+
+  it('«?» la abre y Esc la cierra devolviendo el foco', async () => {
+    await abrirConsola();
+    const fila = await filaFuga();
+    fila.focus();
+    await userEvent.keyboard('?');
+    expect(await screen.findByRole('dialog', { name: 'Atajos de teclado' })).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Atajos de teclado' })).toBeNull();
+    expect(document.activeElement).toBe(fila);
+  });
+
+  it('con la hoja abierta los demás atajos no actúan', async () => {
+    await abrirConsola();
+    await userEvent.keyboard('{F1}');
+    await screen.findByRole('dialog', { name: 'Atajos de teclado' });
+    await userEvent.keyboard('j');
+    expect((await filaFuga()).getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('desde Ajustes → Ayuda cierra los ajustes y abre la hoja', async () => {
+    await abrirConsola();
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Atajos de teclado' }));
+    expect(screen.queryByRole('dialog', { name: 'Ajustes' })).toBeNull();
+    expect(await screen.findByRole('dialog', { name: 'Atajos de teclado' })).toBeTruthy();
+  });
+});

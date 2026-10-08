@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { esCampoDeEntrada, nombreDeTecla, resolverAtajo, type TeclaPulsada } from './atajos';
+import { GRUPOS_ATAJOS, esCampoDeEntrada, nombreDeTecla, resolverAtajo, type TeclaPulsada } from './atajos';
 
 const tecla = (key: string, extra: Partial<TeclaPulsada> = {}): TeclaPulsada => ({
   key,
@@ -17,6 +17,8 @@ describe('nombreDeTecla', () => {
     ['k', 'k'],
     ['F2', 'F2'],
     ['F1', 'F1'],
+    ['?', '?'],
+    ['d', 'd'],
     ['Escape', 'Escape'],
   ])('%s → %s', (key, esperado) => {
     expect(nombreDeTecla(tecla(key))).toBe(esperado);
@@ -81,5 +83,23 @@ describe('resolverAtajo', () => {
     expect(resolverAtajo({ j: vi.fn() }, tecla('k'), cuerpo)).toBeNull();
     expect(resolverAtajo({}, tecla('Escape'), cuerpo)).toBeNull();
     expect(resolverAtajo({}, tecla('constructor'), cuerpo)).toBeNull();
+  });
+});
+
+describe('GRUPOS_ATAJOS', () => {
+  it('agrupa en Navegación, Llamadas, Despacho y Paneles, en ese orden', () => {
+    expect(GRUPOS_ATAJOS.map((g) => g.id)).toEqual(['navegacion', 'llamadas', 'despacho', 'paneles']);
+  });
+
+  it('no repite un atajo dentro de su grupo ni deja grupos vacíos', () => {
+    for (const g of GRUPOS_ATAJOS) {
+      expect(g.atajos.length).toBeGreaterThan(0);
+      expect(new Set(g.atajos.map((a) => a.clave)).size).toBe(g.atajos.length);
+    }
+  });
+
+  it('recoge los atajos que la consola atiende: J, K, F2, D, [, ], F1, ? y Esc', () => {
+    const teclas = new Set<string>(GRUPOS_ATAJOS.flatMap((g) => g.atajos.flatMap((a) => a.teclas)));
+    for (const t of ['J', 'K', 'F2', 'D', '[', ']', 'F1', '?', 'Esc', 'Enter', 'Ctrl+Enter']) expect(teclas.has(t)).toBe(true);
   });
 });
