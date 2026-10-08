@@ -47,7 +47,7 @@ describe('crearServicioMesa', () => {
     const select = vi.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
     const servicio = crearServicioMesa({ from: () => ({ select }) } as unknown as SupabaseClient);
 
-    await expect(servicio.listarReportes()).rejects.toThrow('reportes_ciudadanos');
+    await expect(servicio.listarReportes()).rejects.toThrow('llamadas');
   });
 
   it('suscribe a la tabla y elimina el canal al cancelar', () => {
@@ -81,7 +81,7 @@ describe('crearServicioMesa', () => {
     crearServicioMesa(client as unknown as SupabaseClient).suscribirReportes(alCambiar);
     expect(canal.on).toHaveBeenCalledWith(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'reportes_ciudadanos' },
+      { event: '*', schema: 'public', table: 'llamadas' },
       expect.any(Function),
     );
     expect(canal.subscribe).toHaveBeenCalledOnce();
@@ -207,7 +207,7 @@ describe('crearServicioMesa', () => {
 
   it.each([
     ['actualizarIncidente', 'incidentes', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarIncidente('i1', { estado: 'Resuelto' }), { estado: 'Resuelto' }],
-    ['actualizarEstadoReporte', 'reportes_ciudadanos', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarEstadoReporte('i1', 'Confirmado'), { estado_validacion: 'Confirmado' }],
+    ['actualizarEstadoReporte', 'llamadas', (s: ReturnType<typeof crearServicioMesa>) => s.actualizarEstadoReporte('i1', 'Confirmado'), { estado_validacion: 'Confirmado' }],
   ])('%s hace update().eq("id")', async (_nombre, tabla, accion, cambios) => {
     const { from, update, eq } = clienteUpdate({ data: { id: 'i1' }, error: null });
 

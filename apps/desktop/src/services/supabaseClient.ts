@@ -122,9 +122,9 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
 
   return {
     listarIncidentes: () => listar<Incidente>('incidentes'),
-    listarReportes: () => listar<Reporte>('reportes_ciudadanos'),
+    listarReportes: () => listar<Reporte>('llamadas'),
     suscribirIncidentes: (cb) => suscribir<Incidente>('incidentes', cb),
-    suscribirReportes: (cb) => suscribir<Reporte>('reportes_ciudadanos', cb),
+    suscribirReportes: (cb) => suscribir<Reporte>('llamadas', cb),
     listarRecursos: () => listar<Recurso>('recursos_operativos'),
     suscribirRecursos: (cb) => suscribir<Recurso>('recursos_operativos', cb),
     cambiarEstadoRecurso: (id, estado, incidenteId) =>
@@ -134,7 +134,7 @@ export function crearServicioMesa(client: SupabaseClient): ServicioMesa {
       await actualizar<Incidente>('incidentes', id, { ...cambios });
     },
     actualizarEstadoReporte: async (id, estado) => {
-      await actualizar<Reporte>('reportes_ciudadanos', id, { estado_validacion: estado });
+      await actualizar<Reporte>('llamadas', id, { estado_validacion: estado });
     },
     listarZonasPublicas: () => listar<ZonaPublica>('zonas_publicas'),
     suscribirZonasPublicas: (cb) => suscribir<ZonaPublica>('zonas_publicas', cb),

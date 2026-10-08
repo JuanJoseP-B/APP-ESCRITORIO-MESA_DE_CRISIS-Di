@@ -1,4 +1,4 @@
-/** Catálogo completo de tipos de emergencia; es el valor que se persiste en `reportes_ciudadanos.tipo`. */
+/** Catálogo completo de tipos de emergencia; es el valor que se persiste en `llamadas.tipo`. */
 export const TIPOS_EMERGENCIA = [
   'INCENDIO',
   'CRECIENTE_SUBITA',
