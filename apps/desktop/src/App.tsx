@@ -46,6 +46,7 @@ import { GrillaTactica } from './layout/GrillaTactica';
 import { HojaAtajos } from './layout/HojaAtajos';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
+import { TutorialProvider } from './layout/TutorialProvider';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearServicioDemo } from './services/servicioDemo';
@@ -143,6 +144,7 @@ function Mesa({
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
   const { expandir: expandirDetalle } = panelDetalle;
+  const { expandir: expandirCola } = panelCola;
   // Elegir un incidente abre el detalle: ahí vive el despacho.
   useEffect(() => {
     if (seleccionadoId) expandirDetalle();
@@ -188,6 +190,9 @@ function Mesa({
     setUbicacionLlamada(null);
     setResaltadoId(null);
   }, []);
+  // El recorrido guiado deja la consola lista para cada paso: con el primer incidente activo a la vista si hace falta.
+  const primerIncidenteId = useMemo(() => dividirCola(incidentes.datos).activos[0]?.id ?? null, [incidentes.datos]);
+  const seleccionarPrimero = useCallback(() => setSeleccionadoId((actual) => actual ?? primerIncidenteId), [primerIncidenteId]);
   const abrirLlamadaManual = useCallback(() => abrirFormulario(BORRADOR_VACIO, null, null), [abrirFormulario]);
   // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
   const alAbrirLlamada = useCallback(
@@ -395,7 +400,7 @@ function Mesa({
   );
 
   return (
-    <>
+    <TutorialProvider preparacion={{ expandirCola, expandirDetalle, seleccionarPrimero, cerrarFormulario }} simulacion={simulacion} reducirMovimiento={reducirMovimiento}>
       <GrillaTactica
         panelCola={panelCola}
         panelDetalle={panelDetalle}
@@ -521,7 +526,7 @@ function Mesa({
       />
       {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} onAbrirAtajos={abrirAtajosDesdeAjustes} />}
       {atajosAbiertos && <HojaAtajos onCerrar={cerrarAtajos} />}
-    </>
+    </TutorialProvider>
   );
 }
 

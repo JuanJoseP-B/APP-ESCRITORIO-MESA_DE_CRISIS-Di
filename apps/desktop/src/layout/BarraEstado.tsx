@@ -150,7 +150,7 @@ export function BarraEstado({
             size="sm"
             variant="ghost"
             square
-            aria-label={t('barra.ajustes')}
+            aria-label={t('barra.ajustes')} data-tutorial="ajustes"
             aria-haspopup="dialog"
             title={t('barra.ajustes')}
             onClick={onAbrirAjustes}

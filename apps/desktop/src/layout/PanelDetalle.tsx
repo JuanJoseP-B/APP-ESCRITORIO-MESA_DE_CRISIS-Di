@@ -178,7 +178,7 @@ export function PanelDetalle({
                   variant="secondary"
                   aria-keyshortcuts="A"
                   aria-pressed={asesor.estado.fase !== 'inactivo'}
-                  aria-label={t('asesor.boton.aria')}
+                  aria-label={t('asesor.boton.aria')} data-tutorial="asesor"
                   onClick={asesor.onAlternar}
                 >
                   {t('asesor.boton')} <Kbd>A</Kbd>

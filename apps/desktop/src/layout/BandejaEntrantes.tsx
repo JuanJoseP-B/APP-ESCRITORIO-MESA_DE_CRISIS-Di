@@ -24,7 +24,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
   const lista = entrantes(llamadas);
 
   return (
-    <section aria-label={t('entrantes.aria')} className="shrink-0">
+    <section aria-label={t('entrantes.aria')} data-tutorial="entrantes" className="shrink-0">
       <div className="flex items-center">
         <div className="flex-1">
           <SectionHeader index="01" title={t('entrantes.titulo')} count={lista.length} />

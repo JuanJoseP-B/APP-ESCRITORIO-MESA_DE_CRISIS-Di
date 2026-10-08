@@ -34,7 +34,7 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
       data-cola={panelCola.colapsado ? 'colapsada' : 'expandida'}
       data-detalle={panelDetalle.colapsado ? 'colapsado' : 'expandido'}
     >
-      <div className="ag-grilla__barra" data-area="barra">
+      <div className="ag-grilla__barra" data-area="barra" data-tutorial="barra">
         {barra}
       </div>
       <RailColapsable
@@ -45,11 +45,11 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
         collapsed={panelCola.colapsado}
         onToggle={panelCola.alternar}
       >
-        <div data-area="cola" className="ag-grilla__contenido">
+        <div data-area="cola" data-tutorial="cola" className="ag-grilla__contenido">
           {cola}
         </div>
       </RailColapsable>
-      <main className="ag-grilla__mapa" data-area="mapa">
+      <main className="ag-grilla__mapa" data-area="mapa" data-tutorial="mapa">
         {mapa}
       </main>
       <RailColapsable
@@ -60,11 +60,11 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
         collapsed={panelDetalle.colapsado}
         onToggle={panelDetalle.alternar}
       >
-        <div data-area="detalle" className="ag-grilla__contenido">
+        <div data-area="detalle" data-tutorial="detalle" className="ag-grilla__contenido">
           {detalle}
         </div>
       </RailColapsable>
-      <div className="ag-grilla__tablero" role="region" aria-label={t('tablero.aria')} data-area="tablero">
+      <div className="ag-grilla__tablero" role="region" aria-label={t('tablero.aria')} data-area="tablero" data-tutorial="tablero">
         {tablero}
       </div>
     </div>
