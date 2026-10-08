@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CANALES_LLAMADA,
   ETIQUETAS_CANAL_LLAMADA,
@@ -7,7 +7,9 @@ import {
   TIPOS_EMERGENCIA,
   esPrioridad,
   esTipoEmergencia,
+  type CandidatoDuplicado,
   type Coordenadas,
+  type Incidente,
   type NuevaLlamada,
 } from '@argos/shared';
 import { Button, Glyph, SectionHeader, SelectField, TextAreaField, TextField } from '@argos/ui';
@@ -21,7 +23,9 @@ import {
   type Borrador,
   type CampoBorrador,
 } from '../domain/llamadas';
+import { buscarDuplicados } from '../domain/duplicados';
 import { useAtajos } from '../hooks/useAtajos';
+import { AvisoDuplicado } from './AvisoDuplicado';
 
 export interface FormularioLlamadaProps {
   /** Datos de partida: vacíos (F2) o los de la llamada entrante. Para cambiar de llamada, remonta con `key`. */
@@ -32,9 +36,20 @@ export interface FormularioLlamadaProps {
   readonly ubicacion: Coordenadas | null;
   /** Avisa de la ubicación escrita a mano (`null` mientras esté incompleta) para pintarla en el mapa. */
   readonly onUbicacionCambia: (ubicacion: Coordenadas | null) => void;
+  /** Incidentes con los que se compara la llamada para avisar de posibles duplicados. */
+  readonly incidentes: readonly Incidente[];
+  /** Hora de la consola (ms epoch): fija cuántos minutos hace que se abrió cada candidato. */
+  readonly ahora: number;
   readonly onCerrar: () => void;
-  /** Resuelve `true` si el incidente quedó creado; entonces el formulario se cierra solo. */
-  readonly onCrearIncidente: (datos: NuevaLlamada) => Promise<boolean>;
+  /**
+   * Resuelve `true` si el incidente quedó creado; entonces el formulario se cierra solo. `descartados` son los
+   * candidatos que el operador vio y rechazó al crear uno nuevo.
+   */
+  readonly onCrearIncidente: (datos: NuevaLlamada, descartados: readonly CandidatoDuplicado[]) => Promise<boolean>;
+  /** Asocia la llamada a un incidente ya abierto. Resuelve `true` si quedó vinculada. */
+  readonly onVincular: (datos: NuevaLlamada, candidato: CandidatoDuplicado) => Promise<boolean>;
+  /** Incidente candidato bajo el cursor o el foco, para resaltarlo en el mapa; `null` al salir. */
+  readonly onResaltarIncidente: (incidenteId: string | null) => void;
 }
 
 const OPCIONES_CANAL = CANALES_LLAMADA.map((value) => ({ value, label: ETIQUETAS_CANAL_LLAMADA[value] }));
@@ -44,7 +59,18 @@ const OPCIONES_PRIORIDAD = PRIORIDADES.map((value) => ({ value, label: value }))
 const mismaUbicacion = (a: Coordenadas, b: Coordenadas): boolean => Math.abs(a.lat - b.lat) < 1e-9 && Math.abs(a.lng - b.lng) < 1e-9;
 
 /** Drawer de registro de llamada sobre el panel de detalle. F2 lo abre, Esc lo cierra y Ctrl+Enter confirma. */
-export function FormularioLlamada({ inicial, entrante, ubicacion, onUbicacionCambia, onCerrar, onCrearIncidente }: FormularioLlamadaProps) {
+export function FormularioLlamada({
+  inicial,
+  entrante,
+  ubicacion,
+  onUbicacionCambia,
+  incidentes,
+  ahora,
+  onCerrar,
+  onCrearIncidente,
+  onVincular,
+  onResaltarIncidente,
+}: FormularioLlamadaProps) {
   const [borrador, setBorrador] = useState<Borrador>(inicial);
   const [intentado, setIntentado] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -85,27 +111,46 @@ export function FormularioLlamada({ inicial, entrante, ubicacion, onUbicacionCam
 
   const errores = intentado ? validarBorrador(borrador) : {};
 
-  const confirmar = async () => {
+  // Se reevalúa al cambiar el tipo o la ubicación, y cada segundo con el reloj (los minutos del candidato).
+  const { tipo, lat, lng } = borrador;
+  const candidatos = useMemo(() => {
+    const donde = ubicacionDe({ lat, lng });
+    return tipo === '' || donde === null ? [] : buscarDuplicados({ tipo, ubicacion: donde }, incidentes, ahora);
+  }, [tipo, lat, lng, incidentes, ahora]);
+
+  /** Valida el borrador y, si está completo, ejecuta la decisión del operador; cierra el drawer si se guardó. */
+  const decidir = async (accion: (datos: NuevaLlamada) => Promise<boolean>, antes?: () => boolean) => {
     if (enCurso.current) return;
     setIntentado(true);
-    const pendientes = validarBorrador(borrador);
-    const primero = Object.keys(pendientes)[0] as CampoBorrador | undefined;
+    const primero = Object.keys(validarBorrador(borrador))[0] as CampoBorrador | undefined;
     const datos = aNuevaLlamada(borrador);
     if (primero || datos === null) {
       enfocar(primero ?? 'canal');
       return;
     }
+    if (antes && !antes()) return;
     enCurso.current = true;
     setEnviando(true);
     try {
-      if (await onCrearIncidente(datos)) onCerrar();
+      if (await accion(datos)) onCerrar();
     } finally {
       enCurso.current = false;
       if (montado.current) setEnviando(false);
     }
   };
 
-  useAtajos({ Escape: onCerrar, 'Ctrl+Enter': () => void confirmar() });
+  const crearIncidente = (antes?: () => boolean) => decidir((datos) => onCrearIncidente(datos, candidatos), antes);
+  const vincular = (candidato: CandidatoDuplicado) => decidir((datos) => onVincular(datos, candidato));
+
+  // Con posibles duplicados Ctrl+Enter no decide por el operador: lleva el foco a VINCULAR.
+  const confirmarConAtajo = () =>
+    crearIncidente(() => {
+      if (candidatos.length === 0) return true;
+      raiz.current?.querySelector<HTMLElement>('[data-candidato] button')?.focus();
+      return false;
+    });
+
+  useAtajos({ Escape: onCerrar, 'Ctrl+Enter': () => void confirmarConAtajo() });
 
   return (
     <section
@@ -121,6 +166,7 @@ export function FormularioLlamada({ inicial, entrante, ubicacion, onUbicacionCam
         onSubmit={(e) => e.preventDefault()}
         className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
       >
+        <AvisoDuplicado candidatos={candidatos} onVincular={(c) => void vincular(c)} onResaltar={onResaltarIncidente} deshabilitado={enviando} />
         <div className="grid grid-cols-2 gap-3">
           <SelectField
             size="md"
@@ -173,7 +219,7 @@ export function FormularioLlamada({ inicial, entrante, ubicacion, onUbicacionCam
         <Button variant="ghost" onClick={onCerrar}>
           Cancelar <kbd className="font-mono text-overline">Esc</kbd>
         </Button>
-        <Button variant="primary" disabled={enviando} onClick={() => void confirmar()}>
+        <Button variant="primary" disabled={enviando} onClick={() => void crearIncidente()}>
           Crear incidente <kbd className="font-mono text-overline">Ctrl+Enter</kbd>
         </Button>
       </div>

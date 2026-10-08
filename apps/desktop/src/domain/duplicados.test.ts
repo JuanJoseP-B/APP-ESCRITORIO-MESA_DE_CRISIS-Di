@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EstadoIncidente, Incidente, TipoEmergencia } from '@argos/shared';
-import { buscarDuplicados, coincidenciaTipo } from './duplicados';
+import { buscarDuplicados, coincidenciaTipo, describirCandidato, formatearDistancia, formatearHace } from './duplicados';
 import { distanciaM } from './geo';
 
 /*
@@ -128,5 +128,24 @@ describe('buscarDuplicados (F2-T2)', () => {
   it('la distancia usada es la de geo.distanciaM', () => {
     const [c] = buscarDuplicados(consulta, [inc('z', { metros: 250 })], AHORA);
     expect(c?.distanciaM).toBeCloseTo(distanciaM(PLAZA, alNorte(250)), 6);
+  });
+});
+
+describe('textos del aviso', () => {
+  it('la distancia va en metros bajo el kilómetro y en kilómetros después', () => {
+    expect(formatearDistancia(0)).toBe('0 m');
+    expect(formatearDistancia(119.6)).toBe('120 m');
+    expect(formatearDistancia(999.4)).toBe('999 m');
+    expect(formatearDistancia(1250)).toBe('1.3 km');
+  });
+
+  it('el tiempo es "hace N min" y, bajo el minuto, "hace menos de 1 min"', () => {
+    expect(formatearHace(0)).toBe('hace menos de 1 min');
+    expect(formatearHace(4)).toBe('hace 4 min');
+    expect(formatearHace(61.7)).toBe('hace 61 min');
+  });
+
+  it('describe al candidato con distancia y tiempo', () => {
+    expect(describirCandidato({ distanciaM: 120, minutosDesde: 4 })).toBe('120 m, hace 4 min');
   });
 });

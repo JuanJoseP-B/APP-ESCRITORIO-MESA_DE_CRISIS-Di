@@ -67,3 +67,15 @@ export function buscarDuplicados(
     .sort((a, b) => b.puntaje - a.puntaje || a.distanciaM - b.distanciaM || a.incidenteId.localeCompare(b.incidenteId))
     .slice(0, parametros.maxCandidatos);
 }
+
+/** "120 m" por debajo del kilómetro y "1.3 km" a partir de él. */
+export function formatearDistancia(metros: number): string {
+  return metros < 1000 ? `${Math.round(metros)} m` : `${(metros / 1000).toFixed(1)} km`;
+}
+
+/** "hace 4 min"; por debajo del minuto, "hace menos de 1 min". */
+export const formatearHace = (minutos: number): string => (minutos < 1 ? 'hace menos de 1 min' : `hace ${Math.floor(minutos)} min`);
+
+/** "120 m, hace 4 min": lo que el operador necesita para decidir si la llamada es del mismo incidente. */
+export const describirCandidato = (c: Pick<CandidatoDuplicado, 'distanciaM' | 'minutosDesde'>): string =>
+  `${formatearDistancia(c.distanciaM)}, ${formatearHace(c.minutosDesde)}`;

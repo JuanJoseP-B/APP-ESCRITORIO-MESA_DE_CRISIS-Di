@@ -73,6 +73,8 @@ interface Props {
   readonly ubicacionLlamada?: Coordenadas | null;
   /** Si se pasa, un clic en el mapa fija la ubicación (y no selecciona incidentes). Solo con el formulario abierto. */
   readonly onClicUbicacion?: (ubicacion: Coordenadas) => void;
+  /** Incidente al que apunta el aviso de duplicados: se rodea con un anillo para que el operador lo ubique. */
+  readonly resaltadoIncidenteId?: string | null;
 }
 
 export function MapaTactico({
@@ -89,6 +91,7 @@ export function MapaTactico({
   onErrorDibujo,
   ubicacionLlamada = null,
   onClicUbicacion,
+  resaltadoIncidenteId = null,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -180,6 +183,26 @@ export function MapaTactico({
           'circle-stroke-width': ['case', ['get', 'seleccionado'], 4, 2],
         },
       });
+      // Anillos sobre el incidente resaltado (punto o polígono); el filtro por id se actualiza desde el efecto.
+      m.addLayer({
+        id: 'incidentes-resalte-punto',
+        type: 'circle',
+        source: FUENTE,
+        filter: ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        paint: {
+          'circle-radius': 16,
+          'circle-opacity': 0,
+          'circle-stroke-color': leerToken('action-secondary'),
+          'circle-stroke-width': 4,
+        },
+      });
+      m.addLayer({
+        id: 'incidentes-resalte-borde',
+        type: 'line',
+        source: FUENTE,
+        filter: ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], '']],
+        paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
+      });
       m.addSource(FUENTE_UBICACION, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'llamada-ubicacion-anillo',
@@ -255,6 +278,14 @@ export function MapaTactico({
       ?.setData(colorearFeatures(reportesAFeatureCollection(reportes, reporteSeleccionadoId), leerToken) as never);
   }, [mapa, listo, reportes, reporteSeleccionadoId, versionTema]);
 
+  // Resalta el incidente candidato a duplicado.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    const id = resaltadoIncidenteId ?? '';
+    mapa.setFilter('incidentes-resalte-punto', ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('incidentes-resalte-borde', ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], id]]);
+  }, [mapa, listo, resaltadoIncidenteId]);
+
   // Mira de la ubicación de la llamada en curso.
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -285,6 +316,8 @@ export function MapaTactico({
     mapa.setPaintProperty('zonas-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('incidentes-puntos', 'circle-stroke-color', halo);
     mapa.setPaintProperty('reportes-puntos', 'circle-stroke-color', leerToken('status-warning'));
+    mapa.setPaintProperty('incidentes-resalte-punto', 'circle-stroke-color', leerToken('action-secondary'));
+    mapa.setPaintProperty('incidentes-resalte-borde', 'line-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-anillo', 'circle-stroke-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-stroke-color', halo);

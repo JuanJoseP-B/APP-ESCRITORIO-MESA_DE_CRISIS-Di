@@ -14,7 +14,7 @@ import { useAtajos } from './hooks/useAtajos';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
 import { useSimulacion } from './hooks/useSimulacion';
-import type { Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
+import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
 import { dividirCola, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
@@ -67,6 +67,7 @@ function Mesa({
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<FormularioAbierto | null>(null);
   const [ubicacionLlamada, setUbicacionLlamada] = useState<Coordenadas | null>(null);
+  const [resaltadoId, setResaltadoId] = useState<string | null>(null);
   const llamadaAbiertaId = formulario?.llamadaId ?? null;
   const [foco, setFoco] = useState<Coordenadas | null>(null);
   const [dibujando, setDibujando] = useState(false);
@@ -117,6 +118,7 @@ function Mesa({
   );
   const accionesLlamada = useAccionesLlamada({
     servicio,
+    incidentes: incidentes.datos,
     alSeleccionar: setSeleccionadoId,
     alAvisar: setAviso,
     operador,
@@ -133,6 +135,7 @@ function Mesa({
   const cerrarFormulario = useCallback(() => {
     setFormulario(null);
     setUbicacionLlamada(null);
+    setResaltadoId(null);
   }, []);
   const abrirLlamadaManual = useCallback(() => abrirFormulario(BORRADOR_VACIO, null, null), [abrirFormulario]);
   // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
@@ -152,7 +155,13 @@ function Mesa({
     [descartarReporte],
   );
   const alCrearIncidenteDesdeLlamada = useCallback(
-    (datos: NuevaLlamada) => accionesLlamada.crearIncidente(datos, formulario?.llamadaId ?? null),
+    (datos: NuevaLlamada, descartados: readonly CandidatoDuplicado[]) =>
+      accionesLlamada.crearIncidente(datos, formulario?.llamadaId ?? null, descartados),
+    [accionesLlamada, formulario?.llamadaId],
+  );
+  const alVincularLlamada = useCallback(
+    (datos: NuevaLlamada, candidato: CandidatoDuplicado) =>
+      accionesLlamada.vincular(datos, formulario?.llamadaId ?? null, candidato.incidenteId),
     [accionesLlamada, formulario?.llamadaId],
   );
   const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
@@ -189,6 +198,7 @@ function Mesa({
         onErrorDibujo={alErrorDibujo}
         ubicacionLlamada={formulario ? ubicacionLlamada : null}
         onClicUbicacion={formulario ? setUbicacionLlamada : undefined}
+        resaltadoIncidenteId={resaltadoId}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -292,8 +302,12 @@ function Mesa({
                 entrante={formulario.llamadaId !== null}
                 ubicacion={ubicacionLlamada}
                 onUbicacionCambia={setUbicacionLlamada}
+                incidentes={incidentes.datos}
+                ahora={ahora}
                 onCerrar={cerrarFormulario}
                 onCrearIncidente={alCrearIncidenteDesdeLlamada}
+                onVincular={alVincularLlamada}
+                onResaltarIncidente={setResaltadoId}
               />
             </div>
           )}
