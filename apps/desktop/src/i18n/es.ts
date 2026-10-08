@@ -148,6 +148,9 @@ export const es = {
   'leyenda.bloqueo': 'Bloqueo de vía',
   'leyenda.llamada': 'Llamada sin confirmar',
   'marcador.unidad.aria': '{unidad}, {tipo}, {estado}',
+  'anillo.CALIENTE': 'Zona caliente',
+  'anillo.TIBIA': 'Zona tibia',
+  'anillo.EVACUACION': 'Zona de evacuación',
 
   'trazado.iniciar': 'Trazar zona',
   'trazado.cancelar': 'Cancelar trazado',

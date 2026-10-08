@@ -25,6 +25,7 @@ import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/ll
 import { unidadesParaMapa } from './domain/unidadesMapa';
 import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
 import { rutasAFeatureCollection } from './domain/geojson';
+import { perimetroDeIncidente } from './domain/perimetro';
 import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
@@ -191,6 +192,12 @@ function Mesa({
     return m.length === 0 ? SIN_MOVIMIENTOS : m;
   }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento]);
   const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
+  // Los anillos se generan al crear o seleccionar un incidente; solo cambian si cambia su tipo, su lugar o su perímetro.
+  const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado ?? {};
+  const anillos = useMemo(
+    () => (tipoSel !== undefined && geometriaSel ? perimetroDeIncidente({ tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel }).anillos : []),
+    [tipoSel, geometriaSel, perimetroSel],
+  );
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
   const alSeleccionarUnidad = useCallback(
@@ -237,6 +244,7 @@ function Mesa({
         resaltadoIncidenteId={resaltadoId}
         unidades={unidadesMapa}
         rutas={rutasMapa}
+        anillos={anillos}
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
       />

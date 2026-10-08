@@ -139,6 +139,9 @@ export const en: Diccionario = {
   'leyenda.bloqueo': 'Road block',
   'leyenda.llamada': 'Unconfirmed call',
   'marcador.unidad.aria': '{unidad}, {tipo}, {estado}',
+  'anillo.CALIENTE': 'Hot zone',
+  'anillo.TIBIA': 'Warm zone',
+  'anillo.EVACUACION': 'Evacuation zone',
 
   'trazado.iniciar': 'Draw zone',
   'trazado.cancelar': 'Cancel drawing',

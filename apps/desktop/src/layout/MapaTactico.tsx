@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
-import type { Coordenadas, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
-import { leerToken, observarTema } from '@argos/ui';
+import type { Anillo, Coordenadas, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
+import { leerToken, observarTema, opacidadZona } from '@argos/ui';
 import {
   colorearFeatures,
   incidentesAFeatureCollection,
@@ -11,9 +11,11 @@ import {
   zonasAFeatureCollection,
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
+import { anillosAFeatureCollection, type AnilloGenerado } from '../domain/perimetro';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
 import type { UnidadMapa } from '../domain/unidadesMapa';
 import { LeyendaMapa } from './LeyendaMapa';
+import { useEtiquetasAnillos } from './useEtiquetasAnillos';
 import { useMarcadoresUnidades } from './useMarcadoresUnidades';
 
 const CAPA_BASE = 'base';
@@ -22,10 +24,17 @@ const FUENTE_ZONAS = 'zonas-publicas';
 const FUENTE_REPORTES = 'reportes';
 const FUENTE_UBICACION = 'llamada-ubicacion';
 const FUENTE_RUTAS = 'rutas';
+const FUENTE_ANILLOS = 'anillos';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
 const SIN_UNIDADES: readonly UnidadMapa[] = [];
+const TRAZO_ANILLO: readonly (readonly [Anillo, number[] | null])[] = [
+  ['CALIENTE', null],
+  ['TIBIA', [4, 2]],
+  ['EVACUACION', [1, 2]],
+];
+const SIN_ANILLOS: readonly AnilloGenerado[] = [];
 const SIN_RUTAS: FeatureCollectionRutas = { type: 'FeatureCollection', features: [] };
 const NADA = (): void => undefined;
 const ZOOM_UNIDAD = 16;
@@ -89,6 +98,8 @@ interface Props {
   readonly onSeleccionarUnidad?: (id: string) => void;
   /** Tramo que le falta a cada unidad en ruta; se dibuja como línea discontinua hasta el incidente. */
   readonly rutas?: FeatureCollectionRutas;
+  /** Anillos de riesgo (caliente, tibia, evacuación) del incidente seleccionado, con su radio rotulado. */
+  readonly anillos?: readonly AnilloGenerado[];
 }
 
 export function MapaTactico({
@@ -110,6 +121,7 @@ export function MapaTactico({
   unidadSeleccionadaId = null,
   onSeleccionarUnidad = NADA,
   rutas = SIN_RUTAS,
+  anillos = SIN_ANILLOS,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -135,6 +147,24 @@ export function MapaTactico({
       zoom: 11,
     });
     m.on('load', () => {
+      // Los anillos van debajo de todo lo demás: zonas, incidentes y unidades quedan legibles encima.
+      m.addSource(FUENTE_ANILLOS, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'anillos-relleno',
+        type: 'fill',
+        source: FUENTE_ANILLOS,
+        paint: { 'fill-color': ['get', 'color'], 'fill-opacity': ['get', 'opacidad'] },
+      });
+      // Cada anillo con su trazo (continuo, discontinuo, punteado): se distinguen sin depender del color.
+      for (const [anillo, trazo] of TRAZO_ANILLO) {
+        m.addLayer({
+          id: `anillos-borde-${anillo}`,
+          type: 'line',
+          source: FUENTE_ANILLOS,
+          filter: ['==', ['get', 'id'], anillo],
+          paint: { 'line-color': ['get', 'color'], 'line-width': 2, ...(trazo ? { 'line-dasharray': trazo } : {}) },
+        });
+      }
       m.addSource(FUENTE_ZONAS, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'zonas-relleno',
@@ -308,6 +338,15 @@ export function MapaTactico({
     if (!mapa || !listo) return;
     mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutas, leerToken) as never);
   }, [mapa, listo, rutas, versionTema]);
+
+  // La opacidad de cada anillo parte de la del tema activo, así que se recalcula al cambiar de turno.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    mapa
+      .getSource<GeoJSONSource>(FUENTE_ANILLOS)
+      ?.setData(colorearFeatures(anillosAFeatureCollection(anillos, opacidadZona()), leerToken) as never);
+  }, [mapa, listo, anillos, versionTema]);
+  useEtiquetasAnillos({ mapa, listo, anillos });
 
   // Resalta el incidente candidato a duplicado.
   useEffect(() => {
