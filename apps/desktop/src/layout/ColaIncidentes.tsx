@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
-import { Glyph, SEVERIDADES, type SeveridadBadge } from '@argos/ui';
+import { Badge } from '@argos/ui';
 import { codigoIncidente, dividirCola, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
+import { llamadasPorIncidente } from '../domain/entrantes';
 import { BandejaEntrantes } from './BandejaEntrantes';
-import { SEVERIDAD_UI } from './presentacion';
+import { PRIORIDAD_UI } from './presentacion';
 
 export interface ColaIncidentesProps {
   incidentes: readonly Incidente[];
@@ -19,13 +20,6 @@ export interface ColaIncidentesProps {
   onDescartarLlamada?: (llamada: Llamada) => void;
 }
 
-const COLOR_SEVERIDAD: Record<SeveridadBadge, string> = {
-  critico: 'text-status-critical',
-  alto: 'text-status-critical',
-  medio: 'text-status-warning',
-  bajo: 'text-text-secondary',
-};
-
 /** "12 min", "2 h 05 min" o "—" cuando no se conoce la apertura. */
 export function formatearDuracion(minutos: number | null): string {
   if (minutos === null) return '—';
@@ -38,6 +32,7 @@ type Pestana = 'activos' | 'cerrados';
 function FilaIncidente({
   incidente,
   unidades,
+  llamadas,
   ahora,
   seleccionado,
   cerrado,
@@ -45,25 +40,33 @@ function FilaIncidente({
 }: {
   incidente: Incidente;
   unidades: number;
+  /** Llamadas vinculadas al incidente. */
+  llamadas: number;
   ahora: number;
   seleccionado: boolean;
   cerrado: boolean;
   onSeleccionar: () => void;
 }) {
-  const severidad = SEVERIDAD_UI[incidente.nivel_criticidad];
-  const preset = SEVERIDADES[severidad];
+  const prioridad = PRIORIDAD_UI[incidente.prioridad];
   const codigo = codigoIncidente(incidente.id);
   return (
     <button
       type="button"
       aria-pressed={seleccionado}
-      aria-label={`${incidente.titulo}, ${preset.label}, ${incidente.estado}, ${unidades} unidades`}
+      aria-label={`${incidente.titulo}, prioridad ${incidente.prioridad}, ${incidente.estado}, ${unidades} unidades, ${llamadas} llamadas`}
       onClick={onSeleccionar}
       className={`grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover ${seleccionado ? 'bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong' : ''}`}
     >
-      <span className={`flex items-center gap-2 font-mono text-overline uppercase ${cerrado ? 'text-text-muted' : COLOR_SEVERIDAD[severidad]}`}>
-        <Glyph shape={preset.shape} />
-        {preset.label}
+      <span>
+        {cerrado ? (
+          <Badge tone="neutral" emphasis="outline">
+            {incidente.prioridad}
+          </Badge>
+        ) : (
+          <Badge tone={prioridad.tone} emphasis={prioridad.emphasis}>
+            {incidente.prioridad}
+          </Badge>
+        )}
       </span>
       <span className="font-mono text-data-sm font-semibold tabular text-text-primary">#{codigo}</span>
       <span className="font-mono text-data-sm tabular text-text-secondary">
@@ -75,6 +78,15 @@ function FilaIncidente({
       <span className="font-mono text-data-sm tabular text-text-secondary">
         {unidades} U{cerrado ? ` · ${incidente.estado}` : ''}
       </span>
+      {llamadas > 0 && (
+        <span className="justify-self-end">
+          <Badge tone="neutral" emphasis="outline" glyph={false}>
+            <span role="img" aria-label={llamadas === 1 ? '1 llamada vinculada' : `${llamadas} llamadas vinculadas`} className="font-mono tabular">
+              <span aria-hidden="true">☎</span> {llamadas}
+            </span>
+          </Badge>
+        </span>
+      )}
     </button>
   );
 }
@@ -94,6 +106,7 @@ export function ColaIncidentes({
   const [pestana, setPestana] = useState<Pestana>('activos');
   const { activos, cerrados } = dividirCola(incidentes);
   const unidades = unidadesPorIncidente(recursos);
+  const vinculadas = llamadasPorIncidente(llamadas);
   const visibles = pestana === 'activos' ? activos : cerrados;
 
   return (
@@ -140,6 +153,7 @@ export function ColaIncidentes({
                 <FilaIncidente
                   incidente={i}
                   unidades={unidades.get(i.id) ?? 0}
+                  llamadas={vinculadas.get(i.id) ?? 0}
                   ahora={ahora}
                   seleccionado={i.id === seleccionadoId}
                   cerrado={pestana === 'cerrados'}

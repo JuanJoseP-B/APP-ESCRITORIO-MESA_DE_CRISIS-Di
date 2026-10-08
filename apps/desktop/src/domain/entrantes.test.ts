@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Llamada, Prioridad } from '@argos/shared';
-import { VENTANA_NUEVA_MS, entrantes, esLlamadaNueva, reporteDeLlamada, segundosDesde } from './entrantes';
+import { VENTANA_NUEVA_MS, entrantes, esLlamadaNueva, llamadasPorIncidente, reporteDeLlamada, segundosDesde } from './entrantes';
 
 const AHORA = Date.parse('2026-10-08T12:00:00Z');
 const hace = (seg: number): string => new Date(AHORA - seg * 1000).toISOString();
@@ -66,5 +66,22 @@ describe('reporteDeLlamada', () => {
       lng: -77.28,
       estado_validacion: 'No confirmado',
     });
+  });
+});
+
+describe('llamadasPorIncidente', () => {
+  it('cuenta las llamadas vinculadas a cada incidente y no las entrantes ni las descartadas', () => {
+    const vinculada = (id: string, incidenteId: string, extra: Partial<Llamada> = {}) =>
+      llamada(id, 'P1', 10, { incidenteId, estadoValidacion: 'Confirmado', ...extra });
+    const cuenta = llamadasPorIncidente([
+      vinculada('a', 'i1'),
+      vinculada('b', 'i1'),
+      vinculada('c', 'i2'),
+      vinculada('d', 'i2', { estadoValidacion: 'Descartado' }),
+      llamada('entrante', 'P2', 5),
+    ]);
+    expect(cuenta.get('i1')).toBe(2);
+    expect(cuenta.get('i2')).toBe(1);
+    expect(cuenta.size).toBe(2);
   });
 });

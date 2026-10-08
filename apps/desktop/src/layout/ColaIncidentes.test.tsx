@@ -83,15 +83,39 @@ describe('ColaIncidentes', () => {
     expect(screen.queryByText('Incidente cerrado')).toBeNull();
   });
 
-  it('cada fila muestra criticidad (glifo y palabra), código, tiempo abierto y unidades', () => {
+  it('cada fila muestra prioridad (glifo y palabra), código, tiempo abierto y unidades', () => {
     const { container } = render(<ColaIncidentes {...base} />);
-    const fila = filas()[1] as HTMLElement; // critico: 30 min, 2 unidades
-    expect(fila.textContent).toContain('Crítico');
+    const fila = filas()[1] as HTMLElement; // critico: P1, 30 min, 2 unidades
+    expect(fila.textContent).toContain('P1');
     expect(fila.textContent).toContain('#ICO');
     expect(fila.textContent).toContain('30 min');
     expect(fila.textContent).toContain('2 U');
     expect(container.querySelector('.ag-glyph--square')).not.toBeNull();
     expect(filas()[2]?.textContent).toContain('0 U');
+  });
+
+  it('la prioridad P1–P4 lleva su color semántico: P1 crítico, P2 advertencia, P3 información, P4 neutro', () => {
+    const conPrioridad = (id: string, prioridad: Incidente['prioridad']): Incidente => ({ ...inc(id, 'Medio', '2026-10-07T11:00:00Z'), prioridad });
+    const { container } = render(
+      <ColaIncidentes {...base} incidentes={(['P1', 'P2', 'P3', 'P4'] as const).map((p) => conPrioridad(`i-${p}`, p))} recursos={[]} />,
+    );
+    expect(filas().map((f) => f.querySelector('.ag-badge')?.className)).toEqual([
+      expect.stringContaining('ag-badge--critical'),
+      expect.stringContaining('ag-badge--warning'),
+      expect.stringContaining('ag-badge--info'),
+      expect.stringContaining('ag-badge--neutral'),
+    ]);
+    expect(filas().map((f) => f.textContent?.match(/P[1-4]/)?.[0])).toEqual(['P1', 'P2', 'P3', 'P4']);
+    expect(container.querySelector('.ag-badge--solid')).not.toBeNull();
+  });
+
+  it('el badge ☎ N cuenta las llamadas vinculadas y no aparece sin ellas', () => {
+    const vinculada = (id: string, incidenteId: string) => llamada(id, { incidenteId, estadoValidacion: 'Confirmado' });
+    render(<ColaIncidentes {...base} llamadas={[vinculada('a', 'critico'), vinculada('b', 'critico'), vinculada('c', 'viejo'), llamada('e')]} />);
+    const [viejo, critico, bajo] = filas() as [HTMLElement, HTMLElement, HTMLElement];
+    expect(within(critico).getByRole('img', { name: '2 llamadas vinculadas' }).textContent).toBe('☎ 2');
+    expect(within(viejo).getByRole('img', { name: '1 llamada vinculada' })).toBeTruthy();
+    expect(within(bajo).queryByRole('img')).toBeNull();
   });
 
   it('elegir una fila llama a onSeleccionar con su id y marca la seleccionada', async () => {

@@ -41,3 +41,12 @@ export const reporteDeLlamada = (l: Llamada): Reporte => ({
   estado_validacion: l.estadoValidacion,
   creado_en: l.creadoEn,
 });
+
+/** Llamadas vinculadas a cada incidente (las descartadas no cuentan). */
+export function llamadasPorIncidente(llamadas: readonly Llamada[]): ReadonlyMap<string, number> {
+  const cuenta = new Map<string, number>();
+  for (const l of llamadas) {
+    if (l.incidenteId !== null && l.estadoValidacion !== 'Descartado') cuenta.set(l.incidenteId, (cuenta.get(l.incidenteId) ?? 0) + 1);
+  }
+  return cuenta;
+}
