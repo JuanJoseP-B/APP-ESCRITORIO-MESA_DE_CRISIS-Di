@@ -27,6 +27,7 @@ import { FormularioLlamada } from './layout/FormularioLlamada';
 import { GrillaTactica } from './layout/GrillaTactica';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
+import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearServicioDemo } from './services/servicioDemo';
 import { aplicarTema, temaGuardado, type Tema } from './tema';
@@ -37,8 +38,6 @@ interface FormularioAbierto {
   readonly inicial: Borrador;
   readonly llamadaId: string | null;
 }
-
-const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
 /** Servicio demo con su reloj simulado: la consola y los datos comparten la misma hora acelerable. */
 function crearEntornoDemo(): { readonly servicio: ServicioMesa; readonly reloj: RelojSimulado } {
@@ -60,6 +59,7 @@ function Mesa({
   readonly onReiniciarSimulacion?: () => void;
   readonly onCerrarSesion: () => void;
 }) {
+  const { t } = useTexto();
   const incidentes = useIncidentesRealtime(servicio);
   const llamadas = useLlamadasRealtime(servicio);
   const recursos = useRecursosRealtime(servicio);
@@ -211,23 +211,23 @@ function Mesa({
             setDibujando((d) => !d);
           }}
         >
-          {dibujando ? 'Cancelar trazado' : 'Trazar zona'}
+          {dibujando ? t('trazado.cancelar') : t('trazado.iniciar')}
         </Button>
         {dibujando && (
           <div className="border border-border-strong bg-surface-panel p-3 shadow-overlay">
-            <p className="font-mono text-overline uppercase text-text-primary">Trazar figura</p>
-            <div role="group" aria-label="Figura a trazar" className="mt-2 flex gap-1">
+            <p className="font-mono text-overline uppercase text-text-primary">{t('trazado.titulo')}</p>
+            <div role="group" aria-label={t('trazado.figura')} className="mt-2 flex gap-1">
               {MODOS_TRAZADO.map((m) => (
                 <Button key={m} size="sm" variant={m === modoTrazado ? 'secondary' : 'ghost'} aria-pressed={m === modoTrazado} onClick={() => setModoTrazado(m)}>
-                  {ETIQUETA_MODO[m]}
+                  {m === 'poligono' ? t('trazado.poligono') : t('trazado.linea')}
                 </Button>
               ))}
             </div>
             <p className="mt-2 max-w-64 font-ui text-body-sm text-text-secondary">
               {modoTrazado === 'poligono' && incidenteSeleccionado
-                ? `Destino: zona de riesgo de "${incidenteSeleccionado.titulo}".`
-                : 'Destino: zonas públicas (Bloqueo de Vía).'}{' '}
-              Clic para añadir vértices; doble clic o Enter para terminar.
+                ? t('trazado.destino.riesgo', { titulo: incidenteSeleccionado.titulo })
+                : t('trazado.destino.publica')}{' '}
+              {t('trazado.ayuda')}
             </p>
           </div>
         )}
@@ -328,6 +328,7 @@ function Mesa({
 
 /** Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador. */
 export function App() {
+  const { t } = useTexto();
   const real = useMemo(() => crearServicioDesdeEntorno(), []);
   const [demo, setDemo] = useState(() => (real ? null : crearEntornoDemo()));
   const servicio = real ?? demo?.servicio;
@@ -360,15 +361,15 @@ export function App() {
         const s = await servicio.iniciarSesion(email, password);
         if (!s.esOperador) {
           await servicio.cerrarSesion();
-          setError('Esta cuenta no tiene rol de operador');
+          setError(t('login.error.rol'));
           return;
         }
         setSesion(s);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
+        setError(err instanceof Error ? err.message : t('login.error.desconocido'));
       }
     },
-    [servicio],
+    [servicio, t],
   );
 
   const cerrarSesion = useCallback(() => {

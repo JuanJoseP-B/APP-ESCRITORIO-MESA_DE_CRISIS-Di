@@ -3,6 +3,8 @@ import type { Incidente, Llamada, Recurso } from '@argos/shared';
 import { Badge } from '@argos/ui';
 import { codigoIncidente, dividirCola, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
 import { llamadasPorIncidente } from '../domain/entrantes';
+import { textoEstadoIncidente } from '../i18n/etiquetas';
+import { useTexto } from '../i18n/IdiomaProvider';
 import { BandejaEntrantes } from './BandejaEntrantes';
 import { PRIORIDAD_UI } from './presentacion';
 
@@ -47,13 +49,15 @@ function FilaIncidente({
   cerrado: boolean;
   onSeleccionar: () => void;
 }) {
+  const { t } = useTexto();
   const prioridad = PRIORIDAD_UI[incidente.prioridad];
+  const estado = textoEstadoIncidente(t, incidente.estado);
   const codigo = codigoIncidente(incidente.id);
   return (
     <button
       type="button"
       aria-pressed={seleccionado}
-      aria-label={`${incidente.titulo}, prioridad ${incidente.prioridad}, ${incidente.estado}, ${unidades} unidades, ${llamadas} llamadas`}
+      aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades, llamadas })}
       onClick={onSeleccionar}
       className={`grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover ${seleccionado ? 'bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong' : ''}`}
     >
@@ -76,12 +80,12 @@ function FilaIncidente({
         {incidente.titulo}
       </span>
       <span className="font-mono text-data-sm tabular text-text-secondary">
-        {unidades} U{cerrado ? ` · ${incidente.estado}` : ''}
+        {unidades} U{cerrado ? ` · ${estado}` : ''}
       </span>
       {llamadas > 0 && (
         <span className="justify-self-end">
           <Badge tone="neutral" emphasis="outline" glyph={false}>
-            <span role="img" aria-label={llamadas === 1 ? '1 llamada vinculada' : `${llamadas} llamadas vinculadas`} className="font-mono tabular">
+            <span role="img" aria-label={llamadas === 1 ? t('cola.llamadas.una') : t('cola.llamadas.varias', { n: llamadas })} className="font-mono tabular">
               <span aria-hidden="true">☎</span> {llamadas}
             </span>
           </Badge>
@@ -103,6 +107,7 @@ export function ColaIncidentes({
   onAbrirLlamada,
   onDescartarLlamada,
 }: ColaIncidentesProps) {
+  const { t } = useTexto();
   const [pestana, setPestana] = useState<Pestana>('activos');
   const { activos, cerrados } = dividirCola(incidentes);
   const unidades = unidadesPorIncidente(recursos);
@@ -119,11 +124,11 @@ export function ColaIncidentes({
         onDescartar={onDescartarLlamada}
       />
 
-      <div role="tablist" aria-label="Incidentes" className="flex shrink-0 border-y border-border-strong">
+      <div role="tablist" aria-label={t('cola.tabs.aria')} className="flex shrink-0 border-y border-border-strong">
         {(
           [
-            ['activos', 'Activos', activos.length],
-            ['cerrados', 'Cerrados', cerrados.length],
+            ['activos', t('cola.activos'), activos.length],
+            ['cerrados', t('cola.cerrados'), cerrados.length],
           ] as const
         ).map(([id, nombre, cuenta]) => (
           <button
@@ -144,10 +149,10 @@ export function ColaIncidentes({
       <div id="lista-incidentes" role="tabpanel" aria-labelledby={`pestana-${pestana}`} className="min-h-0 flex-1 overflow-y-auto">
         {visibles.length === 0 ? (
           <p className="px-4 py-3 font-mono text-data-sm text-text-muted">
-            {pestana === 'activos' ? 'Sin incidentes activos' : 'Sin incidentes cerrados'}
+            {pestana === 'activos' ? t('cola.activos.vacio') : t('cola.cerrados.vacio')}
           </p>
         ) : (
-          <ul aria-label={pestana === 'activos' ? 'Incidentes activos' : 'Incidentes cerrados'}>
+          <ul aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
             {visibles.map((i) => (
               <li key={i.id}>
                 <FilaIncidente

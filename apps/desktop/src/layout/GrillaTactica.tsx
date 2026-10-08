@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { RailColapsable } from '@argos/ui';
+import { useTexto } from '../i18n/IdiomaProvider';
 import { useAtajos } from '../hooks/useAtajos';
 import type { PanelColapsable } from '../hooks/usePanelColapsable';
 import './GrillaTactica.css';
@@ -24,6 +25,7 @@ export interface GrillaTacticaProps {
  * desplaza; solo las listas internas de B y D llevan `overflow-y: auto`.
  */
 export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, panelDetalle }: GrillaTacticaProps) {
+  const { t } = useTexto();
   useAtajos({ '[': panelCola.alternar, ']': panelDetalle.alternar });
 
   return (
@@ -37,7 +39,7 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
       </div>
       <RailColapsable
         className="ag-grilla__cola"
-        label="Cola de incidentes"
+        label={t('cola.rail')}
         side="left"
         shortcut="["
         collapsed={panelCola.colapsado}
@@ -52,7 +54,7 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
       </main>
       <RailColapsable
         className="ag-grilla__detalle"
-        label="Detalle del incidente"
+        label={t('detalle.rail')}
         side="right"
         shortcut="]"
         collapsed={panelDetalle.colapsado}
@@ -62,7 +64,7 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
           {detalle}
         </div>
       </RailColapsable>
-      <div className="ag-grilla__tablero" role="region" aria-label="Tablero de unidades" data-area="tablero">
+      <div className="ag-grilla__tablero" role="region" aria-label={t('tablero.aria')} data-area="tablero">
         {tablero}
       </div>
     </div>

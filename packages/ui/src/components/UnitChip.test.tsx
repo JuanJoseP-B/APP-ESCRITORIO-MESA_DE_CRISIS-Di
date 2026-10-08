@@ -60,6 +60,14 @@ describe('UnitChip', () => {
     expect(alElegir).toHaveBeenCalledTimes(1);
   });
 
+  it('statusLabel y statusShort sustituyen la palabra y la abreviatura del estado', () => {
+    const { container } = render(
+      <UnitChip callsign="M-01" status="enruta" kind="Ambulance" statusLabel="En route" statusShort="RTE" />,
+    );
+    expect(screen.getByRole('group', { name: 'M-01, Ambulance, En route' })).toBeTruthy();
+    expect(container.querySelector('.ag-unit__state')?.textContent).toBe('RTE');
+  });
+
   it('no usa colores sueltos en su hoja de estilos', () => {
     expect(css).toContain('.ag-unit');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);

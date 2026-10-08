@@ -26,6 +26,9 @@ export interface UnitChipProps {
   status: EstadoRecursoUI;
   /** Tipo de unidad para lectores de pantalla, p. ej. "Ambulancia". */
   kind?: string;
+  /** Palabra completa del estado (lectores de pantalla) y su abreviatura; por defecto, en español. */
+  statusLabel?: string;
+  statusShort?: string;
   /** Cronómetro "mm:ss" del hito vigente; se omite si no aplica. */
   timer?: string;
   timerLevel?: NivelCronometro;
@@ -35,10 +38,10 @@ export interface UnitChipProps {
   className?: string;
 }
 
-export function UnitChip({ callsign, status, kind, timer, timerLevel = 'en_tiempo', selected, onSelect, className }: UnitChipProps) {
+export function UnitChip({ callsign, status, kind, statusLabel, statusShort, timer, timerLevel = 'en_tiempo', selected, onSelect, className }: UnitChipProps) {
   const estado = ESTADOS_RECURSO_UI[status];
   const nivel = timerLevel === 'en_tiempo' ? undefined : NIVELES_CRONOMETRO[timerLevel];
-  const nombre = [callsign, kind, estado.label, timer ? `${timer}${nivel ? `, ${nivel.palabra}` : ''}` : null]
+  const nombre = [callsign, kind, statusLabel ?? estado.label, timer ? `${timer}${nivel ? `, ${nivel.palabra}` : ''}` : null]
     .filter(Boolean)
     .join(', ');
   const contenido = (
@@ -46,7 +49,7 @@ export function UnitChip({ callsign, status, kind, timer, timerLevel = 'en_tiemp
       <span className="ag-unit__callsign">{callsign}</span>
       <span className="ag-unit__state">
         <Glyph shape={estado.shape} />
-        {ABREVIATURA_ESTADO_UNIDAD[status]}
+        {statusShort ?? ABREVIATURA_ESTADO_UNIDAD[status]}
       </span>
       {timer ? (
         <span className="ag-unit__timer" data-nivel={timerLevel}>

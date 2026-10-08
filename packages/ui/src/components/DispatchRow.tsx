@@ -11,6 +11,8 @@ export interface DispatchRowProps {
   code: string;
   status: EstadoRecursoUI;
   detail?: string;
+  /** Palabra del estado para lectores de pantalla; por defecto la del catálogo en español. */
+  statusLabel?: string;
   /** Sustituye las acciones por defecto del estado. */
   actions?: ReactNode;
   onDispatch?: () => void;
@@ -22,7 +24,7 @@ export interface DispatchRowProps {
   className?: string;
 }
 
-export function DispatchRow({ kind, code, status, detail, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
+export function DispatchRow({ kind, code, status, detail, statusLabel, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
   const porDefecto: Record<EstadoRecursoUI, ReactNode> = {
     disponible: (
       <>
@@ -67,7 +69,7 @@ export function DispatchRow({ kind, code, status, detail, actions, onDispatch, o
   };
   return (
     <div className={cx('ag-row', `ag-row--${status}`, className)} role="group" aria-label={`${kind} ${code}`}>
-      <StatusIndicator status={status} glyphOnly className="ag-row__glyph" />
+      <StatusIndicator status={status} label={statusLabel} glyphOnly className="ag-row__glyph" />
       <div className="ag-row__id">
         <span className="ag-row__name">
           {kind}

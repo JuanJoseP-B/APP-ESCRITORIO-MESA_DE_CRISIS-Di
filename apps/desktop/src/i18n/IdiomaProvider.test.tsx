@@ -40,12 +40,12 @@ describe('diccionarios', () => {
 });
 
 describe('traducir', () => {
-  const dic = { 'idioma.es': 'Hola {nombre}, tienes {n} avisos', 'idioma.en': '{nombre}' } satisfies Diccionario;
+  const dic = { saludo: 'Hola {nombre}, tienes {n} avisos' };
 
   it('sustituye los parámetros y deja a la vista el que falta', () => {
-    expect(traducir(dic, 'idioma.es', { nombre: 'Ana', n: 3 })).toBe('Hola Ana, tienes 3 avisos');
-    expect(traducir(dic, 'idioma.es', { nombre: 'Ana' })).toBe('Hola Ana, tienes {n} avisos');
-    expect(traducir(dic, 'idioma.es')).toBe('Hola {nombre}, tienes {n} avisos');
+    expect(traducir(dic, 'saludo', { nombre: 'Ana', n: 3 })).toBe('Hola Ana, tienes 3 avisos');
+    expect(traducir(dic, 'saludo', { nombre: 'Ana' })).toBe('Hola Ana, tienes {n} avisos');
+    expect(traducir(dic, 'saludo')).toBe('Hola {nombre}, tienes {n} avisos');
   });
 });
 

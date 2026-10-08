@@ -58,4 +58,9 @@ describe('DispatchRow', () => {
     expect(screen.getByText('En escena')).toBeTruthy();
     expect(screen.getByText('Av. Central')).toBeTruthy();
   });
+
+  it('statusLabel sustituye la palabra del estado para lectores de pantalla', () => {
+    const { container } = render(<DispatchRow kind="Ambulance" code="U02" status="disponible" statusLabel="Available" />);
+    expect(container.querySelector('.ag-sr-only')?.textContent).toBe('Available');
+  });
 });

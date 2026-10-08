@@ -1,5 +1,6 @@
 import { Button, Glyph, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
+import { useTexto } from '../i18n/IdiomaProvider';
 import { etiquetaZonaHoraria, formatearHoraConSegundos, formatearMinSeg } from '../domain/reloj';
 import { VELOCIDADES, type Velocidad } from '../domain/relojSimulado';
 import type { Tema } from '../tema';
@@ -34,10 +35,10 @@ export interface BarraEstadoProps {
   onCerrarSesion?: () => void;
 }
 
-const ENLACE_UI: Record<EstadoEnlace, { palabra: string; shape: FormaGlifo; clase: string }> = {
-  EN_VIVO: { palabra: 'En vivo', shape: 'circle', clase: 'text-status-success' },
-  CONECTANDO: { palabra: 'Conectando', shape: 'diamond', clase: 'text-status-info' },
-  SIN_ENLACE: { palabra: 'Sin enlace', shape: 'square', clase: 'text-status-critical' },
+const ENLACE_UI: Record<EstadoEnlace, { shape: FormaGlifo; clase: string }> = {
+  EN_VIVO: { shape: 'circle', clase: 'text-status-success' },
+  CONECTANDO: { shape: 'diamond', clase: 'text-status-info' },
+  SIN_ENLACE: { shape: 'square', clase: 'text-status-critical' },
 };
 
 /** A · barra de estado: reloj con segundos, turno, operador y estado del enlace Realtime. */
@@ -54,12 +55,14 @@ export function BarraEstado({
   simulacion,
   onCerrarSesion,
 }: BarraEstadoProps) {
+  const { t } = useTexto();
   const estadoEnlace = ENLACE_UI[enlace];
-  const nombreTurno = turno === 'carbon' ? 'Noche' : 'Día';
+  const palabraEnlace = t(`enlace.${enlace}`);
+  const nombreTurno = turno === 'carbon' ? t('barra.turno.noche') : t('barra.turno.dia');
   /** Mientras t=0 y en pausa, el escenario aún no ha empezado. */
   const sinIniciar = simulacion !== undefined && !simulacion.reproduciendo && simulacion.tSeg === 0;
   return (
-    <header aria-label="Barra de estado" className="flex h-full items-center gap-4 px-4 text-text-primary">
+    <header aria-label={t('barra.aria')} className="flex h-full items-center gap-4 px-4 text-text-primary">
       <span className="font-mono text-overline uppercase text-text-primary">
         <span aria-hidden="true">■ </span>ARGOS
       </span>
@@ -70,28 +73,28 @@ export function BarraEstado({
         <span className="font-mono text-data-sm text-text-muted">{etiquetaZonaHoraria(hora, zona)}</span>
       </span>
       <span className="font-mono text-data-sm uppercase text-text-secondary">
-        Turno {nombreTurno}
+        {t('barra.turno', { turno: nombreTurno })}
         {operador ? <span className="text-text-muted"> · {operador}</span> : null}
       </span>
-      <span role="status" aria-label={`Enlace: ${estadoEnlace.palabra}`} className={`flex items-center gap-2 font-mono text-data-sm uppercase ${estadoEnlace.clase}`}>
+      <span role="status" aria-label={t('barra.enlace.aria', { estado: palabraEnlace })} className={`flex items-center gap-2 font-mono text-data-sm uppercase ${estadoEnlace.clase}`}>
         <Glyph shape={estadoEnlace.shape} />
-        {estadoEnlace.palabra}
+        {palabraEnlace}
       </span>
       {entrantes !== undefined && (
         <span
           role="status"
-          aria-label={`${entrantes} llamadas entrantes`}
+          aria-label={t('barra.entrantes.aria', { n: entrantes })}
           className={`flex items-center gap-2 font-mono text-data-sm uppercase ${entrantes > 0 ? 'text-status-warning' : 'text-text-muted'}`}
         >
           <Glyph shape={entrantes > 0 ? 'triangle' : 'ring'} />
-          <span className="tabular">{entrantes}</span> Entrantes
+          <span className="tabular">{entrantes}</span> {t('barra.entrantes')}
         </span>
       )}
       {slaVencidos !== undefined && (
         <Button
           size="sm"
           variant="ghost"
-          aria-label={`Filtrar cola: ${slaVencidos} SLA vencidos`}
+          aria-label={t('barra.sla.aria', { n: slaVencidos })}
           disabled={slaVencidos === 0}
           onClick={onFiltrarSla}
           className={slaVencidos > 0 ? 'text-status-critical' : undefined}
@@ -100,28 +103,28 @@ export function BarraEstado({
         </Button>
       )}
       {simulacion && (
-        <div role="group" aria-label="Simulación del escenario" className="flex items-center gap-2">
-          <span className="font-mono text-overline uppercase text-text-secondary">Sim</span>
+        <div role="group" aria-label={t('barra.sim.aria')} className="flex items-center gap-2">
+          <span className="font-mono text-overline uppercase text-text-secondary">{t('barra.sim')}</span>
           <span className="font-mono text-data-sm tabular text-text-primary">
             {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
           </span>
           {sinIniciar ? (
             <Button size="sm" variant="primary" onClick={simulacion.onAlternar}>
-              <Glyph shape="triangle" /> Iniciar escenario
+              <Glyph shape="triangle" /> {t('barra.sim.iniciar')}
             </Button>
           ) : (
             <Button size="sm" variant="secondary" onClick={simulacion.onAlternar}>
-              <Glyph shape={simulacion.reproduciendo ? 'square' : 'triangle'} /> {simulacion.reproduciendo ? 'Pausar' : 'Reproducir'}
+              <Glyph shape={simulacion.reproduciendo ? 'square' : 'triangle'} /> {simulacion.reproduciendo ? t('barra.sim.pausar') : t('barra.sim.reproducir')}
             </Button>
           )}
-          <span role="group" aria-label="Velocidad" className="flex items-center gap-1">
+          <span role="group" aria-label={t('barra.sim.velocidad')} className="flex items-center gap-1">
             {VELOCIDADES.map((v) => (
               <Button
                 key={v}
                 size="sm"
                 variant={v === simulacion.velocidad ? 'secondary' : 'ghost'}
                 aria-pressed={v === simulacion.velocidad}
-                aria-label={`Velocidad ${v}×`}
+                aria-label={t('barra.sim.velocidad.aria', { v })}
                 onClick={() => simulacion.onVelocidad(v)}
               >
                 <span className="tabular">{v}×</span>
@@ -129,17 +132,17 @@ export function BarraEstado({
             ))}
           </span>
           <Button size="sm" variant="ghost" onClick={simulacion.onReiniciar}>
-            Reiniciar
+            {t('barra.sim.reiniciar')}
           </Button>
         </div>
       )}
       <span className="ml-auto flex items-center gap-2">
         <Button size="sm" variant="ghost" onClick={onAlternarTurno}>
-          {turno === 'carbon' ? 'Turno día' : 'Turno noche'}
+          {turno === 'carbon' ? t('barra.turno.aDia') : t('barra.turno.aNoche')}
         </Button>
         {onCerrarSesion && (
           <Button size="sm" variant="ghost" onClick={onCerrarSesion}>
-            Salir
+            {t('barra.salir')}
           </Button>
         )}
       </span>

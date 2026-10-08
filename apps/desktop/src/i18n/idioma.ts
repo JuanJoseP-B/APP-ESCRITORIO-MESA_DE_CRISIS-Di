@@ -1,5 +1,5 @@
 import { en } from './en';
-import { es, type ClaveTexto, type Diccionario } from './es';
+import { es, type Diccionario } from './es';
 
 export const IDIOMAS = ['es', 'en'] as const;
 export type Idioma = (typeof IDIOMAS)[number];
@@ -35,8 +35,8 @@ export function guardarIdioma(idioma: Idioma): void {
 }
 
 /** Sustituye `{nombre}` por su valor; un parámetro ausente deja el marcador a la vista. */
-export function traducir(diccionario: Diccionario, clave: ClaveTexto, params?: ParamsTexto): string {
-  const texto = diccionario[clave];
+export function traducir(diccionario: Readonly<Record<string, string>>, clave: string, params?: ParamsTexto): string {
+  const texto = diccionario[clave] ?? clave;
   if (!params) return texto;
   return texto.replace(/\{(\w+)\}/g, (marcador, nombre: string) => {
     const valor = params[nombre];

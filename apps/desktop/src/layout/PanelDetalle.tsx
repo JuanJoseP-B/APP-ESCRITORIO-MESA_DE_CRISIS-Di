@@ -10,6 +10,14 @@ import {
 import { Badge, Button, DispatchRow, SectionHeader, type VarianteBoton } from '@argos/ui';
 import { codigoIncidente, minutosAbierto } from '../domain/cola';
 import { bitacora } from '../domain/timeline';
+import {
+  textoAccionRecurso,
+  textoEstadoIncidente,
+  textoEstadoRecurso,
+  textoSeveridad,
+  textoTipoRecurso,
+} from '../i18n/etiquetas';
+import { useTexto } from '../i18n/IdiomaProvider';
 import { indicativosDe } from '../domain/unidades';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
@@ -27,14 +35,6 @@ export interface PanelDetalleProps {
   onCambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso, incidenteId: string) => void;
   onCambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
 }
-
-const ETIQUETA_ACCION: Record<EstadoRecurso, string> = {
-  DISPONIBLE: 'Liberar',
-  ASIGNADO: 'Despachar',
-  EN_RUTA: 'En ruta',
-  EN_ESCENA: 'En escena',
-  INOPERATIVO: 'Inoperativo',
-};
 
 /** Solo Despachar es la acción primaria (naranja); el resto es secundaria o neutra. */
 const VARIANTE_ACCION: Record<EstadoRecurso, VarianteBoton> = {
@@ -55,13 +55,14 @@ export function PanelDetalle({
   onCambiarEstadoRecurso,
   onCambiarOcupacion,
 }: PanelDetalleProps) {
+  const { t } = useTexto();
   const refugios = <PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} />;
 
   if (incidente === null) {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-y-auto">
         <p className="px-4 py-4 font-mono text-data-sm text-text-muted">
-          Selecciona un incidente en la cola para ver su ficha y despachar unidades.
+          {t('detalle.vacio')}
         </p>
         {refugios}
       </div>
@@ -78,19 +79,20 @@ export function PanelDetalle({
         key={destino}
         size="sm"
         variant={VARIANTE_ACCION[destino]}
-        aria-label={`${ETIQUETA_ACCION[destino]} ${nombreUnidad(r)}`}
+        aria-label={t('detalle.accion.aria', { accion: textoAccionRecurso(t, destino), unidad: nombreUnidad(r) })}
         onClick={() => onCambiarEstadoRecurso(r, destino, incidente.id)}
       >
-        {destino === 'ASIGNADO' ? 'DESPACHAR' : ETIQUETA_ACCION[destino]}
+        {destino === 'ASIGNADO' ? t('detalle.despachar') : textoAccionRecurso(t, destino)}
       </Button>
     ));
 
   const fila = (r: Recurso) => (
     <li key={r.id}>
       <DispatchRow
-        kind={r.tipo}
+        kind={textoTipoRecurso(t, r.tipo)}
         code={nombreUnidad(r)}
         status={ESTADO_RECURSO_UI[r.estado_actual]}
+        statusLabel={textoEstadoRecurso(t, r.estado_actual)}
         actions={accionesDe(r)}
       />
     </li>
@@ -104,53 +106,53 @@ export function PanelDetalle({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto">
-      <section aria-label="Ficha del incidente" className="shrink-0">
-        <SectionHeader index="01" title={`Incidente #${codigoIncidente(incidente.id)}`} />
+      <section aria-label={t('detalle.ficha')} className="shrink-0">
+        <SectionHeader index="01" title={t('detalle.titulo', { codigo: codigoIncidente(incidente.id) })} />
         <div className="px-4 pb-3">
           <h2 className="font-display text-title-sm text-text-primary">{incidente.titulo}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge severity={SEVERIDAD_UI[incidente.nivel_criticidad]} />
-            <Badge status={ESTADO_INCIDENTE_UI[incidente.estado]} />
+            <Badge severity={SEVERIDAD_UI[incidente.nivel_criticidad]}>{textoSeveridad(t, incidente.nivel_criticidad)}</Badge>
+            <Badge status={ESTADO_INCIDENTE_UI[incidente.estado]}>{textoEstadoIncidente(t, incidente.estado)}</Badge>
             <span className="font-mono text-data-sm tabular text-text-secondary">
-              Abierto hace {formatearDuracion(minutosAbierto(incidente, ahora))}
+              {t('detalle.abierto', { duracion: formatearDuracion(minutosAbierto(incidente, ahora)) })}
             </span>
           </div>
-          <div role="group" aria-label="Estado del incidente" className="mt-3 flex gap-1">
+          <div role="group" aria-label={t('detalle.estado')} className="mt-3 flex gap-1">
             {ESTADOS_INCIDENTE.filter((e) => e !== incidente.estado).map((e) => (
               <Button key={e} size="sm" onClick={() => onCambiarEstadoIncidente(incidente, e)}>
-                Marcar {e}
+                {t('detalle.marcar', { estado: textoEstadoIncidente(t, e) })}
               </Button>
             ))}
           </div>
         </div>
       </section>
 
-      <section aria-label="Unidades asignadas" className="shrink-0">
-        <SectionHeader index="02" title="Unidades asignadas" count={asignadas.length} />
+      <section aria-label={t('detalle.asignadas')} className="shrink-0">
+        <SectionHeader index="02" title={t('detalle.asignadas')} count={asignadas.length} />
         {asignadas.length === 0 ? (
-          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">Sin unidades asignadas</p>
+          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.asignadas.vacio')}</p>
         ) : (
           <ul>{asignadas.map(fila)}</ul>
         )}
       </section>
 
-      <section aria-label="Unidades disponibles" className="shrink-0">
-        <SectionHeader index="03" title="Disponibles para despachar" count={disponibles.length} />
+      <section aria-label={t('detalle.disponibles.aria')} className="shrink-0">
+        <SectionHeader index="03" title={t('detalle.disponibles')} count={disponibles.length} />
         {disponibles.length === 0 ? (
-          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">No hay unidades disponibles</p>
+          <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.disponibles.vacio')}</p>
         ) : (
           <ul>{disponibles.map(fila)}</ul>
         )}
         {inoperativas.length > 0 && (
           <>
-            <p className="px-4 pt-2 font-mono text-overline uppercase text-text-muted">Fuera de servicio</p>
+            <p className="px-4 pt-2 font-mono text-overline uppercase text-text-muted">{t('detalle.fuera')}</p>
             <ul>{inoperativas.map(fila)}</ul>
           </>
         )}
       </section>
 
-      <section aria-label="Línea de tiempo" className="shrink-0">
-        <SectionHeader index="04" title="Línea de tiempo" count={totalEventos} />
+      <section aria-label={t('detalle.timeline')} className="shrink-0">
+        <SectionHeader index="04" title={t('detalle.timeline')} count={totalEventos} />
         <ol className="px-4 pb-3 font-mono text-data-sm text-text-secondary">
           {entradas.map((e, n) =>
             e.tipo === 'fecha' ? (
@@ -163,7 +165,7 @@ export function PanelDetalle({
                   {e.hora}
                 </time>
                 {e.descripcion}
-                <span className="text-text-muted"> · {e.autor ?? 'sin autor'}</span>
+                <span className="text-text-muted"> · {e.autor ?? t('detalle.sinAutor')}</span>
               </li>
             ),
           )}

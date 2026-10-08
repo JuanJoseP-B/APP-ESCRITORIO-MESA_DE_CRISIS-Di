@@ -15,6 +15,7 @@ export const ESTADOS_RECURSO_UI: Record<EstadoRecursoUI, { label: string; shape:
 export interface StatusIndicatorProps {
   status: EstadoRecursoUI;
   count?: number;
+  /** Sustituye la palabra del estado (p. ej. para traducirla). */
   label?: string;
   /** Solo el glifo; la palabra queda para lectores de pantalla. */
   glyphOnly?: boolean;
@@ -26,7 +27,7 @@ export function StatusIndicator({ status, count, label, glyphOnly, className }: 
   return (
     <span className={cx('ag-status', `ag-status--${status}`, className)}>
       <Glyph shape={estado.shape} />
-      {glyphOnly ? <span className="ag-sr-only">{estado.label}</span> : (label ?? estado.label)}
+      {glyphOnly ? <span className="ag-sr-only">{label ?? estado.label}</span> : (label ?? estado.label)}
       {count != null && !glyphOnly ? <span className="ag-status__count">({count})</span> : null}
     </span>
   );
