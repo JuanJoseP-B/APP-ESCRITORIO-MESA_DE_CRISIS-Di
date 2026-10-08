@@ -3,6 +3,9 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Incidente, Recurso, ZonaPublica } from '@argos/shared';
+import { RADIOS_POR_DEFECTO } from '@argos/shared';
+import { analizarPerimetro } from '../domain/analisisEspacial';
+import { generarAnillos } from '../domain/perimetro';
 import { PanelDetalle, type PanelDetalleProps } from './PanelDetalle';
 
 afterEach(cleanup);
@@ -152,5 +155,24 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
     rerender(<PanelDetalle {...base({ incidente: null, onCambiarOcupacion: ajustar })} />);
     await userEvent.click(screen.getByRole('button', { name: 'Reducir ocupación de Coliseo Municipal' }));
     expect(ajustar).toHaveBeenCalledWith(refugio, -5);
+  });
+});
+
+describe('PanelDetalle: análisis del perímetro', () => {
+  const anillos = generarAnillos({ lat: 0, lng: 0 }, RADIOS_POR_DEFECTO);
+
+  it('sin perímetro no hay sección de análisis', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('region', { name: 'Análisis del perímetro' })).toBeNull();
+  });
+
+  it('con perímetro muestra el análisis justo después de la ficha y pasa el resaltado al mapa', async () => {
+    const onResaltar = vi.fn();
+    const analisis = analizarPerimetro(anillos, [refugio], []);
+    render(<PanelDetalle {...base({ perimetro: { anillos, analisis }, onResaltar })} />);
+    const secciones = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(secciones.slice(0, 2)).toEqual(['Ficha del incidente', 'Análisis del perímetro']);
+    await userEvent.hover(screen.getByText(/^Coliseo Municipal · /));
+    expect(onResaltar).toHaveBeenLastCalledWith({ tipo: 'zona', id: 'z1' });
   });
 });

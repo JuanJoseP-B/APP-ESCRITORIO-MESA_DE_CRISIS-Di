@@ -46,6 +46,19 @@ describe('MarcadorUnidad', () => {
     expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('dentro de la zona caliente muestra la alerta con glifo y palabra, y la anuncia', () => {
+    const { container } = render(<MarcadorUnidad unidad={unidad()} seleccionada={false} onSeleccionar={vi.fn()} alerta />);
+    expect(container.querySelector('.ag-marcador__alerta')?.textContent).toBe('CALIENTE');
+    expect(container.querySelector('.ag-marcador__alerta .ag-glyph')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'M11, Ambulancia, En ruta, dentro de la zona caliente' })).toBeTruthy();
+  });
+
+  it('sin alerta no muestra el rótulo; resaltada lo declara', () => {
+    const { container } = render(<MarcadorUnidad unidad={unidad()} seleccionada={false} onSeleccionar={vi.fn()} resaltada />);
+    expect(container.querySelector('.ag-marcador__alerta')).toBeNull();
+    expect(container.querySelector('[data-resaltada="true"]')).not.toBeNull();
+  });
+
   it('el clic entrega el id y no se propaga al mapa', async () => {
     const elegir = vi.fn();
     const alMapa = vi.fn();

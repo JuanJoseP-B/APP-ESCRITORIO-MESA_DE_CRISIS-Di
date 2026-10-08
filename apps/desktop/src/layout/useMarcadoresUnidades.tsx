@@ -15,6 +15,9 @@ interface Opciones {
   readonly listo: boolean;
   readonly unidades: readonly UnidadMapa[];
   readonly seleccionadaId: string | null;
+  /** Unidades dentro de una zona caliente: llevan la alerta en el marcador. */
+  readonly enAlerta: ReadonlySet<string>;
+  readonly resaltadaId: string | null;
   readonly onSeleccionar: (id: string) => void;
 }
 
@@ -22,7 +25,7 @@ interface Opciones {
  * Dibuja una unidad como marcador DOM de MapLibre con un componente React dentro (glifo, indicativo, estado).
  * Cada marcador es su propia raíz de React, por eso se le pasa el idioma por contexto en cada render.
  */
-export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, onSeleccionar }: Opciones): void {
+export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, onSeleccionar }: Opciones): void {
   const idioma = useTexto();
   const entradas = useRef(new Map<string, Entrada>());
   const alSeleccionar = useRef(onSeleccionar);
@@ -49,11 +52,17 @@ export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, o
       }
       entrada.raiz.render(
         <ContextoIdioma.Provider value={idioma}>
-          <MarcadorUnidad unidad={u} seleccionada={u.id === seleccionadaId} onSeleccionar={(id) => alSeleccionar.current(id)} />
+          <MarcadorUnidad
+            unidad={u}
+            seleccionada={u.id === seleccionadaId}
+            alerta={enAlerta.has(u.id)}
+            resaltada={u.id === resaltadaId}
+            onSeleccionar={(id) => alSeleccionar.current(id)}
+          />
         </ContextoIdioma.Provider>,
       );
     }
-  }, [mapa, listo, unidades, seleccionadaId, idioma]);
+  }, [mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, idioma]);
 
   // Al desmontar el mapa se retiran todos los marcadores.
   useEffect(() => {

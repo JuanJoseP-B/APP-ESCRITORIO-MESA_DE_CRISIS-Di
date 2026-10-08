@@ -1,6 +1,7 @@
 import {
   ESTADOS_INCIDENTE,
   TRANSICIONES_RECURSO,
+  type AnalisisPerimetro,
   type EstadoIncidente,
   type EstadoRecurso,
   type Incidente,
@@ -8,7 +9,9 @@ import {
   type ZonaPublica,
 } from '@argos/shared';
 import { Badge, Button, DispatchRow, SectionHeader, type VarianteBoton } from '@argos/ui';
+import type { ObjetivoResaltado } from '../domain/analisisEspacial';
 import { codigoIncidente, minutosAbierto } from '../domain/cola';
+import type { AnilloGenerado } from '../domain/perimetro';
 import { bitacora } from '../domain/timeline';
 import {
   textoAccionRecurso,
@@ -21,6 +24,7 @@ import { useTexto } from '../i18n/IdiomaProvider';
 import { indicativosDe } from '../domain/unidades';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
+import { SeccionPerimetro } from './SeccionPerimetro';
 import { ESTADO_INCIDENTE_UI, ESTADO_RECURSO_UI, SEVERIDAD_UI } from './presentacion';
 
 export interface PanelDetalleProps {
@@ -34,6 +38,10 @@ export interface PanelDetalleProps {
   /** Mutación de la unidad; al despachar recibe el `incidenteId` del incidente mostrado. */
   onCambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso, incidenteId: string) => void;
   onCambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
+  /** Anillos del incidente y su análisis espacial; sin ellos no se muestra la sección del perímetro. */
+  perimetro?: { readonly anillos: readonly AnilloGenerado[]; readonly analisis: AnalisisPerimetro } | null;
+  /** Al señalar un ítem del análisis (cursor o foco) el mapa lo resalta; `null` al soltarlo. */
+  onResaltar?: (objetivo: ObjetivoResaltado | null) => void;
 }
 
 /** Solo Despachar es la acción primaria (naranja); el resto es secundaria o neutra. */
@@ -54,6 +62,8 @@ export function PanelDetalle({
   onCambiarEstadoIncidente,
   onCambiarEstadoRecurso,
   onCambiarOcupacion,
+  perimetro = null,
+  onResaltar = () => undefined,
 }: PanelDetalleProps) {
   const { t, idioma } = useTexto();
   const refugios = <PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} />;
@@ -127,8 +137,20 @@ export function PanelDetalle({
         </div>
       </section>
 
+      {perimetro && (
+        <SeccionPerimetro
+          indice="02"
+          anillos={perimetro.anillos}
+          analisis={perimetro.analisis}
+          zonas={zonas}
+          recursos={recursos}
+          indicativos={indicativos}
+          onResaltar={onResaltar}
+        />
+      )}
+
       <section aria-label={t('detalle.asignadas')} className="shrink-0">
-        <SectionHeader index="02" title={t('detalle.asignadas')} count={asignadas.length} />
+        <SectionHeader index={perimetro ? '03' : '02'} title={t('detalle.asignadas')} count={asignadas.length} />
         {asignadas.length === 0 ? (
           <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.asignadas.vacio')}</p>
         ) : (
@@ -137,7 +159,7 @@ export function PanelDetalle({
       </section>
 
       <section aria-label={t('detalle.disponibles.aria')} className="shrink-0">
-        <SectionHeader index="03" title={t('detalle.disponibles')} count={disponibles.length} />
+        <SectionHeader index={perimetro ? '04' : '03'} title={t('detalle.disponibles')} count={disponibles.length} />
         {disponibles.length === 0 ? (
           <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('detalle.disponibles.vacio')}</p>
         ) : (
@@ -152,7 +174,7 @@ export function PanelDetalle({
       </section>
 
       <section aria-label={t('detalle.timeline')} className="shrink-0">
-        <SectionHeader index="04" title={t('detalle.timeline')} count={totalEventos} />
+        <SectionHeader index={perimetro ? '05' : '04'} title={t('detalle.timeline')} count={totalEventos} />
         <ol className="px-4 pb-3 font-mono text-data-sm text-text-secondary">
           {entradas.map((e, n) =>
             e.tipo === 'fecha' ? (
@@ -172,7 +194,7 @@ export function PanelDetalle({
         </ol>
       </section>
 
-      {refugios}
+      <PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} indice={perimetro ? '06' : '05'} />
     </div>
   );
 }

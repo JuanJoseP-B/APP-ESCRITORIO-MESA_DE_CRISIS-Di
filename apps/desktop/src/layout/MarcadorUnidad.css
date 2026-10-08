@@ -15,3 +15,8 @@
 .ag-marcador--inoperativo { --marcador-color: var(--status-offline); }
 /* INOPERATIVO: atenuada y con borde discontinuo para no depender solo de la opacidad. */
 .ag-marcador[data-atenuada="true"] { opacity: .6; border-style: dashed; }
+/* Dentro de la zona caliente: borde y rótulo en rojo (riesgo vital), con glifo y palabra. */
+.ag-marcador[data-alerta="true"] { border-color: var(--status-critical); border-width: 2px; }
+.ag-marcador__alerta { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: calc(10px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .06em; color: var(--status-critical); }
+/* Resaltada desde el panel: mismo anillo de foco que la seleccionada, sin cambiar de tamaño. */
+.ag-marcador[data-resaltada="true"] { box-shadow: var(--focus-ring); }

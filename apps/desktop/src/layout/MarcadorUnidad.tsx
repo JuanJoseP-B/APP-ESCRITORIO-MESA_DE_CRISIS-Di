@@ -17,13 +17,17 @@ export interface MarcadorUnidadProps {
   readonly unidad: UnidadMapa;
   readonly seleccionada: boolean;
   readonly onSeleccionar: (id: string) => void;
+  /** La unidad está dentro de la zona caliente de un incidente: se marca con glifo y palabra. */
+  readonly alerta?: boolean;
+  /** Resaltada desde otro panel (p. ej. al pasar el cursor por el análisis del perímetro). */
+  readonly resaltada?: boolean;
 }
 
 /**
  * Marcador de una unidad en el mapa: glifo del tipo, indicativo completo y estado (forma y palabra, además del
  * color). Los colores salen de tokens CSS, así que siguen solos el cambio de turno crema/carbón.
  */
-export function MarcadorUnidad({ unidad, seleccionada, onSeleccionar }: MarcadorUnidadProps) {
+export function MarcadorUnidad({ unidad, seleccionada, onSeleccionar, alerta = false, resaltada = false }: MarcadorUnidadProps) {
   const { t } = useTexto();
   const Icono = ICONO_TIPO[unidad.tipo];
   const estadoUi = ESTADO_RECURSO_UI[unidad.estado];
@@ -35,8 +39,10 @@ export function MarcadorUnidad({ unidad, seleccionada, onSeleccionar }: Marcador
       className={`ag-marcador ag-marcador--${estadoUi}`}
       data-tipo={unidad.tipo}
       data-atenuada={unidad.atenuada ? 'true' : undefined}
+      data-alerta={alerta ? 'true' : undefined}
+      data-resaltada={resaltada ? 'true' : undefined}
       aria-pressed={seleccionada}
-      aria-label={t('marcador.unidad.aria', { unidad: unidad.indicativo, tipo, estado })}
+      aria-label={t(alerta ? 'marcador.unidad.aria.alerta' : 'marcador.unidad.aria', { unidad: unidad.indicativo, tipo, estado })}
       title={`${unidad.indicativo} · ${tipo} · ${estado}`}
       onClick={(e) => {
         e.stopPropagation();
@@ -49,6 +55,12 @@ export function MarcadorUnidad({ unidad, seleccionada, onSeleccionar }: Marcador
         <Glyph shape={ESTADOS_RECURSO_UI[estadoUi].shape} />
         {textoEstadoRecursoCorto(t, unidad.estado)}
       </span>
+      {alerta && (
+        <span className="ag-marcador__alerta">
+          <Glyph shape="square" />
+          {t('marcador.alerta')}
+        </span>
+      )}
     </button>
   );
 }

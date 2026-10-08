@@ -25,6 +25,7 @@ import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/ll
 import { unidadesParaMapa } from './domain/unidadesMapa';
 import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
 import { rutasAFeatureCollection } from './domain/geojson';
+import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
 import { perimetroDeIncidente } from './domain/perimetro';
 import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
@@ -76,6 +77,7 @@ function Mesa({
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [unidadId, setUnidadId] = useState<string | null>(null);
+  const [resaltado, setResaltado] = useState<ObjetivoResaltado | null>(null);
   const [formulario, setFormulario] = useState<FormularioAbierto | null>(null);
   const [ubicacionLlamada, setUbicacionLlamada] = useState<Coordenadas | null>(null);
   const [resaltadoId, setResaltadoId] = useState<string | null>(null);
@@ -198,6 +200,12 @@ function Mesa({
     () => (tipoSel !== undefined && geometriaSel ? perimetroDeIncidente({ tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel }).anillos : []),
     [tipoSel, geometriaSel, perimetroSel],
   );
+  // Refugios por anillo, unidades en zona caliente y bloqueos afectados; se recalcula cuando una unidad se mueve.
+  const perimetro = useMemo(
+    () => (anillos.length > 0 ? { anillos, analisis: analizarPerimetro(anillos, zonas.datos, unidadesMapa) } : null),
+    [anillos, zonas.datos, unidadesMapa],
+  );
+  const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
   const alSeleccionarUnidad = useCallback(
@@ -245,6 +253,8 @@ function Mesa({
         unidades={unidadesMapa}
         rutas={rutasMapa}
         anillos={anillos}
+        unidadesEnAlerta={unidadesEnAlerta}
+        resaltado={resaltado}
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
       />
@@ -342,6 +352,8 @@ function Mesa({
               onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
               onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
               onCambiarOcupacion={acciones.cambiarOcupacion}
+              perimetro={perimetro}
+              onResaltar={setResaltado}
             />
             {formulario && (
               <div className="absolute inset-0 z-panel">

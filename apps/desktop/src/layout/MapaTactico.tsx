@@ -11,6 +11,7 @@ import {
   zonasAFeatureCollection,
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
+import type { ObjetivoResaltado } from '../domain/analisisEspacial';
 import { anillosAFeatureCollection, type AnilloGenerado } from '../domain/perimetro';
 import { figuraDesdeDibujo, type FiguraTrazada, type ModoTrazado } from '../domain/trazado';
 import type { UnidadMapa } from '../domain/unidadesMapa';
@@ -34,6 +35,7 @@ const TRAZO_ANILLO: readonly (readonly [Anillo, number[] | null])[] = [
   ['TIBIA', [4, 2]],
   ['EVACUACION', [1, 2]],
 ];
+const SIN_ALERTAS: ReadonlySet<string> = new Set();
 const SIN_ANILLOS: readonly AnilloGenerado[] = [];
 const SIN_RUTAS: FeatureCollectionRutas = { type: 'FeatureCollection', features: [] };
 const NADA = (): void => undefined;
@@ -100,6 +102,10 @@ interface Props {
   readonly rutas?: FeatureCollectionRutas;
   /** Anillos de riesgo (caliente, tibia, evacuación) del incidente seleccionado, con su radio rotulado. */
   readonly anillos?: readonly AnilloGenerado[];
+  /** Unidades dentro de la zona caliente: su marcador lleva la alerta. */
+  readonly unidadesEnAlerta?: ReadonlySet<string>;
+  /** Elemento señalado en el panel de análisis; se resalta en el mapa. */
+  readonly resaltado?: ObjetivoResaltado | null;
 }
 
 export function MapaTactico({
@@ -122,6 +128,8 @@ export function MapaTactico({
   onSeleccionarUnidad = NADA,
   rutas = SIN_RUTAS,
   anillos = SIN_ANILLOS,
+  unidadesEnAlerta = SIN_ALERTAS,
+  resaltado = null,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -251,6 +259,26 @@ export function MapaTactico({
         filter: ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], '']],
         paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
       });
+      // Zona pública señalada desde el análisis: anillo sobre el punto o trazo grueso sobre el polígono o la línea.
+      m.addLayer({
+        id: 'zonas-resalte-punto',
+        type: 'circle',
+        source: FUENTE_ZONAS,
+        filter: ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        paint: {
+          'circle-radius': 14,
+          'circle-opacity': 0,
+          'circle-stroke-color': leerToken('action-secondary'),
+          'circle-stroke-width': 4,
+        },
+      });
+      m.addLayer({
+        id: 'zonas-resalte-linea',
+        type: 'line',
+        source: FUENTE_ZONAS,
+        filter: ['all', ['!=', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
+      });
       m.addSource(FUENTE_RUTAS, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'rutas-linea',
@@ -348,6 +376,14 @@ export function MapaTactico({
   }, [mapa, listo, anillos, versionTema]);
   useEtiquetasAnillos({ mapa, listo, anillos });
 
+  // Resalta la zona señalada en el análisis (las unidades se resaltan en su propio marcador).
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    const id = resaltado?.tipo === 'zona' ? resaltado.id : '';
+    mapa.setFilter('zonas-resalte-punto', ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('zonas-resalte-linea', ['all', ['!=', '$type', 'Point'], ['==', ['get', 'id'], id]]);
+  }, [mapa, listo, resaltado]);
+
   // Resalta el incidente candidato a duplicado.
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -388,6 +424,8 @@ export function MapaTactico({
     mapa.setPaintProperty('reportes-puntos', 'circle-stroke-color', leerToken('status-warning'));
     mapa.setPaintProperty('incidentes-resalte-punto', 'circle-stroke-color', leerToken('action-secondary'));
     mapa.setPaintProperty('incidentes-resalte-borde', 'line-color', leerToken('action-secondary'));
+    mapa.setPaintProperty('zonas-resalte-punto', 'circle-stroke-color', leerToken('action-secondary'));
+    mapa.setPaintProperty('zonas-resalte-linea', 'line-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-anillo', 'circle-stroke-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-stroke-color', halo);
@@ -427,7 +465,15 @@ export function MapaTactico({
     mapa.fitBounds(limites, { padding: 80, maxZoom: 15, duration: 600 });
   }, [mapa, listo, seleccionadoId, claveGeometria]);
 
-  useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId: unidadSeleccionadaId, onSeleccionar: onSeleccionarUnidad });
+  useMarcadoresUnidades({
+    mapa,
+    listo,
+    unidades,
+    seleccionadaId: unidadSeleccionadaId,
+    enAlerta: unidadesEnAlerta,
+    resaltadaId: resaltado?.tipo === 'unidad' ? resaltado.id : null,
+    onSeleccionar: onSeleccionarUnidad,
+  });
 
   // Centra el mapa en la unidad elegida (en el mapa o en el tablero). Solo al cambiar de unidad: si no, la cámara
   // perseguiría a una unidad en ruta. Va después del efecto del incidente para que, con ambos a la vez, gane la unidad.
