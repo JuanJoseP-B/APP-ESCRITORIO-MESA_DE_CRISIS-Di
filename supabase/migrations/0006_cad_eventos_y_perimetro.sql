@@ -220,3 +220,86 @@ drop trigger if exists incidentes_sella_timeline on public.incidentes;
 create trigger incidentes_sella_timeline
   before insert or update of timeline on public.incidentes
   for each row execute function public.sellar_timeline();
+
+-- ---------------------------------------------------------------- 7) RPC transicionar_recurso
+-- Punto del incidente: `perimetro.centro` si existe; si no, el punto de su geometría o el centroide de los
+-- vértices del anillo exterior (sin repetir el vértice de cierre).
+create or replace function public.ubicacion_de_incidente(p_id uuid) returns jsonb
+language sql stable security invoker set search_path = '' as $$
+  select case
+    when i.perimetro -> 'centro' is not null and public.coordenada_valida(i.perimetro -> 'centro') then i.perimetro -> 'centro'
+    when i.geometria ->> 'type' = 'Point' then
+      jsonb_build_object('lat', (i.geometria #>> '{coordinates,1}')::float8, 'lng', (i.geometria #>> '{coordinates,0}')::float8)
+    when i.geometria ->> 'type' = 'Polygon' then (
+      select jsonb_build_object('lat', avg((v.punto ->> 1)::float8), 'lng', avg((v.punto ->> 0)::float8))
+        from jsonb_array_elements(i.geometria #> '{coordinates,0}') with ordinality as v(punto, n)
+       where v.n < jsonb_array_length(i.geometria #> '{coordinates,0}'))
+  end
+  from public.incidentes i
+  where i.id = p_id
+$$;
+
+-- Cambia el estado del recurso e inserta su evento en una sola transacción, con la hora del servidor.
+--  - ASIGNADO exige incidente; EN_RUTA y EN_ESCENA lo conservan; DISPONIBLE e INOPERATIVO lo liberan.
+--  - Al pasar a EN_ESCENA la unidad toma la ubicación del incidente; al quedar DISPONIBLE regresa a su base.
+--  - Cancelar un despacho (ASIGNADO o EN_RUTA a DISPONIBLE) también deja evento, con el incidente liberado.
+-- `security invoker`: la política `recursos_operador` decide quién puede leer y escribir; sin rol de operador
+-- el recurso "no existe" para la función.
+create or replace function public.transicionar_recurso(
+  p_id uuid,
+  p_hacia text,
+  p_incidente uuid default null,
+  p_origen text default 'MANUAL'
+) returns setof public.recursos_operativos
+language plpgsql volatile security invoker set search_path = '' as $$
+declare
+  v_actual public.recursos_operativos;
+  v_nuevo public.recursos_operativos;
+  v_incidente uuid;
+  v_ubicacion jsonb;
+  v_escena jsonb;
+begin
+  select * into v_actual from public.recursos_operativos where id = p_id for update;
+  if not found then
+    raise exception 'Recurso % no encontrado o sin permiso', p_id using errcode = 'no_data_found';
+  end if;
+  if not public.transicion_recurso_permitida(v_actual.estado_actual, p_hacia) then
+    raise exception 'Transición de recurso inválida: % -> %', v_actual.estado_actual, p_hacia
+      using errcode = 'check_violation';
+  end if;
+
+  if p_hacia = 'ASIGNADO' then
+    if p_incidente is null then
+      raise exception 'Despachar un recurso exige un incidente' using errcode = 'null_value_not_allowed';
+    end if;
+    v_incidente := p_incidente;
+  elsif p_hacia in ('EN_RUTA', 'EN_ESCENA') then
+    v_incidente := v_actual.incidente_asignado_id;
+  end if;
+
+  v_ubicacion := v_actual.ubicacion;
+  if p_hacia = 'EN_ESCENA' then
+    v_escena := public.ubicacion_de_incidente(v_incidente);
+    if v_escena is not null and public.coordenada_valida(v_escena) then
+      v_ubicacion := v_escena;
+    end if;
+  elsif p_hacia = 'DISPONIBLE' and v_actual.base is not null then
+    v_ubicacion := v_actual.base;
+  end if;
+
+  update public.recursos_operativos
+     set estado_actual = p_hacia, incidente_asignado_id = v_incidente, ubicacion = v_ubicacion
+   where id = p_id
+  returning * into v_nuevo;
+
+  insert into public.eventos_recurso (recurso_id, incidente_id, desde, hacia, origen)
+  values (p_id, coalesce(v_incidente, v_actual.incidente_asignado_id), v_actual.estado_actual, p_hacia, p_origen);
+
+  return next v_nuevo;
+end;
+$$;
+
+revoke all on function public.ubicacion_de_incidente(uuid) from public, anon;
+grant execute on function public.ubicacion_de_incidente(uuid) to authenticated;
+revoke all on function public.transicionar_recurso(uuid, text, uuid, text) from public, anon;
+grant execute on function public.transicionar_recurso(uuid, text, uuid, text) to authenticated;
