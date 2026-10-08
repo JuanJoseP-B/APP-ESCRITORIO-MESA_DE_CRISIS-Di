@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@argos/ui';
 import { Login } from './components/Login';
-import { MapView } from './components/MapView';
+import { MapaTactico } from './layout/MapaTactico';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
   useIncidentesRealtime,
@@ -107,7 +107,7 @@ function Mesa({
 
   const mapa = (
     <>
-      <MapView
+      <MapaTactico
         incidentes={incidentes.datos}
         zonas={zonas.datos}
         reportes={reportes.datos}
