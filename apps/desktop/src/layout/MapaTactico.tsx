@@ -7,6 +7,7 @@ import {
   colorearFeatures,
   incidentesAFeatureCollection,
   reportesAFeatureCollection,
+  type FeatureCollectionRutas,
   zonasAFeatureCollection,
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
@@ -20,10 +21,12 @@ const FUENTE = 'incidentes';
 const FUENTE_ZONAS = 'zonas-publicas';
 const FUENTE_REPORTES = 'reportes';
 const FUENTE_UBICACION = 'llamada-ubicacion';
+const FUENTE_RUTAS = 'rutas';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
 const ZOOM_REPORTE = 15;
 const VACIO = { type: 'FeatureCollection', features: [] } as const;
 const SIN_UNIDADES: readonly UnidadMapa[] = [];
+const SIN_RUTAS: FeatureCollectionRutas = { type: 'FeatureCollection', features: [] };
 const NADA = (): void => undefined;
 const ZOOM_UNIDAD = 16;
 
@@ -84,6 +87,8 @@ interface Props {
   readonly unidades?: readonly UnidadMapa[];
   readonly unidadSeleccionadaId?: string | null;
   readonly onSeleccionarUnidad?: (id: string) => void;
+  /** Tramo que le falta a cada unidad en ruta; se dibuja como línea discontinua hasta el incidente. */
+  readonly rutas?: FeatureCollectionRutas;
 }
 
 export function MapaTactico({
@@ -104,6 +109,7 @@ export function MapaTactico({
   unidades = SIN_UNIDADES,
   unidadSeleccionadaId = null,
   onSeleccionarUnidad = NADA,
+  rutas = SIN_RUTAS,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -215,6 +221,14 @@ export function MapaTactico({
         filter: ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], '']],
         paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
       });
+      m.addSource(FUENTE_RUTAS, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'rutas-linea',
+        type: 'line',
+        source: FUENTE_RUTAS,
+        layout: { 'line-cap': 'butt' },
+        paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [2, 2] },
+      });
       m.addSource(FUENTE_UBICACION, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'llamada-ubicacion-anillo',
@@ -289,6 +303,11 @@ export function MapaTactico({
       .getSource<GeoJSONSource>(FUENTE_REPORTES)
       ?.setData(colorearFeatures(reportesAFeatureCollection(reportes, reporteSeleccionadoId), leerToken) as never);
   }, [mapa, listo, reportes, reporteSeleccionadoId, versionTema]);
+
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutas, leerToken) as never);
+  }, [mapa, listo, rutas, versionTema]);
 
   // Resalta el incidente candidato a duplicado.
   useEffect(() => {

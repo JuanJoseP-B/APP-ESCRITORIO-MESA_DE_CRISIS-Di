@@ -5,6 +5,7 @@ import { MapaTactico } from './layout/MapaTactico';
 import { PanelAjustes } from './layout/PanelAjustes';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
+  useEventosRecursoRealtime,
   useIncidentesRealtime,
   useLlamadasRealtime,
   useRecursosRealtime,
@@ -22,6 +23,9 @@ import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
 import { unidadesParaMapa } from './domain/unidadesMapa';
+import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
+import { rutasAFeatureCollection } from './domain/geojson';
+import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { BarraEstado } from './layout/BarraEstado';
@@ -33,6 +37,8 @@ import { TableroUnidades } from './layout/TableroUnidades';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearServicioDemo } from './services/servicioDemo';
+
+const SIN_MOVIMIENTOS: readonly MovimientoUnidad[] = [];
 
 /** Formulario de llamada abierto: vac√≠o (F2) o precargado desde una entrante. `clave` lo remonta al cambiar de llamada. */
 interface FormularioAbierto {
@@ -65,6 +71,7 @@ function Mesa({
   const incidentes = useIncidentesRealtime(servicio);
   const llamadas = useLlamadasRealtime(servicio);
   const recursos = useRecursosRealtime(servicio);
+  const eventosRecurso = useEventosRecursoRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [unidadId, setUnidadId] = useState<string | null>(null);
@@ -76,7 +83,8 @@ function Mesa({
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
-  const { temaEfectivo } = usePreferencias();
+  const { temaEfectivo, preferencias } = usePreferencias();
+  const { reducirMovimiento } = preferencias;
   const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
@@ -92,7 +100,8 @@ function Mesa({
       activo = false;
     };
   }, [servicio]);
-  const ahora = useReloj(desfaseMs, 1000, reloj?.ahora);
+  // En el demo la hora corre acelerada y las unidades se desplazan: se refresca varias veces por segundo.
+  const ahora = useReloj(desfaseMs, reloj ? 250 : 1000, reloj?.ahora);
   const simulacion = useSimulacion(servicio, reloj);
 
   const panelCola = usePanelColapsable('cola');
@@ -172,7 +181,17 @@ function Mesa({
   const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
-  const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos), [recursos.datos]);
+  useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos });
+  // Las unidades EN_RUTA se interpolan seg˙n el reloj; con ´reducir movimientoª saltan por tramos en vez de deslizarse.
+  const movimientos = useMemo(() => {
+    const m = reloj
+      ? movimientosEnRuta(recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento ? PASOS_SIN_ANIMACION : undefined)
+      : SIN_MOVIMIENTOS;
+    // Sin unidades en ruta se devuelve siempre el mismo arreglo: el mapa no se repinta cada cuarto de segundo.
+    return m.length === 0 ? SIN_MOVIMIENTOS : m;
+  }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento]);
+  const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
+  const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva tambiÈn al incidente al que va.
   const alSeleccionarUnidad = useCallback(
     (id: string) => {
@@ -217,6 +236,7 @@ function Mesa({
         onClicUbicacion={formulario ? setUbicacionLlamada : undefined}
         resaltadoIncidenteId={resaltadoId}
         unidades={unidadesMapa}
+        rutas={rutasMapa}
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
       />

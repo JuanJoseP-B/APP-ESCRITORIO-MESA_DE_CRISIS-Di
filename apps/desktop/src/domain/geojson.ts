@@ -8,6 +8,8 @@ import {
   type Reporte,
   type ZonaPublica,
 } from '@argos/shared';
+import { aPosicion } from './geo';
+import type { MovimientoUnidad } from './movimiento';
 
 export interface FeatureIncidente {
   readonly type: 'Feature';
@@ -130,5 +132,34 @@ export function reportesAFeatureCollection(
         seleccionado: r.id === seleccionadoId,
       },
     })),
+  };
+}
+
+/** Tramo que le falta recorrer a cada unidad en ruta, de su posición actual al incidente. */
+export const COLOR_RUTA: TokenColor = 'status-warning';
+
+export interface FeatureRuta {
+  readonly type: 'Feature';
+  readonly id: string;
+  readonly geometry: { readonly type: 'LineString'; readonly coordinates: readonly [readonly [number, number], readonly [number, number]] };
+  readonly properties: { readonly id: string; readonly color: string };
+}
+
+export interface FeatureCollectionRutas {
+  readonly type: 'FeatureCollection';
+  readonly features: readonly FeatureRuta[];
+}
+
+export function rutasAFeatureCollection(movimientos: readonly MovimientoUnidad[]): FeatureCollectionRutas {
+  return {
+    type: 'FeatureCollection',
+    features: movimientos
+      .filter((m) => !m.llego)
+      .map((m) => ({
+        type: 'Feature',
+        id: m.recursoId,
+        geometry: { type: 'LineString', coordinates: [aPosicion(m.posicion), aPosicion(m.destino)] },
+        properties: { id: m.recursoId, color: COLOR_RUTA },
+      })),
   };
 }
