@@ -278,8 +278,12 @@ export async function medirDesfaseServidor(
   return mejor?.desfase ?? 0;
 }
 
-/** Crea el servicio desde variables de entorno; `null` si no están configuradas. */
+/**
+ * Crea el servicio de Supabase solo si `VITE_USAR_SUPABASE=true` y hay credenciales; si no, `null` y la app usa
+ * el demo. El backend está congelado (migraciones 0005 y 0006 sin aplicar), así que el demo es el modo por defecto.
+ */
 export function crearServicioDesdeEntorno(): ServicioMesa | null {
+  if (import.meta.env['VITE_USAR_SUPABASE'] !== 'true') return null;
   const url = import.meta.env['VITE_SUPABASE_URL'] as string | undefined;
   const key = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string | undefined;
   if (!url || !key) return null;

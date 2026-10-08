@@ -27,3 +27,4 @@ repo tal cual y NO se aplican al proyecto real. `medirDesfaseServidor` sigue exp
 - Sustituye a `?reloj=N`, que nunca llegó a implementarse. `servicioDemo` (singleton) ya no lo usa `App`.
 - Los datos iniciales del demo se calculan respecto a la hora del servicio, para que los tiempos y SLA tengan sentido.
 - Pendiente heredado: retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs.
+- Supabase solo con `VITE_USAR_SUPABASE=true`: con la 0006 sin aplicar, la base devuelve estados antiguos ('Disponible') y `UnitChip` rompía la pantalla (en blanco). Por defecto, demo.
