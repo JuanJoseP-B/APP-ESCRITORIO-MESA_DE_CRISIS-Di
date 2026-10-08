@@ -63,6 +63,13 @@ describe('GrillaTactica', () => {
     expect(css).toMatch(/@media \(max-width: 1279px\)/);
   });
 
+  it('por debajo de 1280 px el detalle es un drawer con altura entre la barra y el tablero', () => {
+    const media = css.slice(css.indexOf('@media (max-width: 1279px)'));
+    expect(media).toMatch(
+      /\.ag-grilla__detalle \{[^}]*position: absolute;[^}]*height: auto;[^}]*top: var\(--grilla-barra\);[^}]*bottom: var\(--grilla-tablero\);/,
+    );
+  });
+
   it('colapsar B con su botón cambia data-colapsado y deja el rail', async () => {
     const { container } = render(<Prueba />);
     const rail = container.querySelector('.ag-grilla__cola');

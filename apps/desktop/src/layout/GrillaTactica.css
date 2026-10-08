@@ -41,6 +41,6 @@
     grid-template-columns: var(--grilla-cola) minmax(0, 1fr);
   }
   .ag-grilla[data-cola="colapsada"], .ag-grilla[data-cola="colapsada"][data-detalle="colapsado"] { grid-template-columns: var(--grilla-rail) minmax(0, 1fr); }
-  .ag-grilla__detalle { grid-area: auto; position: absolute; top: var(--grilla-barra); right: 0; bottom: var(--grilla-tablero); z-index: var(--z-panel); width: var(--grilla-detalle); box-shadow: var(--elev-panel); }
+  .ag-grilla__detalle { grid-area: auto; position: absolute; height: auto; top: var(--grilla-barra); right: 0; bottom: var(--grilla-tablero); z-index: var(--z-panel); width: var(--grilla-detalle); box-shadow: var(--elev-panel); }
   .ag-grilla[data-detalle="colapsado"] .ag-grilla__detalle { width: var(--grilla-rail); box-shadow: none; }
 }

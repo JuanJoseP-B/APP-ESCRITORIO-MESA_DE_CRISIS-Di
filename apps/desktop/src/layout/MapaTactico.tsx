@@ -301,7 +301,7 @@ export function MapaTactico({
   return (
     <div className="relative h-full w-full">
       <div ref={contenedor} className="h-full w-full" data-testid="mapa" />
-      <div className="absolute bottom-4 right-4 z-toolbar">
+      <div className="absolute bottom-4 right-4 z-map-overlay">
         <LeyendaMapa />
       </div>
     </div>
