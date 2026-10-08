@@ -27,9 +27,9 @@ const bloqueo = (id: string, geometria: ZonaPublica['geometria']): ZonaPublica =
   capacidad_maxima: 0,
 });
 
-const unidad = (id: string, metros: number, estado: UnidadMapa['estado'] = 'EN_ESCENA'): UnidadMapa => {
+const unidad = (id: string, metros: number, estado: UnidadMapa['estado'] = 'EN_ESCENA', incidenteId: string | null = null): UnidadMapa => {
   const [lng, lat] = alNorte(metros);
-  return { id, indicativo: id, tipo: 'Bomberos', estado, posicion: { lat, lng }, atenuada: false };
+  return { id, indicativo: id, tipo: 'Bomberos', estado, incidenteId, posicion: { lat, lng }, atenuada: false };
 };
 
 describe('analizarPerimetro · refugios', () => {
@@ -70,6 +70,25 @@ describe('analizarPerimetro · unidades', () => {
   it('alerta de las unidades dentro de la zona caliente, y solo de ellas', () => {
     const unidades = [unidad('en-escena', 0), unidad('cerca', 90), unidad('tibia', 200), unidad('lejos', 2000, 'DISPONIBLE')];
     expect(analizarPerimetro(anillos, [], unidades).unidadesEnZonaCaliente).toEqual(['en-escena', 'cerca']);
+  });
+
+  it('las unidades EN_ESCENA o EN_RUTA asignadas al incidente no alertan: quedan aparte', () => {
+    const unidades = [
+      unidad('escena', 0, 'EN_ESCENA', 'i1'),
+      unidad('ruta', 50, 'EN_RUTA', 'i1'),
+      unidad('ajena', 60, 'EN_ESCENA', 'i2'),
+      unidad('asignada', 70, 'ASIGNADO', 'i1'),
+      unidad('libre', 80, 'DISPONIBLE'),
+    ];
+    const r = analizarPerimetro(anillos, [], unidades, 'i1');
+    expect(r.unidadesAsignadasEnZona).toEqual(['escena', 'ruta']);
+    expect(r.unidadesEnZonaCaliente).toEqual(['ajena', 'asignada', 'libre']);
+  });
+
+  it('sin incidente de referencia todas las unidades de la zona alertan', () => {
+    const r = analizarPerimetro(anillos, [], [unidad('u', 0, 'EN_ESCENA', 'i1')]);
+    expect(r.unidadesAsignadasEnZona).toEqual([]);
+    expect(r.unidadesEnZonaCaliente).toEqual(['u']);
   });
 
   it('sin unidades no hay alerta', () => {

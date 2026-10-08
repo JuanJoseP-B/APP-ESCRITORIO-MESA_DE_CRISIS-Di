@@ -165,6 +165,7 @@ export const en: Diccionario = {
   'analisis.alerta': 'ALERT · Units inside the hot zone',
   'analisis.alerta.unidad': '{unidad} · {tipo}',
   'analisis.sinAlerta': 'No unit inside the hot zone',
+  'analisis.enEscena': 'On scene · Units assigned to this incident',
   'analisis.refugios': 'Shelters by ring',
   'analisis.refugios.vacio': 'No shelters registered',
   'analisis.refugio.detalle': '{nombre} · {anillo}',

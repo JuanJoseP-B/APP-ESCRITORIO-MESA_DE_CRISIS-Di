@@ -202,8 +202,8 @@ function Mesa({
   );
   // Refugios por anillo, unidades en zona caliente y bloqueos afectados; se recalcula cuando una unidad se mueve.
   const perimetro = useMemo(
-    () => (anillos.length > 0 ? { anillos, analisis: analizarPerimetro(anillos, zonas.datos, unidadesMapa) } : null),
-    [anillos, zonas.datos, unidadesMapa],
+    () => (anillos.length > 0 ? { anillos, analisis: analizarPerimetro(anillos, zonas.datos, unidadesMapa, seleccionadoId) } : null),
+    [anillos, zonas.datos, unidadesMapa, seleccionadoId],
   );
   const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);

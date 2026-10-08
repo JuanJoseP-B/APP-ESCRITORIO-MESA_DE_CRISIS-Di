@@ -50,8 +50,10 @@ export interface AnalisisPerimetro {
     /** `false` si el refugio queda dentro de CALIENTE o TIBIA. */
     readonly apto: boolean;
   }>;
-  /** Ids de recurso dentro de CALIENTE: alerta de seguridad. */
+  /** Ids de recurso dentro de CALIENTE que no atienden este incidente: alerta de seguridad. */
   readonly unidadesEnZonaCaliente: readonly string[];
+  /** Ids de recurso EN_ESCENA o EN_RUTA asignados al incidente y dentro de CALIENTE: es su lugar de trabajo, sin alerta. */
+  readonly unidadesAsignadasEnZona: readonly string[];
   /** Ids de `zonas_publicas` (bloqueos) que intersectan algún anillo. */
   readonly bloqueosAfectados: readonly string[];
 }

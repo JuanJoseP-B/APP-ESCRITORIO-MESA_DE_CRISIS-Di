@@ -174,6 +174,7 @@ export const es = {
   'analisis.alerta': 'ALERTA · Unidades dentro de la zona caliente',
   'analisis.alerta.unidad': '{unidad} · {tipo}',
   'analisis.sinAlerta': 'Ninguna unidad dentro de la zona caliente',
+  'analisis.enEscena': 'En escena · Unidades asignadas a este incidente',
   'analisis.refugios': 'Refugios por anillo',
   'analisis.refugios.vacio': 'Sin refugios registrados',
   'analisis.refugio.detalle': '{nombre} · {anillo}',

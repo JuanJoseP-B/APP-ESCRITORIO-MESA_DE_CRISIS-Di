@@ -25,6 +25,9 @@ export function SeccionPerimetro({ indice, anillos, analisis, zonas, recursos, i
   const unidades = analisis.unidadesEnZonaCaliente
     .map((id) => recursos.find((r) => r.id === id))
     .filter((r): r is Recurso => r !== undefined);
+  const asignadas = analisis.unidadesAsignadasEnZona
+    .map((id) => recursos.find((r) => r.id === id))
+    .filter((r): r is Recurso => r !== undefined);
   const bloqueos = analisis.bloqueosAfectados
     .map((id) => zonas.find((z) => z.id === id))
     .filter((z): z is ZonaPublica => z !== undefined);
@@ -65,6 +68,22 @@ export function SeccionPerimetro({ indice, anillos, analisis, zonas, recursos, i
         </div>
       ) : (
         <p className="px-4 pb-2 font-mono text-data-sm text-text-muted">{t('analisis.sinAlerta')}</p>
+      )}
+
+      {asignadas.length > 0 && (
+        <div className="mx-4 mb-2 border border-border-strong bg-surface-raised px-3 py-2">
+          <p className="flex items-center gap-2 font-mono text-overline uppercase text-text-secondary">
+            <Glyph shape="diamond" />
+            {t('analisis.enEscena')}
+          </p>
+          <ul aria-label={t('analisis.enEscena')} className="mt-1 font-mono text-data-sm text-text-primary">
+            {asignadas.map((r) => (
+              <li key={r.id} className={FILA} {...resaltable({ tipo: 'unidad', id: r.id })}>
+                {t('analisis.alerta.unidad', { unidad: indicativos.get(r.id) ?? r.id, tipo: textoTipoRecurso(t, r.tipo) })}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <p className="px-4 pt-1 font-mono text-overline uppercase text-text-muted">{t('analisis.refugios')}</p>

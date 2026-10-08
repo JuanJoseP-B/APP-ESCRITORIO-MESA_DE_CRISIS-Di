@@ -23,16 +23,24 @@ function anilloDe(geometria: GeometriaZona, anillos: readonly AnilloGenerado[]):
   return 'FUERA';
 }
 
+/** Una unidad EN_ESCENA o EN_RUTA asignada al incidente analizado trabaja dentro de su zona caliente: no es una alerta. */
+const ESTADOS_EN_OPERACION: readonly UnidadMapa['estado'][] = ['EN_ESCENA', 'EN_RUTA'];
+
 /**
  * Análisis espacial de un perímetro (ROADMAP §3.2): refugios clasificados por anillo (y si son aptos para recibir
- * gente), unidades dentro de la zona caliente y bloqueos que cruzan cualquier anillo.
+ * gente), unidades dentro de la zona caliente y bloqueos que cruzan cualquier anillo. Las unidades que atienden
+ * `incidenteId` y están en la zona caliente se separan de las que alertan.
  */
 export function analizarPerimetro(
   anillos: readonly AnilloGenerado[],
   zonas: readonly ZonaPublica[],
   unidades: readonly UnidadMapa[],
+  incidenteId: string | null = null,
 ): AnalisisPerimetro {
   const caliente = anillos.find((a) => a.anillo === 'CALIENTE');
+  const enZona = caliente ? unidades.filter((u) => booleanPointInPolygon(aPosicion(u.posicion), aPoligonoTurf(caliente))) : [];
+  const asignada = (u: UnidadMapa): boolean =>
+    incidenteId !== null && u.incidenteId === incidenteId && ESTADOS_EN_OPERACION.includes(u.estado);
   const exterior = anillos.find((a) => a.anillo === 'EVACUACION');
   return {
     refugios: zonas
@@ -41,9 +49,8 @@ export function analizarPerimetro(
         const anillo = anilloDe(z.geometria, anillos);
         return { id: z.id, nombre: z.nombre, anillo, apto: anillo === 'FUERA' || !ANILLOS_NO_APTOS.includes(anillo) };
       }),
-    unidadesEnZonaCaliente: caliente
-      ? unidades.filter((u) => booleanPointInPolygon(aPosicion(u.posicion), aPoligonoTurf(caliente))).map((u) => u.id)
-      : [],
+    unidadesEnZonaCaliente: enZona.filter((u) => !asignada(u)).map((u) => u.id),
+    unidadesAsignadasEnZona: enZona.filter(asignada).map((u) => u.id),
     bloqueosAfectados: exterior
       ? zonas
           .filter((z) => z.tipo === 'Bloqueo de Vía' && booleanIntersects(aGeometriaTurf(z.geometria), aPoligonoTurf(exterior)))

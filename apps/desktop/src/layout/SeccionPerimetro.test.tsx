@@ -32,12 +32,12 @@ const bloqueo: ZonaPublica = {
 };
 
 const recurso = (id: string, etiqueta: string): Recurso => ({ id, etiqueta, tipo: 'Ambulancia', estado_actual: 'EN_ESCENA', incidente_asignado_id: 'i1' });
-const unidadMapa = (id: string, metros: number): UnidadMapa => {
+const unidadMapa = (id: string, metros: number, incidenteId: string | null = null): UnidadMapa => {
   const [lng, lat] = alNorte(metros);
-  return { id, indicativo: id, tipo: 'Ambulancia', estado: 'EN_ESCENA', posicion: { lat, lng }, atenuada: false };
+  return { id, indicativo: id, tipo: 'Ambulancia', estado: 'EN_ESCENA', incidenteId, posicion: { lat, lng }, atenuada: false };
 };
 
-function montar(unidades: readonly UnidadMapa[], onResaltar = vi.fn()) {
+function montar(unidades: readonly UnidadMapa[], onResaltar = vi.fn(), incidenteId: string | null = null) {
   const zonas = [refugio('z1', 'Coliseo', 200), refugio('z2', 'Colegio', 450), refugio('z3', 'Estadio', 2000), bloqueo];
   const recursos = [recurso('m11', 'M11'), recurso('u02', 'U02')];
   const indicativos = new Map([['m11', 'M11'], ['u02', 'U02']]);
@@ -45,7 +45,7 @@ function montar(unidades: readonly UnidadMapa[], onResaltar = vi.fn()) {
     <SeccionPerimetro
       indice="02"
       anillos={anillos}
-      analisis={analizarPerimetro(anillos, zonas, unidades)}
+      analisis={analizarPerimetro(anillos, zonas, unidades, incidenteId)}
       zonas={zonas}
       recursos={recursos}
       indicativos={indicativos}
@@ -94,6 +94,21 @@ describe('SeccionPerimetro', () => {
     expect(alerta.textContent).toContain('ALERTA · Unidades dentro de la zona caliente');
     expect(within(alerta).getAllByRole('listitem').map((i) => i.textContent)).toEqual(['M11 · Ambulancia', 'U02 · Ambulancia']);
     expect(alerta.querySelector('.ag-glyph')).not.toBeNull();
+  });
+
+  it('las unidades asignadas al incidente aparecen «en escena», sin alerta, y las demás sí alertan', () => {
+    montar([unidadMapa('m11', 0, 'i1'), unidadMapa('u02', 60, 'otro')], vi.fn(), 'i1');
+    const alerta = screen.getByRole('alert');
+    expect(within(alerta).getAllByRole('listitem').map((i) => i.textContent)).toEqual(['U02 · Ambulancia']);
+    const enEscena = screen.getByRole('list', { name: 'En escena · Unidades asignadas a este incidente' });
+    expect(within(enEscena).getAllByRole('listitem').map((i) => i.textContent)).toEqual(['M11 · Ambulancia']);
+    expect(enEscena.closest('[role="alert"]')).toBeNull();
+  });
+
+  it('si solo hay unidades asignadas no hay alerta', () => {
+    montar([unidadMapa('m11', 0, 'i1')], vi.fn(), 'i1');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('Ninguna unidad dentro de la zona caliente')).toBeTruthy();
   });
 
   it('señalar un ítem lo resalta en el mapa y soltarlo lo quita', async () => {

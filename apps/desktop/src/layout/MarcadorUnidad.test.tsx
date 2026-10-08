@@ -13,6 +13,7 @@ const unidad = (extra: Partial<UnidadMapa> = {}): UnidadMapa => ({
   indicativo: 'M11',
   tipo: 'Ambulancia',
   estado: 'EN_RUTA',
+  incidenteId: null,
   posicion: { lat: 1.2, lng: -77.2 },
   atenuada: false,
   ...extra,

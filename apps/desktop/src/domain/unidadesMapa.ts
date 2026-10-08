@@ -7,6 +7,8 @@ export interface UnidadMapa {
   readonly indicativo: string;
   readonly tipo: TipoRecurso;
   readonly estado: EstadoRecurso;
+  /** Incidente al que está asignada; `null` si está libre. */
+  readonly incidenteId: string | null;
   readonly posicion: Coordenadas;
   /** INOPERATIVO: se dibuja atenuada. */
   readonly atenuada: boolean;
@@ -30,6 +32,7 @@ export function unidadesParaMapa(
       indicativo: indicativos.get(r.id) ?? r.id,
       tipo: r.tipo,
       estado: r.estado_actual,
+      incidenteId: r.incidente_asignado_id,
       posicion,
       atenuada: r.estado_actual === 'INOPERATIVO',
     });
