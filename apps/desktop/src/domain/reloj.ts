@@ -25,3 +25,10 @@ export function etiquetaZonaHoraria(ms: number, zona?: string): string {
   const etiqueta = nombre.replace('GMT', 'UTC');
   return etiqueta === 'UTC+0' ? 'UTC' : etiqueta;
 }
+
+/** "mm:ss" para una duración en segundos (se trunca; lo negativo cuenta como 0). */
+export function formatearMinSeg(segundos: number): string {
+  const total = Math.max(0, Math.floor(segundos));
+  const dos = (n: number): string => String(n).padStart(2, '0');
+  return `${dos(Math.floor(total / 60))}:${dos(total % 60)}`;
+}

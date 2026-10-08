@@ -1,7 +1,20 @@
 import { Button, Glyph, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
-import { etiquetaZonaHoraria, formatearHoraConSegundos } from '../domain/reloj';
+import { etiquetaZonaHoraria, formatearHoraConSegundos, formatearMinSeg } from '../domain/reloj';
+import { VELOCIDADES, type Velocidad } from '../domain/relojSimulado';
 import type { Tema } from '../tema';
+
+/** Control del escenario del demo; la barra lo muestra solo si se le pasa (modo demo). */
+export interface SimulacionBarra {
+  reproduciendo: boolean;
+  velocidad: Velocidad;
+  /** Segundos del escenario transcurridos. */
+  tSeg: number;
+  duracionSeg: number;
+  onAlternar: () => void;
+  onVelocidad: (velocidad: Velocidad) => void;
+  onReiniciar: () => void;
+}
 
 export interface BarraEstadoProps {
   /** Hora corregida (ms epoch), p. ej. de `useReloj`. */
@@ -15,6 +28,7 @@ export interface BarraEstadoProps {
   /** Unidades con SLA vencido; si falta, el contador no se muestra (llega con la lógica CAD). */
   slaVencidos?: number;
   onFiltrarSla?: () => void;
+  simulacion?: SimulacionBarra;
   onCerrarSesion?: () => void;
 }
 
@@ -34,6 +48,7 @@ export function BarraEstado({
   enlace,
   slaVencidos,
   onFiltrarSla,
+  simulacion,
   onCerrarSesion,
 }: BarraEstadoProps) {
   const estadoEnlace = ENLACE_UI[enlace];
@@ -68,6 +83,34 @@ export function BarraEstado({
         >
           <Glyph shape="square" /> <span className="tabular">{slaVencidos}</span> SLA
         </Button>
+      )}
+      {simulacion && (
+        <div role="group" aria-label="Simulación del escenario" className="flex items-center gap-2">
+          <span className="font-mono text-overline uppercase text-text-secondary">Sim</span>
+          <span className="font-mono text-data-sm tabular text-text-primary">
+            {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
+          </span>
+          <Button size="sm" variant="secondary" onClick={simulacion.onAlternar}>
+            <Glyph shape={simulacion.reproduciendo ? 'square' : 'triangle'} /> {simulacion.reproduciendo ? 'Pausar' : 'Reproducir'}
+          </Button>
+          <span role="group" aria-label="Velocidad" className="flex items-center gap-1">
+            {VELOCIDADES.map((v) => (
+              <Button
+                key={v}
+                size="sm"
+                variant={v === simulacion.velocidad ? 'secondary' : 'ghost'}
+                aria-pressed={v === simulacion.velocidad}
+                aria-label={`Velocidad ${v}×`}
+                onClick={() => simulacion.onVelocidad(v)}
+              >
+                <span className="tabular">{v}×</span>
+              </Button>
+            ))}
+          </span>
+          <Button size="sm" variant="ghost" onClick={simulacion.onReiniciar}>
+            Reiniciar
+          </Button>
+        </div>
       )}
       <span className="ml-auto flex items-center gap-2">
         <Button size="sm" variant="ghost" onClick={onAlternarTurno}>

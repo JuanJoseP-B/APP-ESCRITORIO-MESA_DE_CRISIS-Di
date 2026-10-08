@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularDesfaseMs, etiquetaZonaHoraria, formatearHoraConSegundos } from './reloj';
+import { calcularDesfaseMs, etiquetaZonaHoraria, formatearHoraConSegundos, formatearMinSeg } from './reloj';
 
 describe('calcularDesfaseMs', () => {
   it('compara la hora del servidor con el punto medio del viaje', () => {
@@ -35,5 +35,17 @@ describe('etiquetaZonaHoraria', () => {
 
   it('en UTC no lleva desfase', () => {
     expect(etiquetaZonaHoraria(ms, 'UTC')).toBe('UTC');
+  });
+});
+
+describe('formatearMinSeg', () => {
+  it('da minutos y segundos con dos dígitos', () => {
+    expect(formatearMinSeg(0)).toBe('00:00');
+    expect(formatearMinSeg(65.9)).toBe('01:05');
+    expect(formatearMinSeg(480)).toBe('08:00');
+  });
+
+  it('lo negativo cuenta como cero', () => {
+    expect(formatearMinSeg(-3)).toBe('00:00');
   });
 });

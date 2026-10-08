@@ -12,9 +12,11 @@ import {
 import { useAtajos } from './hooks/useAtajos';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
+import { useSimulacion } from './hooks/useSimulacion';
 import type { Coordenadas, Reporte } from '@argos/shared';
 import { dividirCola, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
+import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
@@ -22,18 +24,29 @@ import { GrillaTactica } from './layout/GrillaTactica';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
-import { servicioDemo } from './services/servicioDemo';
+import { crearServicioDemo } from './services/servicioDemo';
 import { aplicarTema, temaGuardado, type Tema } from './tema';
 
 const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
+/** Servicio demo con su reloj simulado: la consola y los datos comparten la misma hora acelerable. */
+function crearEntornoDemo(): { readonly servicio: ServicioMesa; readonly reloj: RelojSimulado } {
+  const reloj = crearRelojSimulado();
+  return { servicio: crearServicioDemo({ ahora: reloj.ahora }), reloj };
+}
+
 function Mesa({
   servicio,
+  reloj,
   operador,
+  onReiniciarSimulacion,
   onCerrarSesion,
 }: {
   readonly servicio: ServicioMesa;
+  /** Solo en modo demo. */
+  readonly reloj?: RelojSimulado;
   readonly operador: string;
+  readonly onReiniciarSimulacion?: () => void;
   readonly onCerrarSesion: () => void;
 }) {
   const incidentes = useIncidentesRealtime(servicio);
@@ -61,7 +74,8 @@ function Mesa({
       activo = false;
     };
   }, [servicio]);
-  const ahora = useReloj(desfaseMs);
+  const ahora = useReloj(desfaseMs, 1000, reloj?.ahora);
+  const simulacion = useSimulacion(servicio, reloj);
 
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
@@ -173,6 +187,19 @@ function Mesa({
           onAlternarTurno={alternarTema}
           operador={operador}
           enlace={enlace}
+          simulacion={
+            simulacion && onReiniciarSimulacion
+              ? {
+                  reproduciendo: simulacion.reproduciendo,
+                  velocidad: simulacion.velocidad,
+                  tSeg: simulacion.tSeg,
+                  duracionSeg: simulacion.duracionSeg,
+                  onAlternar: simulacion.alternar,
+                  onVelocidad: simulacion.fijarVelocidad,
+                  onReiniciar: onReiniciarSimulacion,
+                }
+              : undefined
+          }
           onCerrarSesion={onCerrarSesion}
         />
       }
@@ -217,11 +244,20 @@ function Mesa({
 
 /** Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador. */
 export function App() {
-  const servicio = useMemo(() => crearServicioDesdeEntorno() ?? servicioDemo, []);
+  const real = useMemo(() => crearServicioDesdeEntorno(), []);
+  const [demo, setDemo] = useState(() => (real ? null : crearEntornoDemo()));
+  const servicio = real ?? demo?.servicio;
+  const [corrida, setCorrida] = useState(0);
+  // Reiniciar descarta el servicio y el reloj del demo y monta la consola de nuevo, con los datos de partida.
+  const reiniciarSimulacion = useCallback(() => {
+    setDemo(crearEntornoDemo());
+    setCorrida((n) => n + 1);
+  }, []);
   const [sesion, setSesion] = useState<SesionOperador | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!servicio) return;
     let activo = true;
     servicio.sesionActual().then(
       (s) => activo && setSesion(s),
@@ -234,6 +270,7 @@ export function App() {
 
   const iniciarSesion = useCallback(
     async (email: string, password: string) => {
+      if (!servicio) return;
       setError(null);
       try {
         const s = await servicio.iniciarSesion(email, password);
@@ -251,10 +288,19 @@ export function App() {
   );
 
   const cerrarSesion = useCallback(() => {
-    void servicio.cerrarSesion().finally(() => setSesion(null));
+    void servicio?.cerrarSesion().finally(() => setSesion(null));
   }, [servicio]);
 
-  if (sesion === undefined) return null;
+  if (!servicio || sesion === undefined) return null;
   if (!sesion?.esOperador) return <Login onIniciarSesion={iniciarSesion} error={error} />;
-  return <Mesa servicio={servicio} operador={sesion.email} onCerrarSesion={cerrarSesion} />;
+  return (
+    <Mesa
+      key={corrida}
+      servicio={servicio}
+      reloj={demo?.reloj}
+      operador={sesion.email}
+      onReiniciarSimulacion={demo ? reiniciarSimulacion : undefined}
+      onCerrarSesion={cerrarSesion}
+    />
+  );
 }

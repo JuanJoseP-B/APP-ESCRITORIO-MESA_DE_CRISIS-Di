@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BarraEstado, type BarraEstadoProps } from './BarraEstado';
+import { BarraEstado, type BarraEstadoProps, type SimulacionBarra } from './BarraEstado';
 
 afterEach(cleanup);
 
@@ -70,5 +70,54 @@ describe('BarraEstado', () => {
 
     rerender(<BarraEstado {...base} slaVencidos={0} onFiltrarSla={filtrar} />);
     expect((screen.getByRole('button', { name: 'Filtrar cola: 0 SLA vencidos' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('BarraEstado: simulación (modo demo)', () => {
+  const simulacion = (extra: Partial<SimulacionBarra> = {}): SimulacionBarra => ({
+    reproduciendo: true,
+    velocidad: 1,
+    tSeg: 125,
+    duracionSeg: 480,
+    onAlternar: vi.fn(),
+    onVelocidad: vi.fn(),
+    onReiniciar: vi.fn(),
+    ...extra,
+  });
+
+  it('sin simulación (backend real) no hay controles', () => {
+    render(<BarraEstado {...base} />);
+    expect(screen.queryByRole('group', { name: 'Simulación del escenario' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reiniciar' })).toBeNull();
+  });
+
+  it('muestra el tiempo del escenario y la acción de pausar mientras corre', () => {
+    render(<BarraEstado {...base} simulacion={simulacion()} />);
+    const grupo = screen.getByRole('group', { name: 'Simulación del escenario' });
+    expect(grupo.textContent).toContain('02:05 / 08:00');
+    expect(screen.getByRole('button', { name: /Pausar/ })).toBeTruthy();
+  });
+
+  it('en pausa ofrece reproducir', async () => {
+    const alternar = vi.fn();
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, onAlternar: alternar })} />);
+    await userEvent.click(screen.getByRole('button', { name: /Reproducir/ }));
+    expect(alternar).toHaveBeenCalledTimes(1);
+  });
+
+  it('marca la velocidad activa y permite elegir otra', async () => {
+    const velocidad = vi.fn();
+    render(<BarraEstado {...base} simulacion={simulacion({ velocidad: 5, onVelocidad: velocidad })} />);
+    expect(screen.getByRole('button', { name: 'Velocidad 5×' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Velocidad 1×' }).getAttribute('aria-pressed')).toBe('false');
+    await userEvent.click(screen.getByRole('button', { name: 'Velocidad 10×' }));
+    expect(velocidad).toHaveBeenCalledWith(10);
+  });
+
+  it('reinicia el escenario', async () => {
+    const reiniciar = vi.fn();
+    render(<BarraEstado {...base} simulacion={simulacion({ onReiniciar: reiniciar })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Reiniciar' }));
+    expect(reiniciar).toHaveBeenCalledTimes(1);
   });
 });
