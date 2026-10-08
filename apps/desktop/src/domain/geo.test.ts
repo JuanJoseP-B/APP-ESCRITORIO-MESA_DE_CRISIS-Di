@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { aPosicion, distanciaM } from './geo';
+import { RADIOS_POR_DEFECTO } from '@argos/shared';
+import { aPosicion, distanciaM, ubicacionDeIncidente } from './geo';
 
 /*
  * F2-T1. Coordenadas (Wikipedia, consultadas el 2026-10-08):
@@ -31,5 +32,34 @@ describe('distanciaM (Haversine)', () => {
 
   it('aPosicion devuelve [lng, lat]', () => {
     expect(aPosicion({ lat: 1.2, lng: -77.3 })).toEqual([-77.3, 1.2]);
+  });
+});
+
+describe('ubicacionDeIncidente', () => {
+  const punto = { type: 'Point', coordinates: [-77.2811, 1.2136] } as const;
+  const cuadrado = {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [0, 0],
+        [2, 0],
+        [2, 2],
+        [0, 2],
+        [0, 0],
+      ],
+    ],
+  } as const;
+
+  it('un punto devuelve sus coordenadas como {lng, lat}', () => {
+    expect(ubicacionDeIncidente({ geometria: punto })).toEqual({ lng: -77.2811, lat: 1.2136 });
+  });
+
+  it('un polígono devuelve el centroide de sus vértices sin contar el de cierre', () => {
+    expect(ubicacionDeIncidente({ geometria: cuadrado })).toEqual({ lng: 1, lat: 1 });
+  });
+
+  it('el centro del perímetro manda sobre la geometría', () => {
+    const perimetro = { centro: { lat: 5, lng: 6 }, radios: RADIOS_POR_DEFECTO, origen: 'AUTO', poligonoManual: null } as const;
+    expect(ubicacionDeIncidente({ geometria: cuadrado, perimetro })).toEqual({ lat: 5, lng: 6 });
   });
 });
