@@ -32,6 +32,7 @@ export function RailColapsable({ label, side, collapsed, onToggle, icon, shortcu
       <button
         type="button"
         className="ag-rail__toggle"
+        aria-label={`${accion} ${label}`}
         aria-expanded={!collapsed}
         aria-controls={idCuerpo}
         aria-keyshortcuts={shortcut}
@@ -46,9 +47,7 @@ export function RailColapsable({ label, side, collapsed, onToggle, icon, shortcu
             {icon ? <span className="ag-rail__icon">{icon}</span> : null}
             <span className="ag-rail__label">{label}</span>
           </>
-        ) : (
-          <span className="ag-sr-only">{`${accion} ${label}`}</span>
-        )}
+        ) : null}
       </button>
       <div id={idCuerpo} className="ag-rail__body" hidden={collapsed}>
         {children}

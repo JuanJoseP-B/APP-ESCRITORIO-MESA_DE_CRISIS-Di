@@ -32,7 +32,7 @@ describe('RailColapsable', () => {
     expect(container.querySelector('.ag-rail__body')?.hasAttribute('hidden')).toBe(true);
     expect(screen.getByTestId('icono')).toBeTruthy();
     expect(container.querySelector('.ag-rail__label')?.textContent).toBe('Detalle');
-    const boton = screen.getByRole('button', { name: /Detalle/ });
+    const boton = screen.getByRole('button', { name: 'Expandir Detalle' });
     expect(boton.getAttribute('aria-expanded')).toBe('false');
     expect(boton.getAttribute('aria-controls')).toBe(container.querySelector('.ag-rail__body')?.id);
   });
@@ -73,6 +73,7 @@ describe('RailColapsable', () => {
   });
 
   it('no usa colores sueltos en su hoja de estilos', () => {
+    expect(css).toContain('.ag-rail');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
   });
 });

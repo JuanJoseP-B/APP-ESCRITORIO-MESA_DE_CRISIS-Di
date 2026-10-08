@@ -53,6 +53,7 @@ describe('UnitChip', () => {
   });
 
   it('no usa colores sueltos en su hoja de estilos', () => {
+    expect(css).toContain('.ag-unit');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
   });
 });
