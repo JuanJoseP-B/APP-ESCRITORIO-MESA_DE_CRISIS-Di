@@ -87,7 +87,14 @@ export function BarraEstado({
       </span>
       <span className="font-mono text-data-sm uppercase text-text-secondary">
         {t('barra.turno', { turno: nombreTurno })}
-        {operador ? <span className="inline-block max-w-40 truncate align-bottom text-text-muted" title={operador}> · {operador}</span> : null}
+        {operador ? (
+          <span className="text-text-muted">
+            {' · '}
+            <span className="inline-block max-w-40 truncate align-bottom" title={operador}>
+              {operador}
+            </span>
+          </span>
+        ) : null}
       </span>
       <span role="status" aria-label={t('barra.enlace.aria', { estado: palabraEnlace })} className={`flex items-center gap-2 font-mono text-data-sm uppercase ${estadoEnlace.clase}`}>
         <Glyph shape={estadoEnlace.shape} />
