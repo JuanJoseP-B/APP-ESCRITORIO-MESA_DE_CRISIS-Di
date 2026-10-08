@@ -1,6 +1,6 @@
 # PROGRESO · Demo-first (UI/UX)
 
-**Rama:** `feat/cad-fase2-logica` · `npm run check`: 62 archivos, 480 pruebas, 0 errores (al cierre de U1).
+**Rama:** `feat/cad-fase2-logica` · `npm run check`: 69 archivos, 563 pruebas, 0 errores (al cierre de U2).
 
 ## Enfoque
 El proyecto se evalúa por UI/UX: el **modo demo es el producto principal** (sin credenciales Supabase, servicio en memoria).
@@ -9,22 +9,25 @@ repo tal cual y NO se aplican al proyecto real. `medirDesfaseServidor` sigue exp
 
 ## Subfases
 - **U1 · Base del demo (hecha):** reloj local, datos en Pasto, guion de escenario y control de simulación.
-- **U2 · Ingesta F2 y duplicados:** FormularioLlamada (F2, Esc, Ctrl+Enter), AvisoDuplicado, vinculación y P1–P4 en la cola.
+- **U2 · Ingesta F2 y duplicados (hecha):** bandeja Entrantes, FormularioLlamada (F2, Esc, Ctrl+Enter), AvisoDuplicado, P1–P4 y ☎ N en la cola.
 - **U3 · Mapa:** unidades animadas, anillos de perímetro y análisis espacial (turf), corrección manual con draw.
-- **U4 · SLA y atajos:** `sla.ts`, CronometroSla, alertas SLA en BarraEstado, atajos F2/D/A.
+- **U4 · SLA y atajos:** `sla.ts`, CronometroSla, alertas SLA en BarraEstado, atajos D/A.
 - **U5 · Copiloto:** Asesor IA con motor determinista (sin API externa ni secretos).
 - **U6 · Pulido y entrega:** contraste AA en ambos temas, teclado, reduced-motion, docs (ROADMAP, SPEC, README, CLAUDE.md).
 
-## Hecho en U1
-- `bd6f1e0` reloj local: el cliente real ya no mide el desfase; no había stash ni cambios a medias que descartar.
-- `47470f0` demo en Pasto como el `seed.sql`: 6 unidades (U01, U02, P01, M10, M11, M12), 2 refugios, 1 incidente (fuga de gas P1), mapa centrado allí.
-- `3b4c07c` `domain/escenario.ts`: guion de 8 min (gas ×3 con 2 duplicados, deslizamiento, sensor), `eventosHasta` y `eventosEntre`.
-- `05205e0` `domain/relojSimulado.ts` + `useSimulacion` + control en `BarraEstado` (reproducir/pausar, 1×/5×/10×, reiniciar).
+## Decisiones U2 (el choque se resuelve por lo más simple)
+- El reloj simulado nace en pausa; con t=0 la barra muestra el botón primario «Iniciar escenario». Reiniciar vuelve a ese estado.
+- Entrantes = llamadas sin vincular ni descartar: P1 primero y, a igual prioridad, la más reciente arriba. «Nueva» dura 12 s del reloj
+  de la consola (a 10× casi no se ve). `Reporte` sigue vivo solo para pintar los pines del mapa (`reporteDeLlamada`).
+- Confirmar/descartar de la bandeja vieja desaparece: abrir la llamada lleva al formulario; Descartar queda en la fila.
+- Una entrante editada en el formulario no se reescribe en su fila (no hay `actualizarLlamada`): los datos editados van al incidente.
+- Ctrl+Enter = crear incidente; con candidatos NO decide: lleva el foco a VINCULAR (el aviso exige elegir). F2 con el drawer abierto no hace nada.
+- Candidatos requieren tipo y ubicación válidos. Vincular no escala la prioridad del incidente. Coordenadas con 5 decimales (≈1 m).
+- Bitácora: crear anota «Incidente creado desde llamada…» y cada duplicado descartado; vincular anota «Llamada … vinculada».
+- Faltaban campos en ui: se añadieron `SelectField` y `TextAreaField`. La cola muestra P1–P4 en lugar de la criticidad.
+- Los archivos del árbol de trabajo están en CRLF (git los guarda en LF por `.gitattributes`); se preservó.
 
-## Decisiones (el choque se resuelve por lo más simple)
-- El escenario arranca solo, en marcha a 1× (la primera llamada entra a los 20 s). Pausar congela también el reloj de la app.
-- Reiniciar recrea el servicio y el reloj del demo y remonta la consola (`key`); la sesión no se pierde.
-- Sustituye a `?reloj=N`, que nunca llegó a implementarse. `servicioDemo` (singleton) ya no lo usa `App`.
-- Los datos iniciales del demo se calculan respecto a la hora del servicio, para que los tiempos y SLA tengan sentido.
-- Pendiente heredado: retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs.
-- Supabase solo con `VITE_USAR_SUPABASE=true`: con la 0006 sin aplicar, la base devuelve estados antiguos ('Disponible') y `UnitChip` rompía la pantalla (en blanco). Por defecto, demo.
+## Pendiente heredado
+- Retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs.
+- Supabase solo con `VITE_USAR_SUPABASE=true`: con la 0006 sin aplicar la base devuelve estados antiguos y `UnitChip` rompía la pantalla.
+- Sin navegador no se verificó a ojo: contraste AA, foco visible y reduced-motion de lo nuevo quedan para U6.
