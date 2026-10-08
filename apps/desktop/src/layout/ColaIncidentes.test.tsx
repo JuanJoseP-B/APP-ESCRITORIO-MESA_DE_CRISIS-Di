@@ -2,7 +2,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EstadoIncidente, Incidente, NivelCriticidad, Recurso, Reporte } from '@argos/shared';
+import { PRIORIDAD_POR_CRITICIDAD, type EstadoIncidente, type Incidente, type NivelCriticidad, type Recurso, type Reporte } from '@argos/shared';
 import { ColaIncidentes, formatearDuracion, type ColaIncidentesProps } from './ColaIncidentes';
 
 afterEach(cleanup);
@@ -13,6 +13,8 @@ const inc = (id: string, nivel: NivelCriticidad, abierto: string, estado: Estado
   id,
   titulo: `Incidente ${id}`,
   nivel_criticidad: nivel,
+  prioridad: PRIORIDAD_POR_CRITICIDAD[nivel],
+  tipo: 'INCENDIO',
   estado,
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: [{ timestamp: abierto, descripcion: 'Registrado' }],

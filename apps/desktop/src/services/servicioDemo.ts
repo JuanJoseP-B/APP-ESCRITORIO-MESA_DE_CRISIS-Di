@@ -7,6 +7,8 @@ const incidentes: readonly Incidente[] = [
     id: 'demo-1',
     titulo: 'Incendio forestal cerro San Cristóbal',
     nivel_criticidad: 'Crítico',
+    prioridad: 'P1',
+    tipo: 'INCENDIO',
     estado: 'Abierto',
     geometria: {
       type: 'Polygon',
@@ -29,6 +31,8 @@ const incidentes: readonly Incidente[] = [
     id: 'demo-2',
     titulo: 'Bloqueo de vía Av. Providencia',
     nivel_criticidad: 'Medio',
+    prioridad: 'P2',
+    tipo: 'VIA_BLOQUEADA',
     estado: 'Contenido',
     geometria: { type: 'Point', coordinates: [-70.61, -33.43] },
     timeline: [{ timestamp: '2026-10-02T07:40:00Z', descripcion: 'Corte de tránsito' }],

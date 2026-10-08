@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { ESTADOS_INCIDENTE, NIVELES_CRITICIDAD } from './incidente';
-import type { Incidente, Recurso } from './index';
+import type { Incidente, NuevoIncidente, Prioridad, Recurso, TipoEmergencia } from './index';
 
 function describirGeometria(incidente: Incidente): string {
   const { geometria } = incidente;
@@ -21,11 +21,19 @@ describe('Incidente', () => {
     expect(ESTADOS_INCIDENTE).toEqual(['Abierto', 'Contenido', 'Resuelto']);
   });
 
+  it('prioridad y tipo son parte del incidente; el tipo puede faltar en filas anteriores al CAD', () => {
+    expectTypeOf<Incidente['prioridad']>().toEqualTypeOf<Prioridad>();
+    expectTypeOf<Incidente['tipo']>().toEqualTypeOf<TipoEmergencia | null>();
+    expectTypeOf<NuevoIncidente>().not.toHaveProperty('creado_en');
+  });
+
   it('discrimina la geometría por su tipo (Point / Polygon)', () => {
     const base = {
       id: 'inc-1',
       titulo: 'Incendio forestal',
       nivel_criticidad: 'Crítico',
+      prioridad: 'P1',
+      tipo: 'INCENDIO',
       estado: 'Abierto',
       timeline: [{ timestamp: '2026-10-01T12:00:00Z', descripcion: 'Reporte recibido' }],
     } as const;

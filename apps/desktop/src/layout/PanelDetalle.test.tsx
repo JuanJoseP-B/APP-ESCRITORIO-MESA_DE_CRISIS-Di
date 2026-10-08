@@ -11,6 +11,8 @@ const incidente: Incidente = {
   id: 'inc-1-a3f',
   titulo: 'Fuga de gas en sector',
   nivel_criticidad: 'Crítico',
+  prioridad: 'P1',
+  tipo: 'FUGA_GAS',
   estado: 'Abierto',
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: [

@@ -195,6 +195,8 @@ describe('crearServicioMesa', () => {
     const nuevo = {
       titulo: 'x',
       nivel_criticidad: 'Medio',
+      prioridad: 'P2',
+      tipo: null,
       estado: 'Abierto',
       geometria: { type: 'Point', coordinates: [0, 0] },
       timeline: [],

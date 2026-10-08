@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EstadoIncidente, Incidente, NivelCriticidad, Recurso } from '@argos/shared';
+import { PRIORIDAD_POR_CRITICIDAD, type EstadoIncidente, type Incidente, type NivelCriticidad, type Recurso } from '@argos/shared';
 import {
   aperturaDeIncidente,
   codigoIncidente,
@@ -21,6 +21,8 @@ const inc = (
   id,
   titulo: `Incidente ${id}`,
   nivel_criticidad: nivel,
+  prioridad: PRIORIDAD_POR_CRITICIDAD[nivel],
+  tipo: 'INCENDIO',
   estado,
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: abierto ? [{ timestamp: abierto, descripcion: 'Registrado' }] : [],

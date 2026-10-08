@@ -6,6 +6,8 @@ const base: Incidente = {
   id: 'a',
   titulo: 'Incendio forestal',
   nivel_criticidad: 'Crítico',
+  prioridad: 'P1',
+  tipo: 'INCENDIO',
   estado: 'Abierto',
   geometria: { type: 'Point', coordinates: [-70.6, -33.4] },
   timeline: [],

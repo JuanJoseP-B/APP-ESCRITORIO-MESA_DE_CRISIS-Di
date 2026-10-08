@@ -1,5 +1,6 @@
 import { TIPOS_EMERGENCIA, etiquetaTipoEmergencia, type TipoEmergencia } from './emergencia';
 import { agregarEvento, type NuevoIncidente } from './incidente';
+import { PRIORIDAD_POR_CRITICIDAD } from './llamada';
 
 export const TIPOS_REPORTE = TIPOS_EMERGENCIA;
 export type TipoReporte = TipoEmergencia;
@@ -38,6 +39,8 @@ export function incidenteDesdeReporte(reporte: Reporte, ahora: Date = new Date()
   return {
     titulo: `${etiquetaTipoEmergencia(reporte.tipo)} reportado por ciudadano`,
     nivel_criticidad: 'Medio',
+    prioridad: PRIORIDAD_POR_CRITICIDAD.Medio,
+    tipo: reporte.tipo,
     estado: 'Abierto',
     geometria: { type: 'Point', coordinates: [reporte.lng, reporte.lat] },
     timeline: agregarEvento([], 'Reporte ciudadano confirmado por operador', ahora),
