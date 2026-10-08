@@ -34,7 +34,11 @@ export interface AccionesOperador {
   readonly guardarTrazado: (figura: FiguraTrazada) => void;
   /** `delta` relativo (p. ej. +5 / -5); la base lo aplica de forma atómica. */
   readonly cambiarOcupacion: (zona: ZonaPublica, delta: number) => void;
-  readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso) => void;
+  /**
+   * Al despachar, `incidenteId` fija el incidente destino (el que muestra PanelDetalle); sin él se
+   * usa el seleccionado.
+   */
+  readonly cambiarEstadoRecurso: (recurso: Recurso, estado: EstadoRecurso, incidenteId?: string) => void;
 }
 
 const mensajeDe = (err: unknown): string => (err instanceof Error ? err.message : 'Error desconocido');
@@ -104,10 +108,10 @@ export function useAccionesOperador({
           }),
         ),
       cambiarOcupacion: (zona, delta) => ejecutar(() => servicio.ajustarOcupacionZona(zona.id, delta)),
-      cambiarEstadoRecurso: (recurso, estado) =>
+      cambiarEstadoRecurso: (recurso, estado, incidenteId) =>
         ejecutar(() => {
-          // Despachar usa el incidente seleccionado; otras transiciones lo conservan o liberan.
-          const siguiente = transicionarRecurso(recurso, estado, ultimo.current.seleccionadoId ?? undefined);
+          // Despachar usa el incidente indicado (o el seleccionado); otras transiciones lo conservan o liberan.
+          const siguiente = transicionarRecurso(recurso, estado, incidenteId ?? ultimo.current.seleccionadoId ?? undefined);
           return servicio.cambiarEstadoRecurso(recurso.id, estado, siguiente.incidente_asignado_id);
         }),
     }),

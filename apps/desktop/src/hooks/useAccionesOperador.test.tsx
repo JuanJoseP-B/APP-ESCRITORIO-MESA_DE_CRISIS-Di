@@ -111,6 +111,16 @@ describe('useAccionesOperador', () => {
     await waitFor(() => expect(alAvisar).toHaveBeenCalledWith(expect.stringContaining('Transición inválida')));
   });
 
+  it('despachar con incidenteId explícito prevalece sobre el seleccionado', async () => {
+    const { servicio, acciones } = await montar('demo-2');
+    const libre = (await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4') as Recurso;
+
+    acciones.current.cambiarEstadoRecurso(libre, 'Despachado', 'demo-1');
+    await waitFor(async () =>
+      expect((await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4')?.incidente_asignado_id).toBe('demo-1'),
+    );
+  });
+
   it('guardarTrazado mantiene su identidad entre renders', async () => {
     const servicio = crearServicioDemo();
     const props = { servicio, incidentes: [], seleccionadoId: null as string | null, alSeleccionar: vi.fn(), alAvisar: vi.fn() };

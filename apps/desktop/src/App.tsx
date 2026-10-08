@@ -2,9 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@argos/ui';
 import { Login } from './components/Login';
 import { MapView } from './components/MapView';
-import { PanelMesa } from './components/PanelMesa';
-import { PanelRecursos } from './components/PanelRecursos';
-import { PanelRefugios } from './components/PanelRefugios';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
   useIncidentesRealtime,
@@ -12,15 +9,32 @@ import {
   useReportesRealtime,
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
+import { useAtajos } from './hooks/useAtajos';
+import { usePanelColapsable } from './hooks/usePanelColapsable';
+import { useReloj } from './hooks/useReloj';
 import type { Coordenadas, Reporte } from '@argos/shared';
+import { dividirCola, moverSeleccion } from './domain/cola';
+import { estadoEnlace } from './domain/conexion';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
+import { BarraEstado } from './layout/BarraEstado';
+import { ColaIncidentes } from './layout/ColaIncidentes';
+import { GrillaTactica } from './layout/GrillaTactica';
+import { PanelDetalle } from './layout/PanelDetalle';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { servicioDemo } from './services/servicioDemo';
 import { aplicarTema, temaGuardado, type Tema } from './tema';
 
 const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
 
-function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; readonly onCerrarSesion: () => void }) {
+function Mesa({
+  servicio,
+  operador,
+  onCerrarSesion,
+}: {
+  readonly servicio: ServicioMesa;
+  readonly operador: string;
+  readonly onCerrarSesion: () => void;
+}) {
   const incidentes = useIncidentesRealtime(servicio);
   const reportes = useReportesRealtime(servicio);
   const recursos = useRecursosRealtime(servicio);
@@ -34,6 +48,27 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
   const [tema, setTema] = useState<Tema>(temaGuardado);
   useEffect(() => aplicarTema(tema), [tema]);
   const alternarTema = useCallback(() => setTema((actual) => (actual === 'crema' ? 'carbon' : 'crema')), []);
+
+  const [desfaseMs, setDesfaseMs] = useState(0);
+  useEffect(() => {
+    let activo = true;
+    servicio.desfaseHoraServidorMs().then(
+      (d) => activo && setDesfaseMs(d),
+      () => undefined,
+    );
+    return () => {
+      activo = false;
+    };
+  }, [servicio]);
+  const ahora = useReloj(desfaseMs);
+
+  const panelCola = usePanelColapsable('cola');
+  const panelDetalle = usePanelColapsable('detalle');
+  const { expandir: expandirDetalle } = panelDetalle;
+  // Elegir un incidente abre el detalle: ahí vive el despacho.
+  useEffect(() => {
+    if (seleccionadoId) expandirDetalle();
+  }, [seleccionadoId, expandirDetalle]);
 
   const acciones = useAccionesOperador({
     servicio,
@@ -56,55 +91,49 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
     setReporteSeleccionadoId(r.id);
     setFoco({ lat: r.lat, lng: r.lng });
   }, []);
-  const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId);
+  const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
 
+  const ordenCola = useMemo(() => dividirCola(incidentes.datos).activos.map((i) => i.id), [incidentes.datos]);
+  useAtajos({
+    j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
+    k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
+    Escape: () => setDibujando(false),
+  });
+
+  const enlace = estadoEnlace([incidentes, reportes, recursos, zonas]);
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? reportes.error;
 
-  return (
-    <div className="flex h-screen">
-      <PanelMesa
+  const mapa = (
+    <>
+      <MapView
         incidentes={incidentes.datos}
+        zonas={zonas.datos}
         reportes={reportes.datos}
         seleccionadoId={seleccionadoId}
-        onSeleccionar={setSeleccionadoId}
         reporteSeleccionadoId={reporteSeleccionadoId}
-        onSeleccionarReporte={alSeleccionarReporte}
+        onSeleccionar={setSeleccionadoId}
+        foco={foco}
         dibujando={dibujando}
-        onAlternarDibujo={() => {
-          setAviso(null);
-          setDibujando((d) => !d);
-        }}
-        onConfirmarReporte={acciones.confirmarReporte}
-        onDescartarReporte={acciones.descartarReporte}
-        onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
-        onCerrarSesion={onCerrarSesion}
-        tema={tema}
-        onAlternarTema={alternarTema}
-      >
-        <PanelRecursos
-          recursos={recursos.datos}
-          incidenteSeleccionadoId={seleccionadoId}
-          onCambiarEstado={acciones.cambiarEstadoRecurso}
-        />
-        <PanelRefugios zonas={zonas.datos} onCambiarOcupacion={acciones.cambiarOcupacion} />
-      </PanelMesa>
-      <main className="relative flex-1">
-        <MapView
-          incidentes={incidentes.datos}
-          zonas={zonas.datos}
-          reportes={reportes.datos}
-          seleccionadoId={seleccionadoId}
-          reporteSeleccionadoId={reporteSeleccionadoId}
-          onSeleccionar={setSeleccionadoId}
-          foco={foco}
-          dibujando={dibujando}
-          modoTrazado={modoTrazado}
-          onFigura={alFigura}
-          onErrorDibujo={alErrorDibujo}
-        />
+        modoTrazado={modoTrazado}
+        onFigura={alFigura}
+        onErrorDibujo={alErrorDibujo}
+      />
+      <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
+        <Button
+          size="sm"
+          variant={dibujando ? 'secondary' : 'ghost'}
+          className="border border-border-strong bg-surface-panel shadow-overlay"
+          aria-pressed={dibujando}
+          onClick={() => {
+            setAviso(null);
+            setDibujando((d) => !d);
+          }}
+        >
+          {dibujando ? 'Cancelar trazado' : 'Trazar zona'}
+        </Button>
         {dibujando && (
-          <div className="absolute left-4 top-4 z-toolbar border border-border-strong bg-surface-panel p-3 shadow-overlay">
+          <div className="border border-border-strong bg-surface-panel p-3 shadow-overlay">
             <p className="font-mono text-overline uppercase text-text-primary">Trazar figura</p>
             <div role="group" aria-label="Figura a trazar" className="mt-2 flex gap-1">
               {MODOS_TRAZADO.map((m) => (
@@ -121,14 +150,58 @@ function Mesa({ servicio, onCerrarSesion }: { readonly servicio: ServicioMesa; r
             </p>
           </div>
         )}
-        {mensaje && (
-          <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
-            <span aria-hidden="true" className="mr-2 text-status-info">◆</span>
-            {mensaje}
-          </p>
-        )}
-      </main>
-    </div>
+      </div>
+      {mensaje && (
+        <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
+          <span aria-hidden="true" className="mr-2 text-status-info">◆</span>
+          {mensaje}
+        </p>
+      )}
+    </>
+  );
+
+  return (
+    <GrillaTactica
+      panelCola={panelCola}
+      panelDetalle={panelDetalle}
+      barra={
+        <BarraEstado
+          hora={ahora}
+          turno={tema}
+          onAlternarTurno={alternarTema}
+          operador={operador}
+          enlace={enlace}
+          onCerrarSesion={onCerrarSesion}
+        />
+      }
+      cola={
+        <ColaIncidentes
+          incidentes={incidentes.datos}
+          recursos={recursos.datos}
+          reportes={reportes.datos}
+          ahora={ahora}
+          seleccionadoId={seleccionadoId}
+          onSeleccionar={setSeleccionadoId}
+          reporteSeleccionadoId={reporteSeleccionadoId}
+          onSeleccionarReporte={alSeleccionarReporte}
+          onConfirmarReporte={acciones.confirmarReporte}
+          onDescartarReporte={acciones.descartarReporte}
+        />
+      }
+      mapa={mapa}
+      detalle={
+        <PanelDetalle
+          incidente={incidenteSeleccionado}
+          recursos={recursos.datos}
+          zonas={zonas.datos}
+          ahora={ahora}
+          onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
+          onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
+          onCambiarOcupacion={acciones.cambiarOcupacion}
+        />
+      }
+      tablero={null}
+    />
   );
 }
 
@@ -173,5 +246,5 @@ export function App() {
 
   if (sesion === undefined) return null;
   if (!sesion?.esOperador) return <Login onIniciarSesion={iniciarSesion} error={error} />;
-  return <Mesa servicio={servicio} onCerrarSesion={cerrarSesion} />;
+  return <Mesa servicio={servicio} operador={sesion.email} onCerrarSesion={cerrarSesion} />;
 }

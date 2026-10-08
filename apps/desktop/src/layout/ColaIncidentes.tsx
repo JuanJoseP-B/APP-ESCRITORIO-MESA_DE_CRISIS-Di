@@ -10,6 +10,7 @@ import {
 import { Button, Glyph, SEVERIDADES, SectionHeader, type SeveridadBadge } from '@argos/ui';
 import { codigoIncidente, dividirCola, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
 import { formatearHora } from '../domain/timeline';
+import { SEVERIDAD_UI } from './presentacion';
 
 export interface ColaIncidentesProps {
   incidentes: readonly Incidente[];
@@ -24,12 +25,6 @@ export interface ColaIncidentesProps {
   onConfirmarReporte?: (reporte: Reporte) => void;
   onDescartarReporte?: (reporte: Reporte) => void;
 }
-
-const SEVERIDAD_UI: Record<Incidente['nivel_criticidad'], SeveridadBadge> = {
-  Crítico: 'critico',
-  Medio: 'medio',
-  Bajo: 'bajo',
-};
 
 const COLOR_SEVERIDAD: Record<SeveridadBadge, string> = {
   critico: 'text-status-critical',
