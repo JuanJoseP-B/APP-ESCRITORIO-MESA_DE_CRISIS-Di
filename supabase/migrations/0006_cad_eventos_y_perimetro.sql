@@ -125,3 +125,24 @@ alter table public.incidentes add column if not exists perimetro_origen text;
 alter table public.incidentes drop constraint if exists incidentes_perimetro_origen_valido;
 alter table public.incidentes add constraint incidentes_perimetro_origen_valido
   check (perimetro_origen is null or perimetro_origen in ('AUTO', 'MANUAL', 'IA'));
+
+-- ---------------------------------------------------------------- 4) recursos: ubicación y base
+-- {lat, lng} en grados (el tipo `Coordenadas` de @argos/shared). `ubicacion` es la posición actual: la base
+-- mientras la unidad está libre, la del incidente al llegar a la escena, o la que el operador corrige a mano.
+-- Siguen protegidas por la misma política `recursos_operador`: sin acceso para anon.
+create or replace function public.coordenada_valida(p jsonb) returns boolean
+language sql immutable set search_path = '' as $$
+  select case
+    when p is null then true
+    when jsonb_typeof(p) <> 'object' then false
+    when jsonb_typeof(p -> 'lat') is distinct from 'number' or jsonb_typeof(p -> 'lng') is distinct from 'number' then false
+    else (p ->> 'lat')::float8 between -90 and 90 and (p ->> 'lng')::float8 between -180 and 180
+  end
+$$;
+
+alter table public.recursos_operativos add column if not exists ubicacion jsonb;
+alter table public.recursos_operativos add column if not exists base jsonb;
+alter table public.recursos_operativos drop constraint if exists recursos_ubicacion_valida;
+alter table public.recursos_operativos add constraint recursos_ubicacion_valida check (public.coordenada_valida(ubicacion));
+alter table public.recursos_operativos drop constraint if exists recursos_base_valida;
+alter table public.recursos_operativos add constraint recursos_base_valida check (public.coordenada_valida(base));
