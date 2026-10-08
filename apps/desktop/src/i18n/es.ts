@@ -278,6 +278,23 @@ export const es = {
   'login.ingresar': 'Ingresar',
   'login.error.rol': 'Esta cuenta no tiene rol de operador',
   'login.error.desconocido': 'Error desconocido',
+
+  // Asesor táctico · motor de reglas
+  'asesor.rol.Bomberos': 'Control y rescate',
+  'asesor.rol.Ambulancia': 'Atención prehospitalaria',
+  'asesor.rol.Policía': 'Seguridad y control de tránsito',
+  'asesor.just.situacion': '{tipo} {prioridad}, abierto hace {minutos} min. Llamadas vinculadas: {llamadas}.',
+  'asesor.just.unidades': 'Se propone despachar {unidades}: la unidad libre más cercana de cada tipo que falta.',
+  'asesor.just.cubierto': 'Los tipos de unidad que exige este incidente ya están asignados; no hace falta despachar más.',
+  'asesor.just.sinUnidades': 'No hay unidades libres de los tipos que faltan: despacho manual o refuerzo externo.',
+  'asesor.just.perimetro': 'Perímetro del protocolo: {caliente}/{tibia}/{evacuacion} m.',
+  'asesor.just.perimetroRefugio': 'Perímetro del protocolo: {caliente}/{tibia}/{evacuacion} m; refugio sugerido: {refugio} (cupo libre: {libres}).',
+  'asesor.adv.sinUnidades': 'No hay unidad de {tipo} disponible.',
+  'asesor.adv.zonaCaliente': '{unidad} está en zona caliente y no atiende este incidente.',
+  'asesor.adv.slaVencido': 'SLA vencido en {unidad}.',
+  'asesor.adv.sinRefugio': 'Ningún refugio fuera del perímetro tiene cupo.',
+  'asesor.adv.refugioLleno': '{refugio} está al {porcentaje} % de su aforo.',
+  'asesor.detalle.sinTipo': 'El incidente no tiene tipo de emergencia, así que no hay protocolo que aplicar.',
 } as const;
 
 export type ClaveTexto = keyof typeof es;

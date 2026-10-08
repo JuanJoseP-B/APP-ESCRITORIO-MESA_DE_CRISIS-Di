@@ -267,4 +267,21 @@ export const en: Diccionario = {
   'login.ingresar': 'Sign in',
   'login.error.rol': 'This account does not have the operator role',
   'login.error.desconocido': 'Unknown error',
+
+  // Tactical advisor · rules engine
+  'asesor.rol.Bomberos': 'Control and rescue',
+  'asesor.rol.Ambulancia': 'Pre-hospital care',
+  'asesor.rol.Policía': 'Security and traffic control',
+  'asesor.just.situacion': '{tipo} {prioridad}, open for {minutos} min. Linked calls: {llamadas}.',
+  'asesor.just.unidades': 'Dispatching {unidades} is proposed: the nearest free unit of each missing type.',
+  'asesor.just.cubierto': 'The unit types this incident requires are already assigned; no further dispatch is needed.',
+  'asesor.just.sinUnidades': 'No free units of the missing types: manual dispatch or outside reinforcement.',
+  'asesor.just.perimetro': 'Protocol perimeter: {caliente}/{tibia}/{evacuacion} m.',
+  'asesor.just.perimetroRefugio': 'Protocol perimeter: {caliente}/{tibia}/{evacuacion} m; suggested shelter: {refugio} (free capacity: {libres}).',
+  'asesor.adv.sinUnidades': 'No {tipo} unit is available.',
+  'asesor.adv.zonaCaliente': '{unidad} is in the hot zone and is not serving this incident.',
+  'asesor.adv.slaVencido': 'SLA overdue on {unidad}.',
+  'asesor.adv.sinRefugio': 'No shelter outside the perimeter has room.',
+  'asesor.adv.refugioLleno': '{refugio} is at {porcentaje} % of its capacity.',
+  'asesor.detalle.sinTipo': 'The incident has no emergency type, so there is no protocol to apply.',
 };
