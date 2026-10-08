@@ -67,14 +67,17 @@ const unidad = (
   ubicacion: Coordenadas = base,
 ): Recurso => ({ id: `demo-rec-${n}`, etiqueta, tipo, estado_actual: estado, incidente_asignado_id: incidenteId, base, ubicacion });
 
-/** Mismas unidades y bases que el `seed.sql` (más la M12); la M11 ya está en la escena del incidente. */
+/**
+ * Mismas unidades y bases que el `seed.sql` (más la M12); la M11 ya está en la escena del incidente y la M12 va en
+ * camino, retenida por el tráfico (ver `TRAFICO_ESCENARIO`).
+ */
 const recursosIniciales: readonly Recurso[] = [
   unidad(1, 'U01', 'Bomberos', 'DISPONIBLE', { lat: 1.2142, lng: -77.279 }),
   unidad(2, 'U02', 'Bomberos', 'ASIGNADO', { lat: 1.2105, lng: -77.2838 }, 'demo-1'),
   unidad(3, 'M11', 'Ambulancia', 'EN_ESCENA', { lat: 1.2168, lng: -77.2815 }, 'demo-1', { lat: 1.2136, lng: -77.2811 }),
   unidad(4, 'P01', 'Policía', 'DISPONIBLE', { lat: 1.2128, lng: -77.2805 }),
   unidad(5, 'M10', 'Ambulancia', 'INOPERATIVO', { lat: 1.212, lng: -77.276 }),
-  unidad(6, 'M12', 'Ambulancia', 'DISPONIBLE', { lat: 1.2184, lng: -77.2778 }),
+  unidad(6, 'M12', 'Ambulancia', 'EN_RUTA', { lat: 1.2184, lng: -77.2778 }, 'demo-1'),
 ];
 
 /** Historia de los recursos que arrancan ocupados, referida a la hora del servicio para que sus SLA tengan sentido. */
@@ -91,6 +94,8 @@ function eventosIniciales(ahoraMs: number): readonly EventoRecurso[] {
     evento(2, 'demo-rec-3', 'ASIGNADO', 'EN_RUTA', 6),
     evento(3, 'demo-rec-3', 'EN_RUTA', 'EN_ESCENA', 3),
     evento(4, 'demo-rec-2', 'DISPONIBLE', 'ASIGNADO', 1),
+    evento(5, 'demo-rec-6', 'DISPONIBLE', 'ASIGNADO', 5),
+    evento(6, 'demo-rec-6', 'ASIGNADO', 'EN_RUTA', 4),
   ];
 }
 

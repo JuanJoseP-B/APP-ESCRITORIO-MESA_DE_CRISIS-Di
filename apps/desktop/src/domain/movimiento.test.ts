@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { EventoRecurso, Incidente, Recurso } from '@argos/shared';
+import { TRAFICO_ESCENARIO } from './escenario';
 import { distanciaM } from './geo';
 import {
   PASOS_SIN_ANIMACION,
   VELOCIDAD_MS,
   duracionTrayectoSeg,
   estadoTrayecto,
+  factorVelocidadDe,
   movimientosEnRuta,
   posicionesDe,
   type Trayecto,
@@ -89,6 +91,28 @@ const evento = (n: number, recursoId: string, hacia: EventoRecurso['hacia'], cre
   hacia,
   origen: 'MANUAL',
   creadoEn,
+});
+
+describe('tráfico', () => {
+  it('una fracción de la velocidad alarga el trayecto en la misma proporción', () => {
+    const normal = duracionTrayectoSeg('Ambulancia', trayecto);
+    expect(duracionTrayectoSeg('Ambulancia', { ...trayecto, factorVelocidad: 0.5 })).toBeCloseTo(normal * 2, 6);
+    expect(duracionTrayectoSeg('Ambulancia', { ...trayecto, factorVelocidad: 1 })).toBe(normal);
+  });
+
+  it('solo la unidad retenida del escenario avanza con el factor del tráfico', () => {
+    expect(factorVelocidadDe({ etiqueta: TRAFICO_ESCENARIO.etiqueta })).toBe(TRAFICO_ESCENARIO.factorVelocidad);
+    expect(factorVelocidadDe({ etiqueta: 'M11' })).toBe(1);
+    expect(factorVelocidadDe({})).toBe(1);
+  });
+
+  it('movimientosEnRuta aplica el factor: a mitad del tiempo normal la retenida casi no se ha movido', () => {
+    const mitad = SALIDA + (duracionTrayectoSeg('Ambulancia', trayecto) * 1000) / 2;
+    const salidaIso = new Date(SALIDA).toISOString();
+    const retenida = recurso('r1', 'EN_RUTA', { etiqueta: TRAFICO_ESCENARIO.etiqueta });
+    const m = movimientosEnRuta([retenida], [evento(1, 'r1', 'EN_RUTA', salidaIso)], [incidente('i1')], mitad);
+    expect(m[0]?.progreso).toBeCloseTo(0.5 * TRAFICO_ESCENARIO.factorVelocidad, 6);
+  });
 });
 
 describe('movimientosEnRuta', () => {

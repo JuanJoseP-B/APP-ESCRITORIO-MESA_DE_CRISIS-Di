@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { movimientosEnRuta } from '../domain/movimiento';
+import { slaDeRecursos } from '../domain/sla';
 import { crearServicioDemo } from './servicioDemo';
 
 describe('servicioDemo (recursos)', () => {
@@ -216,5 +218,44 @@ describe('servicioDemo: ciclo de vida, eventos y llamadas', () => {
     });
     expect(incidente.creado_en).toBe('2026-10-07T12:00:00.000Z');
     expect(incidente.timeline.map((e) => e.creado_en)).toEqual(['2026-10-07T11:00:01.000Z', '2026-10-07T12:00:00.000Z']);
+  });
+});
+
+describe('servicioDemo: SLA del escenario', () => {
+  const AHORA = Date.parse('2026-10-08T10:00:00Z');
+
+  it('arranca con la M12 en camino y la U02 asignada, ambas con su historia de eventos', async () => {
+    const servicio = crearServicioDemo({ ahora: () => AHORA });
+    const recursos = await servicio.listarRecursos();
+    expect(recursos.find((r) => r.id === 'demo-rec-6')).toMatchObject({ estado_actual: 'EN_RUTA', incidente_asignado_id: 'demo-1' });
+    const eventos = await servicio.listarEventosRecurso();
+    expect(eventos.filter((e) => e.recursoId === 'demo-rec-6').map((e) => e.hacia)).toEqual(['ASIGNADO', 'EN_RUTA']);
+  });
+
+  it('el SLA de la M12 (P1, 10 min desde la asignación) vence hacia el minuto 5 del escenario', async () => {
+    const servicio = crearServicioDemo({ ahora: () => AHORA });
+    const [recursos, eventos, incidentes] = await Promise.all([
+      servicio.listarRecursos(),
+      servicio.listarEventosRecurso(),
+      servicio.listarIncidentes(),
+    ]);
+    const nivelEn = (seg: number) => slaDeRecursos(recursos, eventos, incidentes, AHORA + seg * 1000).get('demo-rec-6')?.nivel;
+    expect(nivelEn(0)).toBe('EN_TIEMPO');
+    expect(nivelEn(200)).toBe('ALERTA');
+    expect(nivelEn(299)).toBe('ALERTA');
+    expect(nivelEn(301)).toBe('VENCIDO');
+  });
+
+  it('la M12 llega ya fuera de SLA pero antes de que acabe el escenario', async () => {
+    const servicio = crearServicioDemo({ ahora: () => AHORA });
+    const [recursos, eventos, incidentes] = await Promise.all([
+      servicio.listarRecursos(),
+      servicio.listarEventosRecurso(),
+      servicio.listarIncidentes(),
+    ]);
+    const llegada = movimientosEnRuta(recursos, eventos, incidentes, AHORA + 480_000).find((m) => m.recursoId === 'demo-rec-6');
+    const antes = movimientosEnRuta(recursos, eventos, incidentes, AHORA + 300_000).find((m) => m.recursoId === 'demo-rec-6');
+    expect(antes?.llego).toBe(false);
+    expect(llegada?.llego).toBe(true);
   });
 });

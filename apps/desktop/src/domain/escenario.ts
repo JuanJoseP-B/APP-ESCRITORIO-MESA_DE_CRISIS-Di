@@ -84,6 +84,19 @@ export const GUION_CRISIS: Guion = [
   },
 ];
 
+/**
+ * Unidad retenida por el tráfico: avanza a una fracción de su velocidad y su SLA de llegada vence hacia el minuto 5
+ * del escenario a 1×. La consola anota el retraso en la bitácora del incidente `incidenteId` en `tSeg`.
+ */
+export const TRAFICO_ESCENARIO = {
+  etiqueta: 'M12',
+  /** Con 0,07 los 648 m de su base al incidente le llevan unos 11 min: llega hacia el minuto 7, ya fuera de SLA. */
+  factorVelocidad: 0.07,
+  incidenteId: 'demo-1',
+  tSeg: 150,
+  nota: 'Unidad M12 avanza con retraso por tráfico en la vía de acceso',
+} as const;
+
 /** Eventos con `tSeg` ≤ `tSeg`, en orden cronológico; un tiempo negativo no incluye ninguno. */
 export function eventosHasta(guion: Guion, tSeg: number): Guion {
   return guion.filter((e) => e.tSeg <= tSeg).sort((a, b) => a.tSeg - b.tSeg);

@@ -1,4 +1,5 @@
 import type { Coordenadas, EventoRecurso, Incidente, Recurso, TipoRecurso } from '@argos/shared';
+import { TRAFICO_ESCENARIO } from './escenario';
 import { distanciaM, ubicacionDeIncidente } from './geo';
 
 /**
@@ -20,6 +21,8 @@ export interface Trayecto {
   readonly destino: Coordenadas;
   /** Hora simulada (ms epoch) en que salió, la del evento EN_RUTA. */
   readonly salidaMs: number;
+  /** Fracción de la velocidad del tipo (tráfico, desvíos); 1 si se omite. */
+  readonly factorVelocidad?: number;
 }
 
 export interface EstadoTrayecto {
@@ -37,9 +40,16 @@ const interpolar = (a: Coordenadas, b: Coordenadas, p: number): Coordenadas => (
 });
 
 /** Segundos que tarda una unidad de ese tipo en cubrir el trayecto. */
-export function duracionTrayectoSeg(tipo: TipoRecurso, trayecto: Pick<Trayecto, 'origen' | 'destino'>): number {
-  return distanciaM(trayecto.origen, trayecto.destino) / VELOCIDAD_MS[tipo];
+export function duracionTrayectoSeg(
+  tipo: TipoRecurso,
+  trayecto: Pick<Trayecto, 'origen' | 'destino' | 'factorVelocidad'>,
+): number {
+  return distanciaM(trayecto.origen, trayecto.destino) / (VELOCIDAD_MS[tipo] * (trayecto.factorVelocidad ?? 1));
 }
+
+/** Fracción de la velocidad con que avanza la unidad: la del tráfico del escenario si es la retenida, 1 en el resto. */
+export const factorVelocidadDe = (recurso: Pick<Recurso, 'etiqueta'>): number =>
+  recurso.etiqueta === TRAFICO_ESCENARIO.etiqueta ? TRAFICO_ESCENARIO.factorVelocidad : 1;
 
 /**
  * Dónde está la unidad en `ahoraMs`: interpolación lineal entre origen y destino a la velocidad de su tipo.
@@ -96,7 +106,7 @@ export function movimientosEnRuta(
       recursoId: r.id,
       incidenteId: incidente.id,
       destino,
-      ...estadoTrayecto(r.tipo, { origen, destino, salidaMs }, ahoraMs, pasos),
+      ...estadoTrayecto(r.tipo, { origen, destino, salidaMs, factorVelocidad: factorVelocidadDe(r) }, ahoraMs, pasos),
     });
   }
   return movimientos;

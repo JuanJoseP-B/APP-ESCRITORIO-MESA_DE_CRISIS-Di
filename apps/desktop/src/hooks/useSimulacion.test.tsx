@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Guion } from '../domain/escenario';
+import { GUION_CRISIS, TRAFICO_ESCENARIO, type Guion } from '../domain/escenario';
 import { crearRelojSimulado } from '../domain/relojSimulado';
 import { crearServicioDemo } from '../services/servicioDemo';
 import { useSimulacion } from './useSimulacion';
@@ -93,5 +93,34 @@ describe('useSimulacion', () => {
     act(() => result.current?.fijarVelocidad(10));
     act(() => void vi.advanceTimersByTime(120_000));
     expect(result.current?.tSeg).toBe(result.current?.duracionSeg);
+  });
+});
+
+describe('useSimulacion: retraso por tráfico', () => {
+  const notasDe = async (servicio: ReturnType<typeof crearServicioDemo>) =>
+    ((await servicio.listarIncidentes()).find((i) => i.id === TRAFICO_ESCENARIO.incidenteId)?.timeline ?? []).filter(
+      (e) => e.descripcion === TRAFICO_ESCENARIO.nota,
+    );
+
+  it('con el guion de la crisis anota el retraso en la bitácora, una sola vez y firmado por el sistema', async () => {
+    const reloj = crearRelojSimulado(Date.now, true);
+    const servicio = crearServicioDemo({ ahora: reloj.ahora });
+    renderHook(() => useSimulacion(servicio, reloj, GUION_CRISIS, 1000));
+    await act(async () => void vi.advanceTimersByTimeAsync((TRAFICO_ESCENARIO.tSeg - 5) * 1000));
+    expect(await notasDe(servicio)).toHaveLength(0);
+    await act(async () => void vi.advanceTimersByTimeAsync(10_000));
+    await act(async () => void vi.advanceTimersByTimeAsync(60_000));
+    const notas = await notasDe(servicio);
+    expect(notas).toHaveLength(1);
+    expect(notas[0]?.autor).toBe('Sistema');
+  });
+
+  it('con otro guion no toca la bitácora', async () => {
+    const reloj = crearRelojSimulado(Date.now, true);
+    const servicio = crearServicioDemo({ ahora: reloj.ahora });
+    const actualizar = vi.spyOn(servicio, 'actualizarIncidente');
+    renderHook(() => useSimulacion(servicio, reloj, GUION, 1000));
+    await act(async () => void vi.advanceTimersByTimeAsync(300_000));
+    expect(actualizar).not.toHaveBeenCalled();
   });
 });
