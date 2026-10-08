@@ -196,3 +196,22 @@ describe('ColaIncidentes: filtro por SLA', () => {
     expect(screen.queryByText('Sin incidentes activos')).toBeNull();
   });
 });
+
+describe('ColaIncidentes: scroll al seleccionado', () => {
+  it('acerca a la vista la fila elegida (J/K) cada vez que cambia la selección', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const { rerender } = render(<ColaIncidentes {...base} seleccionadoId={null} />);
+    expect(scroll).not.toHaveBeenCalled();
+    rerender(<ColaIncidentes {...base} seleccionadoId="critico" />);
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
+    rerender(<ColaIncidentes {...base} seleccionadoId="viejo" />);
+    expect(scroll).toHaveBeenCalledTimes(2);
+  });
+
+  it('funciona aunque el entorno no tenga scrollIntoView', () => {
+    Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+    expect(() => render(<ColaIncidentes {...base} seleccionadoId="critico" />)).not.toThrow();
+  });
+});

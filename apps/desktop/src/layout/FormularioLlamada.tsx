@@ -10,7 +10,7 @@ import {
   type Incidente,
   type NuevaLlamada,
 } from '@argos/shared';
-import { Button, Glyph, SectionHeader, SelectField, TextAreaField, TextField } from '@argos/ui';
+import { Button, Glyph, Kbd, SectionHeader, SelectField, TextAreaField, TextField } from '@argos/ui';
 import {
   aNuevaLlamada,
   esCanal,
@@ -226,11 +226,11 @@ export function FormularioLlamada({
         <TextAreaField label={t('llamada.narrativa')} name="narrativa" rows={4} value={borrador.narrativa} onChange={(e) => cambiar('narrativa', e.target.value)} />
       </form>
       <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
-        <Button variant="ghost" onClick={onCerrar}>
-          {t('llamada.cancelar')} <kbd className="font-mono text-overline">Esc</kbd>
+        <Button variant="ghost" aria-keyshortcuts="Escape" onClick={onCerrar}>
+          {t('llamada.cancelar')} <Kbd>Esc</Kbd>
         </Button>
-        <Button variant="primary" disabled={enviando} onClick={() => void crearIncidente()}>
-          {t('llamada.crear')} <kbd className="font-mono text-overline">Ctrl+Enter</kbd>
+        <Button variant="primary" aria-keyshortcuts="Control+Enter" disabled={enviando} onClick={() => void crearIncidente()}>
+          {t('llamada.crear')} <Kbd>Ctrl+Enter</Kbd>
         </Button>
       </div>
     </section>

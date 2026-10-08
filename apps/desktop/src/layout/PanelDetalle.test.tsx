@@ -158,6 +158,25 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
   });
 });
 
+describe('PanelDetalle: despacho con teclado', () => {
+  it('el botón «Despachar unidad» muestra su tecla D en un <kbd>, anuncia el atajo y abre el despacho', async () => {
+    const abrir = vi.fn();
+    render(<PanelDetalle {...base({ onAbrirDespacho: abrir })} />);
+    const boton = screen.getByRole('button', { name: 'Despachar unidad' });
+    expect(boton.querySelector('kbd')?.textContent).toBe('D');
+    expect(boton.getAttribute('aria-keyshortcuts')).toBe('D');
+    await userEvent.click(boton);
+    expect(abrir).toHaveBeenCalledTimes(1);
+  });
+
+  it('no aparece sin la acción o con el incidente resuelto', () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('button', { name: 'Despachar unidad' })).toBeNull();
+    rerender(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' }, onAbrirDespacho: vi.fn() })} />);
+    expect(screen.queryByRole('button', { name: 'Despachar unidad' })).toBeNull();
+  });
+});
+
 describe('PanelDetalle: cronómetros SLA', () => {
   const sla = (recursoId: string, nivel: EstadoSla['nivel'], transcurridoSeg: number): EstadoSla => ({ recursoId, hito: 'EN_RUTA', transcurridoSeg, limiteSeg: 120, nivel });
 

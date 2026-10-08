@@ -9,7 +9,7 @@ import {
   type Recurso,
   type ZonaPublica,
 } from '@argos/shared';
-import { Badge, Button, DispatchRow, SectionHeader, type VarianteBoton } from '@argos/ui';
+import { Badge, Button, DispatchRow, Kbd, SectionHeader, type VarianteBoton } from '@argos/ui';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
 import { codigoIncidente, minutosAbierto } from '../domain/cola';
 import type { AnilloGenerado } from '../domain/perimetro';
@@ -44,6 +44,8 @@ export interface PanelDetalleProps {
   perimetro?: { readonly anillos: readonly AnilloGenerado[]; readonly analisis: AnalisisPerimetro } | null;
   /** Al señalar un ítem del análisis (cursor o foco) el mapa lo resalta; `null` al soltarlo. */
   onResaltar?: (objetivo: ObjetivoResaltado | null) => void;
+  /** Abre el despacho con el teclado (atajo D): unidad libre más cercana preseleccionada. */
+  onAbrirDespacho?: () => void;
   /** SLA de las unidades con despacho en curso, por id de recurso; las asignadas llevan su cronómetro. */
   sla?: ReadonlyMap<string, EstadoSla>;
   /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
@@ -72,6 +74,7 @@ export function PanelDetalle({
   onCambiarOcupacion,
   perimetro = null,
   onResaltar = () => undefined,
+  onAbrirDespacho,
   sla = SIN_SLA,
   reducirMovimiento = false,
 }: PanelDetalleProps) {
@@ -145,6 +148,11 @@ export function PanelDetalle({
               </Button>
             ))}
           </div>
+          {onAbrirDespacho && incidente.estado !== 'Resuelto' && (
+            <Button size="sm" variant="secondary" className="mt-3" aria-keyshortcuts="D" onClick={onAbrirDespacho}>
+              {t('detalle.despacharUnidad')} <Kbd>D</Kbd>
+            </Button>
+          )}
         </div>
       </section>
 

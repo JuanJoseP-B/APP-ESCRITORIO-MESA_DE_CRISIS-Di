@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
 import { Badge, Button } from '@argos/ui';
 import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
@@ -55,8 +55,14 @@ function FilaIncidente({
   const prioridad = PRIORIDAD_UI[incidente.prioridad];
   const estado = textoEstadoIncidente(t, incidente.estado);
   const codigo = codigoIncidente(incidente.id);
+  // J/K cambian la selección sin tocar el scroll de la lista: la fila elegida se acerca a la vista.
+  const fila = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (seleccionado) fila.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [seleccionado]);
   return (
     <button
+      ref={fila}
       type="button"
       aria-pressed={seleccionado}
       aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades, llamadas })}

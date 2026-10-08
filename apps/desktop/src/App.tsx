@@ -34,6 +34,7 @@ import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { AvisosSla } from './layout/AvisosSla';
+import { DialogoDespacho } from './layout/DialogoDespacho';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
 import { FormularioLlamada } from './layout/FormularioLlamada';
@@ -93,6 +94,7 @@ function Mesa({
   const { temaEfectivo, preferencias } = usePreferencias();
   const { reducirMovimiento } = preferencias;
   const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
+  const [despachoAbierto, setDespachoAbierto] = useState(false);
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
 
@@ -131,6 +133,8 @@ function Mesa({
   useEffect(() => {
     if (seleccionadoId) expandirDetalle();
   }, [seleccionadoId, expandirDetalle]);
+  // El despacho es del incidente que lo abrió: si el operador cambia de incidente, se cierra.
+  useEffect(() => setDespachoAbierto(false), [seleccionadoId]);
 
   const acciones = useAccionesOperador({
     servicio,
@@ -239,9 +243,15 @@ function Mesa({
     j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
     k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
     F2: () => {
-      if (!formulario) abrirLlamadaManual();
+      if (!formulario && !despachoAbierto) abrirLlamadaManual();
+    },
+    d: () => {
+      if (!incidenteSeleccionado || incidenteSeleccionado.estado === 'Resuelto' || formulario) return;
+      expandirDetalle();
+      setDespachoAbierto(true);
     },
     Escape: () => {
+      if (despachoAbierto) return; // el propio diálogo de despacho se cierra con Esc
       setDibujando(false);
       setUnidadId(null);
     },
@@ -379,9 +389,23 @@ function Mesa({
               onCambiarOcupacion={acciones.cambiarOcupacion}
               perimetro={perimetro}
               onResaltar={setResaltado}
+              onAbrirDespacho={() => setDespachoAbierto(true)}
               sla={sla.porRecurso}
               reducirMovimiento={reducirMovimiento}
             />
+            {despachoAbierto && incidenteSeleccionado && !formulario && (
+              <div className="absolute inset-0 z-panel">
+                <DialogoDespacho
+                  incidente={incidenteSeleccionado}
+                  recursos={recursos.datos}
+                  onConfirmar={(recurso) => {
+                    acciones.cambiarEstadoRecurso(recurso, 'ASIGNADO', incidenteSeleccionado.id);
+                    setDespachoAbierto(false);
+                  }}
+                  onCancelar={() => setDespachoAbierto(false)}
+                />
+              </div>
+            )}
             {formulario && (
               <div className="absolute inset-0 z-panel">
                 <FormularioLlamada
