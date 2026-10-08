@@ -1,5 +1,4 @@
 # PROGRESO · Demo-first (UI/UX)
-
 **Rama:** `feat/cad-fase2-logica` · `npm run check`: 95 archivos, 804 pruebas, 0 errores (al cierre de U5).
 
 ## Enfoque
