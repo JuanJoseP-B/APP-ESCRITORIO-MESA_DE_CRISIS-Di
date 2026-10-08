@@ -8,10 +8,10 @@
 .ag-rail__toggle:hover { background: var(--surface-hover); color: var(--text-primary); }
 .ag-rail__toggle:focus { outline: none; }
 .ag-rail__toggle:focus-visible { box-shadow: var(--focus-ring); }
-/* Expandido: la flecha flota en la esquina superior del panel, sin robar altura al contenido. */
-.ag-rail[data-colapsado="false"] .ag-rail__toggle { position: absolute; top: var(--space-2); z-index: 1; width: var(--control-sm); height: var(--control-sm); }
-.ag-rail[data-colapsado="false"][data-lado="left"] .ag-rail__toggle { right: var(--space-2); }
-.ag-rail[data-colapsado="false"][data-lado="right"] .ag-rail__toggle { left: var(--space-2); }
+/* Expandido: la flecha ocupa su propia franja (no se solapa con el contenido) en el borde exterior del panel. */
+.ag-rail[data-colapsado="false"] .ag-rail__toggle { flex: none; width: var(--control-sm); height: var(--control-sm); margin: var(--space-1) var(--space-2) 0; }
+.ag-rail[data-colapsado="false"][data-lado="left"] .ag-rail__toggle { align-self: flex-end; }
+.ag-rail[data-colapsado="false"][data-lado="right"] .ag-rail__toggle { align-self: flex-start; }
 /* Plegado: rail completo de 40 px con icono y rótulo vertical. */
 .ag-rail[data-colapsado="true"] .ag-rail__toggle { flex: 1; flex-direction: column; justify-content: flex-start; width: 100%; padding: var(--space-3) 0; }
 .ag-rail__icon { display: inline-flex; }
