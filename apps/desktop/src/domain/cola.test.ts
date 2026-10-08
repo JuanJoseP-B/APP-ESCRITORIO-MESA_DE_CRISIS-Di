@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { EstadoIncidente, Incidente, NivelCriticidad, Recurso } from '@argos/shared';
 import {
   aperturaDeIncidente,
+  codigoIncidente,
   dividirCola,
   incidentesActivos,
   minutosAbierto,
+  moverSeleccion,
   ordenarCerrados,
   ordenarCola,
   unidadesPorIncidente,
@@ -117,5 +119,34 @@ describe('unidadesPorIncidente', () => {
     expect(mapa.get('a')).toBe(2);
     expect(mapa.get('b')).toBe(1);
     expect(mapa.get('c')).toBeUndefined();
+  });
+});
+
+describe('codigoIncidente', () => {
+  it('toma las 3 últimas letras o dígitos del id, en mayúsculas', () => {
+    expect(codigoIncidente('3f2a9c10-0b7e-4d51-9e8a-1c2d3e4f5a3f')).toBe('A3F');
+    expect(codigoIncidente('demo-1')).toBe('MO1');
+    expect(codigoIncidente('demo-2')).toBe('MO2');
+  });
+});
+
+describe('moverSeleccion', () => {
+  const orden = ['a', 'b', 'c'];
+
+  it('avanza y retrocede sin dar la vuelta', () => {
+    expect(moverSeleccion(orden, 'a', 1)).toBe('b');
+    expect(moverSeleccion(orden, 'c', 1)).toBe('c');
+    expect(moverSeleccion(orden, 'b', -1)).toBe('a');
+    expect(moverSeleccion(orden, 'a', -1)).toBe('a');
+  });
+
+  it('sin selección válida empieza por el primero (J) o el último (K)', () => {
+    expect(moverSeleccion(orden, null, 1)).toBe('a');
+    expect(moverSeleccion(orden, null, -1)).toBe('c');
+    expect(moverSeleccion(orden, 'borrado', 1)).toBe('a');
+  });
+
+  it('con la cola vacía no hay selección', () => {
+    expect(moverSeleccion([], 'a', 1)).toBeNull();
   });
 });

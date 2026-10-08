@@ -78,3 +78,17 @@ export function unidadesPorIncidente(recursos: readonly Recurso[]): ReadonlyMap<
   }
   return cuenta;
 }
+
+/** Código corto y dictable del incidente: las 3 últimas letras o dígitos de su id, en mayúsculas. */
+export const codigoIncidente = (id: string): string => id.replace(/[^a-z0-9]/gi, '').slice(-3).toUpperCase();
+
+/**
+ * Id que queda tras mover la selección `delta` posiciones en `orden` (J/K); no da la vuelta. Sin
+ * selección (o con una que ya no está en la lista) arranca en el primero o el último según el sentido.
+ */
+export function moverSeleccion(orden: readonly string[], actualId: string | null, delta: 1 | -1): string | null {
+  if (orden.length === 0) return null;
+  const actual = actualId === null ? -1 : orden.indexOf(actualId);
+  if (actual === -1) return orden[delta === 1 ? 0 : orden.length - 1] ?? null;
+  return orden[Math.min(orden.length - 1, Math.max(0, actual + delta))] ?? null;
+}
