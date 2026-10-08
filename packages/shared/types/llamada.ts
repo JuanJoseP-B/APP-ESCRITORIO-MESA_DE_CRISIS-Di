@@ -1,4 +1,7 @@
+import type { TipoEmergencia } from './emergencia';
+import type { Coordenadas } from './geo';
 import type { NivelCriticidad } from './incidente';
+import type { EstadoValidacion } from './reporte';
 
 export const CANALES_LLAMADA = ['123', 'VHF', 'SENSOR', 'PRESENCIAL'] as const;
 export type CanalLlamada = (typeof CANALES_LLAMADA)[number];
@@ -25,4 +28,48 @@ export const PRIORIDAD_POR_CRITICIDAD: Readonly<Record<NivelCriticidad, Priorida
   Crítico: 'P1',
   Medio: 'P2',
   Bajo: 'P3',
+};
+
+/** Llamada o aviso registrado por el operador. Sin `incidenteId` está pendiente de vincular. */
+export interface Llamada {
+  readonly id: string;
+  readonly canal: CanalLlamada;
+  readonly tipo: TipoEmergencia;
+  readonly prioridad: Prioridad;
+  readonly ubicacion: Coordenadas;
+  readonly narrativa: string;
+  readonly reportante: string | null;
+  readonly callback: string | null;
+  /** `null` = sin vincular. */
+  readonly incidenteId: string | null;
+  readonly estadoValidacion: EstadoValidacion;
+  readonly operadorId: string;
+  /** ISO 8601, hora del servidor. */
+  readonly creadoEn: string;
+}
+
+/** Lo que captura el formulario; el servicio fija el resto (id, operador, hora y estado). */
+export type NuevaLlamada = Omit<Llamada, 'id' | 'creadoEn' | 'operadorId' | 'incidenteId' | 'estadoValidacion'>;
+
+export interface CandidatoDuplicado {
+  readonly incidenteId: string;
+  readonly codigo: string;
+  readonly distanciaM: number;
+  readonly minutosDesde: number;
+  /** 0..1 */
+  readonly puntaje: number;
+}
+
+export interface ParametrosDuplicados {
+  readonly radioMaxM: number;
+  readonly ventanaMin: number;
+  readonly umbral: number;
+  readonly maxCandidatos: number;
+}
+
+export const PARAMETROS_DUPLICADOS: ParametrosDuplicados = {
+  radioMaxM: 500,
+  ventanaMin: 30,
+  umbral: 0.6,
+  maxCandidatos: 3,
 };
