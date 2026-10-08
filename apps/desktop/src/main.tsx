@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { IdiomaProvider } from './i18n/IdiomaProvider';
 import './mapaWorker';
 import './styles.css';
 import { aplicarTema, temaGuardado } from './tema';
@@ -12,6 +13,8 @@ if (!raiz) throw new Error('No se encontró #root');
 
 createRoot(raiz).render(
   <StrictMode>
-    <App />
+    <IdiomaProvider>
+      <App />
+    </IdiomaProvider>
   </StrictMode>,
 );

@@ -43,6 +43,7 @@ Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `time
 - **Tipos compartidos:** `packages/shared/types` exporta `Incidente`, `Recurso` y `Reporte`; la app y los paquetes los consumen (evita contratos duplicados).
 - **Acceso a Supabase aislado:** todas las llamadas pasan por un servicio unificado (p. ej. `services/supabaseClient.ts`); nunca consultar desde componentes de UI.
 - **Prohibido `any`** en cualquier archivo TypeScript (tipado estricto).
+- **Textos con `t()`:** todo texto visible nuevo en `apps/desktop` se escribe con `useTexto()` → `t('clave', { params })`. La clave se añade a `src/i18n/es.ts` (fuente) y a `src/i18n/en.ts` (tipado contra `es`: si falta una clave, `typecheck` falla). Sin librerías de i18n.
 - **Fuera de alcance (Fase 1):** pasarelas de pago, OAuth/redes sociales (solo email/password y roles internos), gráficos 3D o motores de mapas distintos a Mapbox GL JS / MapLibre.
 
 ## Verificación y flujo de trabajo
