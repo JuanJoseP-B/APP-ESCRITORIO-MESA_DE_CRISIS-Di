@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Marker, type Map as MapLibreMap } from 'maplibre-gl';
+import type { EstadoSla } from '@argos/shared';
 import type { UnidadMapa } from '../domain/unidadesMapa';
 import { ContextoIdioma, useTexto } from '../i18n/IdiomaProvider';
 import { MarcadorUnidad } from './MarcadorUnidad';
@@ -19,13 +20,16 @@ interface Opciones {
   readonly enAlerta: ReadonlySet<string>;
   readonly resaltadaId: string | null;
   readonly onSeleccionar: (id: string) => void;
+  /** SLA de las unidades con despacho en curso, por id de recurso. */
+  readonly sla: ReadonlyMap<string, EstadoSla>;
+  readonly reducirMovimiento: boolean;
 }
 
 /**
  * Dibuja una unidad como marcador DOM de MapLibre con un componente React dentro (glifo, indicativo, estado).
  * Cada marcador es su propia raíz de React, por eso se le pasa el idioma por contexto en cada render.
  */
-export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, onSeleccionar }: Opciones): void {
+export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, onSeleccionar, sla, reducirMovimiento }: Opciones): void {
   const idioma = useTexto();
   const entradas = useRef(new Map<string, Entrada>());
   const alSeleccionar = useRef(onSeleccionar);
@@ -57,12 +61,14 @@ export function useMarcadoresUnidades({ mapa, listo, unidades, seleccionadaId, e
             seleccionada={u.id === seleccionadaId}
             alerta={enAlerta.has(u.id)}
             resaltada={u.id === resaltadaId}
+            sla={sla.get(u.id)}
+            reducirMovimiento={reducirMovimiento}
             onSeleccionar={(id) => alSeleccionar.current(id)}
           />
         </ContextoIdioma.Provider>,
       );
     }
-  }, [mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, idioma]);
+  }, [mapa, listo, unidades, seleccionadaId, enAlerta, resaltadaId, idioma, sla, reducirMovimiento]);
 
   // Al desmontar el mapa se retiran todos los marcadores.
   useEffect(() => {

@@ -11,7 +11,8 @@ export { IncidentCard, type IncidentCardProps } from './components/IncidentCard'
 export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
 export { ShelterGauge, type ShelterGaugeProps } from './components/ShelterGauge';
 export { Masthead, type MastheadProps } from './components/Masthead';
-export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps, type NivelCronometro } from './components/UnitChip';
+export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps } from './components/UnitChip';
+export { CronometroSla, PALABRAS_CRONOMETRO, type CronometroSlaProps, type NivelCronometro, type PalabrasCronometro } from './components/CronometroSla';
 export { SegmentedControl, type SegmentedControlProps, type OpcionSegmento } from './components/SegmentedControl';
 export { Switch, type SwitchProps } from './components/Switch';
 export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';

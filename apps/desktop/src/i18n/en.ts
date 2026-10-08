@@ -160,6 +160,8 @@ export const en: Diccionario = {
   'aviso.incidente.noDisponible': 'The incident is no longer available',
   'marcador.unidad.aria.alerta': '{unidad}, {tipo}, {estado}, inside the hot zone',
   'marcador.alerta': 'HOT',
+  'sla.alerta': 'warning',
+  'sla.vencido': 'overdue',
   'analisis.titulo': 'Perimeter analysis',
   'analisis.radios': 'Perimeter rings',
   'analisis.alerta': 'ALERT · Units inside the hot zone',

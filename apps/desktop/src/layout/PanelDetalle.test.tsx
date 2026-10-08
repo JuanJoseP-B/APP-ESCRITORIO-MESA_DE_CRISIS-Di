@@ -2,7 +2,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Incidente, Recurso, ZonaPublica } from '@argos/shared';
+import type { EstadoSla, Incidente, Recurso, ZonaPublica } from '@argos/shared';
 import { RADIOS_POR_DEFECTO } from '@argos/shared';
 import { analizarPerimetro } from '../domain/analisisEspacial';
 import { generarAnillos } from '../domain/perimetro';
@@ -155,6 +155,23 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
     rerender(<PanelDetalle {...base({ incidente: null, onCambiarOcupacion: ajustar })} />);
     await userEvent.click(screen.getByRole('button', { name: 'Reducir ocupación de Coliseo Municipal' }));
     expect(ajustar).toHaveBeenCalledWith(refugio, -5);
+  });
+});
+
+describe('PanelDetalle: cronómetros SLA', () => {
+  const sla = (recursoId: string, nivel: EstadoSla['nivel'], transcurridoSeg: number): EstadoSla => ({ recursoId, hito: 'EN_RUTA', transcurridoSeg, limiteSeg: 120, nivel });
+
+  it('las unidades asignadas muestran su cronómetro con nivel en glifo y palabra', () => {
+    render(<PanelDetalle {...base({ sla: new Map([['U02', sla('U02', 'ALERTA', 100)]]) })} />);
+    const asignadas = screen.getByRole('region', { name: 'Unidades asignadas' });
+    const cronometro = within(asignadas).getByRole('timer', { name: '01:40, alerta' });
+    expect(cronometro.getAttribute('data-nivel')).toBe('alerta');
+    expect(cronometro.querySelector('.ag-glyph--triangle')).not.toBeNull();
+  });
+
+  it('sin SLA, o en unidades libres, no hay cronómetro', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('timer')).toBeNull();
   });
 });
 

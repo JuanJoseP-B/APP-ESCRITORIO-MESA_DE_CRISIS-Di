@@ -3,6 +3,7 @@ import {
   TRANSICIONES_RECURSO,
   type AnalisisPerimetro,
   type EstadoIncidente,
+  type EstadoSla,
   type EstadoRecurso,
   type Incidente,
   type Recurso,
@@ -24,6 +25,7 @@ import { useTexto } from '../i18n/IdiomaProvider';
 import { indicativosDe } from '../domain/unidades';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
+import { CronometroUnidad } from './CronometroUnidad';
 import { SeccionPerimetro } from './SeccionPerimetro';
 import { ESTADO_INCIDENTE_UI, ESTADO_RECURSO_UI, SEVERIDAD_UI } from './presentacion';
 
@@ -42,7 +44,13 @@ export interface PanelDetalleProps {
   perimetro?: { readonly anillos: readonly AnilloGenerado[]; readonly analisis: AnalisisPerimetro } | null;
   /** Al señalar un ítem del análisis (cursor o foco) el mapa lo resalta; `null` al soltarlo. */
   onResaltar?: (objetivo: ObjetivoResaltado | null) => void;
+  /** SLA de las unidades con despacho en curso, por id de recurso; las asignadas llevan su cronómetro. */
+  sla?: ReadonlyMap<string, EstadoSla>;
+  /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
+  reducirMovimiento?: boolean;
 }
+
+const SIN_SLA: ReadonlyMap<string, EstadoSla> = new Map();
 
 /** Solo Despachar es la acción primaria (naranja); el resto es secundaria o neutra. */
 const VARIANTE_ACCION: Record<EstadoRecurso, VarianteBoton> = {
@@ -64,6 +72,8 @@ export function PanelDetalle({
   onCambiarOcupacion,
   perimetro = null,
   onResaltar = () => undefined,
+  sla = SIN_SLA,
+  reducirMovimiento = false,
 }: PanelDetalleProps) {
   const { t, idioma } = useTexto();
   const refugios = <PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} />;
@@ -103,6 +113,7 @@ export function PanelDetalle({
         code={nombreUnidad(r)}
         status={ESTADO_RECURSO_UI[r.estado_actual]}
         statusLabel={textoEstadoRecurso(t, r.estado_actual)}
+        timer={<CronometroUnidad sla={sla.get(r.id)} reducirMovimiento={reducirMovimiento} />}
         actions={accionesDe(r)}
       />
     </li>

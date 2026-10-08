@@ -16,6 +16,7 @@ import { useAtajos } from './hooks/useAtajos';
 import { usePreferencias } from './hooks/usePreferencias';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
+import { useSla } from './hooks/useSla';
 import { useSimulacion } from './hooks/useSimulacion';
 import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
 import { dividirCola, moverSeleccion } from './domain/cola';
@@ -106,6 +107,8 @@ function Mesa({
   // En el demo la hora corre acelerada y las unidades se desplazan: se refresca varias veces por segundo.
   const ahora = useReloj(desfaseMs, reloj ? 250 : 1000, reloj?.ahora);
   const simulacion = useSimulacion(servicio, reloj);
+  // Cronómetros SLA de las unidades despachadas: se recalculan a 1 Hz sobre la hora de la consola.
+  const sla = useSla(recursos.datos, eventosRecurso.datos, incidentes.datos, desfaseMs, reloj?.ahora);
 
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
@@ -255,6 +258,8 @@ function Mesa({
         anillos={anillos}
         unidadesEnAlerta={unidadesEnAlerta}
         resaltado={resaltado}
+        sla={sla.porRecurso}
+        reducirMovimiento={reducirMovimiento}
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
       />
@@ -354,6 +359,8 @@ function Mesa({
               onCambiarOcupacion={acciones.cambiarOcupacion}
               perimetro={perimetro}
               onResaltar={setResaltado}
+              sla={sla.porRecurso}
+              reducirMovimiento={reducirMovimiento}
             />
             {formulario && (
               <div className="absolute inset-0 z-panel">
@@ -380,6 +387,8 @@ function Mesa({
             incidenteSeleccionadoId={seleccionadoId}
             unidadSeleccionadaId={unidadId}
             onSeleccionarUnidad={(unidad) => alSeleccionarUnidad(unidad.id)}
+            sla={sla.porRecurso}
+            reducirMovimiento={reducirMovimiento}
           />
         }
       />

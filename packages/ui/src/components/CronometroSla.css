@@ -1,0 +1,22 @@
+/* ── CronometroSla ──────────────────────────────────────────────────────── */
+/* Tiempo en mono tabular; ALERTA en ámbar, VENCIDO en rojo crítico. Siempre con glifo y palabra, no solo color. */
+.ag-sla { box-sizing: border-box; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 500; letter-spacing: .02em; color: var(--text-secondary); }
+.ag-sla__tiempo { white-space: nowrap; }
+.ag-sla__palabra { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.ag-sla--apilado .ag-sla__palabra { flex-basis: 100%; }
+.ag-sla[data-nivel="alerta"] { color: var(--status-warning); font-weight: 600; }
+.ag-sla[data-nivel="vencido"] { color: var(--status-critical); font-weight: 700; }
+
+/* VENCIDO parpadea a 1 Hz: medio segundo con fondo crítico y medio sin él. */
+.ag-sla[data-nivel="vencido"][data-movimiento="normal"] { animation: ag-sla-parpadeo 1s step-end infinite; }
+@keyframes ag-sla-parpadeo {
+  0% { background: var(--status-critical-bg); }
+  50% { background: transparent; }
+}
+
+/* Con menos movimiento: sin parpadeo; borde grueso y rayas fijas (la forma y la palabra siguen ahí). */
+.ag-sla[data-nivel="vencido"][data-movimiento="reducido"] { animation: none; box-shadow: inset 0 0 0 3px var(--status-critical); background: repeating-linear-gradient(135deg, var(--status-critical-bg) 0 4px, transparent 4px 8px); padding: 0 var(--space-1); }
+@media (prefers-reduced-motion: reduce) {
+  .ag-sla[data-nivel="vencido"] { animation: none; box-shadow: inset 0 0 0 3px var(--status-critical); background: repeating-linear-gradient(135deg, var(--status-critical-bg) 0 4px, transparent 4px 8px); padding: 0 var(--space-1); }
+}
+:root[data-reduced-motion='true'] .ag-sla[data-nivel="vencido"] { animation: none; box-shadow: inset 0 0 0 3px var(--status-critical); background: repeating-linear-gradient(135deg, var(--status-critical-bg) 0 4px, transparent 4px 8px); padding: 0 var(--space-1); }

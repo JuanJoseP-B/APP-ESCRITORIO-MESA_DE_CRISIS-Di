@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
-import type { Anillo, Coordenadas, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
+import type { Anillo, Coordenadas, EstadoSla, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
 import { leerToken, observarTema, opacidadZona } from '@argos/ui';
 import {
   colorearFeatures,
@@ -37,6 +37,7 @@ const TRAZO_ANILLO: readonly (readonly [Anillo, number[] | null])[] = [
   ['EVACUACION', [1, 2]],
 ];
 const SIN_ALERTAS: ReadonlySet<string> = new Set();
+const SIN_SLA: ReadonlyMap<string, EstadoSla> = new Map();
 const SIN_ANILLOS: readonly AnilloGenerado[] = [];
 const SIN_RUTAS: FeatureCollectionRutas = { type: 'FeatureCollection', features: [] };
 const NADA = (): void => undefined;
@@ -107,6 +108,10 @@ interface Props {
   readonly unidadesEnAlerta?: ReadonlySet<string>;
   /** Elemento señalado en el panel de análisis; se resalta en el mapa. */
   readonly resaltado?: ObjetivoResaltado | null;
+  /** SLA de las unidades con despacho en curso, por id de recurso; su marcador lleva el cronómetro. */
+  readonly sla?: ReadonlyMap<string, EstadoSla>;
+  /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
+  readonly reducirMovimiento?: boolean;
 }
 
 export function MapaTactico({
@@ -131,6 +136,8 @@ export function MapaTactico({
   anillos = SIN_ANILLOS,
   unidadesEnAlerta = SIN_ALERTAS,
   resaltado = null,
+  sla = SIN_SLA,
+  reducirMovimiento = false,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -482,6 +489,8 @@ export function MapaTactico({
     enAlerta: unidadesEnAlerta,
     resaltadaId: resaltado?.tipo === 'unidad' ? resaltado.id : null,
     onSeleccionar: onSeleccionarUnidad,
+    sla,
+    reducirMovimiento,
   });
 
   // Centra el mapa en la unidad elegida (en el mapa o en el tablero). Solo al cambiar de unidad: si no, la cámara

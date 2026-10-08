@@ -11,6 +11,8 @@ export interface DispatchRowProps {
   code: string;
   status: EstadoRecursoUI;
   detail?: string;
+  /** Cronómetro SLA (`CronometroSla`) bajo el nombre; se omite si no aplica. */
+  timer?: ReactNode;
   /** Palabra del estado para lectores de pantalla; por defecto la del catálogo en español. */
   statusLabel?: string;
   /** Sustituye las acciones por defecto del estado. */
@@ -24,7 +26,7 @@ export interface DispatchRowProps {
   className?: string;
 }
 
-export function DispatchRow({ kind, code, status, detail, statusLabel, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
+export function DispatchRow({ kind, code, status, detail, timer, statusLabel, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
   const porDefecto: Record<EstadoRecursoUI, ReactNode> = {
     disponible: (
       <>
@@ -75,6 +77,7 @@ export function DispatchRow({ kind, code, status, detail, statusLabel, actions, 
           {kind}
           <span className="ag-row__code">{code}</span>
         </span>
+        {timer ? <span className="ag-row__timer">{timer}</span> : null}
         {detail ? <span className="ag-row__detail">{detail}</span> : null}
       </div>
       <div className="ag-row__actions">{actions ?? porDefecto[status]}</div>

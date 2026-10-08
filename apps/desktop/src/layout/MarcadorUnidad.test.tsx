@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { EstadoSla } from '@argos/shared';
 import type { UnidadMapa } from '../domain/unidadesMapa';
 import { MarcadorUnidad } from './MarcadorUnidad';
 import css from './MarcadorUnidad.css?raw';
@@ -52,6 +53,19 @@ describe('MarcadorUnidad', () => {
     expect(container.querySelector('.ag-marcador__alerta')?.textContent).toBe('CALIENTE');
     expect(container.querySelector('.ag-marcador__alerta .ag-glyph')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'M11, Ambulancia, En ruta, dentro de la zona caliente' })).toBeTruthy();
+  });
+
+  it('con SLA lleva el cronómetro, y el nivel se anuncia además del tiempo', () => {
+    const sla: EstadoSla = { recursoId: 'r1', hito: 'EN_ESCENA', transcurridoSeg: 601, limiteSeg: 600, nivel: 'VENCIDO' };
+    const { container } = render(<MarcadorUnidad unidad={unidad()} seleccionada={false} onSeleccionar={vi.fn()} sla={sla} />);
+    expect(container.querySelector('.ag-marcador__sla')?.getAttribute('data-nivel')).toBe('vencido');
+    expect(container.querySelector('.ag-marcador__sla')?.textContent).toBe('10:01vencido');
+    expect(screen.getByRole('button', { name: 'M11, Ambulancia, En ruta, 10:01, vencido' })).toBeTruthy();
+  });
+
+  it('sin SLA no hay cronómetro', () => {
+    const { container } = render(<MarcadorUnidad unidad={unidad()} seleccionada={false} onSeleccionar={vi.fn()} />);
+    expect(container.querySelector('.ag-marcador__sla')).toBeNull();
   });
 
   it('sin alerta no muestra el rótulo; resaltada lo declara', () => {

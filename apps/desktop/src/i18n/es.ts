@@ -169,6 +169,8 @@ export const es = {
   'aviso.incidente.noDisponible': 'El incidente ya no está disponible',
   'marcador.unidad.aria.alerta': '{unidad}, {tipo}, {estado}, dentro de la zona caliente',
   'marcador.alerta': 'CALIENTE',
+  'sla.alerta': 'alerta',
+  'sla.vencido': 'vencido',
   'analisis.titulo': 'Análisis del perímetro',
   'analisis.radios': 'Anillos del perímetro',
   'analisis.alerta': 'ALERTA · Unidades dentro de la zona caliente',

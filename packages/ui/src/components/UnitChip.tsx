@@ -1,6 +1,7 @@
 import { cx } from '../cx';
 import { ESTADOS_RECURSO_UI, type EstadoRecursoUI } from './StatusIndicator';
 import { Glyph } from './Glyph';
+import { CronometroSla, PALABRAS_CRONOMETRO, type NivelCronometro, type PalabrasCronometro } from './CronometroSla';
 import './UnitChip.css';
 
 /** Palabra corta del estado: cabe en el chip de ancho fijo sin truncar el indicativo. */
@@ -11,14 +12,6 @@ export const ABREVIATURA_ESTADO_UNIDAD: Record<EstadoRecursoUI, string> = {
   escena: 'ESC',
   inoperativo: 'INOP',
 };
-
-/** Nivel del cronómetro; `en_tiempo` es neutro, los otros añaden glifo y palabra. */
-export type NivelCronometro = 'en_tiempo' | 'alerta' | 'vencido';
-
-const NIVELES_CRONOMETRO = {
-  alerta: { palabra: 'alerta', shape: 'triangle' },
-  vencido: { palabra: 'vencido', shape: 'square' },
-} as const;
 
 export interface UnitChipProps {
   /** Indicativo completo, p. ej. "M-01"; nunca se trunca. */
@@ -32,16 +25,20 @@ export interface UnitChipProps {
   /** Cronómetro "mm:ss" del hito vigente; se omite si no aplica. */
   timer?: string;
   timerLevel?: NivelCronometro;
+  /** Palabras de los niveles del cronómetro; por defecto, en español. */
+  timerWords?: PalabrasCronometro;
+  /** Menos movimiento: el cronómetro vencido no parpadea y se marca con rayas. */
+  reduceMotion?: boolean;
   selected?: boolean;
   /** Con `onSelect` el chip es un botón; sin él, un elemento informativo. */
   onSelect?: () => void;
   className?: string;
 }
 
-export function UnitChip({ callsign, status, kind, statusLabel, statusShort, timer, timerLevel = 'en_tiempo', selected, onSelect, className }: UnitChipProps) {
+export function UnitChip({ callsign, status, kind, statusLabel, statusShort, timer, timerLevel = 'en_tiempo', timerWords = PALABRAS_CRONOMETRO, reduceMotion = false, selected, onSelect, className }: UnitChipProps) {
   const estado = ESTADOS_RECURSO_UI[status];
-  const nivel = timerLevel === 'en_tiempo' ? undefined : NIVELES_CRONOMETRO[timerLevel];
-  const nombre = [callsign, kind, statusLabel ?? estado.label, timer ? `${timer}${nivel ? `, ${nivel.palabra}` : ''}` : null]
+  const palabraNivel = timerLevel === 'en_tiempo' ? undefined : timerWords[timerLevel];
+  const nombre = [callsign, kind, statusLabel ?? estado.label, timer ? `${timer}${palabraNivel ? `, ${palabraNivel}` : ''}` : null]
     .filter(Boolean)
     .join(', ');
   const contenido = (
@@ -52,10 +49,7 @@ export function UnitChip({ callsign, status, kind, statusLabel, statusShort, tim
         {statusShort ?? ABREVIATURA_ESTADO_UNIDAD[status]}
       </span>
       {timer ? (
-        <span className="ag-unit__timer" data-nivel={timerLevel}>
-          {nivel ? <Glyph shape={nivel.shape} /> : null}
-          {timer}
-        </span>
+        <CronometroSla className="ag-unit__timer" nivel={timerLevel} tiempo={timer} palabras={timerWords} reducirMovimiento={reduceMotion} apilado />
       ) : null}
     </>
   );

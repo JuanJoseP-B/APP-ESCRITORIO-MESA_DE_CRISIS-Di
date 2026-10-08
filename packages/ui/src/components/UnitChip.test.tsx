@@ -48,6 +48,14 @@ describe('UnitChip', () => {
     expect(screen.getByRole('group', { name: 'M-12, Ambulancia, Despachado, 06:12, vencido' })).toBeTruthy();
   });
 
+  it('el cronómetro con nivel muestra glifo, tiempo y palabra en el chip, con las palabras que se le pasen', () => {
+    const { container } = render(
+      <UnitChip callsign="M-12" status="enruta" timer="08:10" timerLevel="alerta" timerWords={{ alerta: 'warning', vencido: 'overdue' }} />,
+    );
+    expect(container.querySelector('.ag-unit__timer .ag-sla__palabra')?.textContent).toBe('warning');
+    expect(screen.getByRole('group', { name: 'M-12, En ruta, 08:10, warning' })).toBeTruthy();
+  });
+
   it('sin onSelect es informativo; con onSelect es un botón con aria-pressed', async () => {
     const alElegir = vi.fn();
     const { rerender } = render(<UnitChip callsign="P-01" status="escena" />);
