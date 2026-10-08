@@ -9,7 +9,7 @@ import {
 } from '@argos/shared';
 import { Badge, Button, DispatchRow, SectionHeader, type VarianteBoton } from '@argos/ui';
 import { codigoIncidente, minutosAbierto } from '../domain/cola';
-import { eventosVisibles } from '../domain/timeline';
+import { bitacora } from '../domain/timeline';
 import { PanelRefugios } from '../components/PanelRefugios';
 import { formatearDuracion } from './ColaIncidentes';
 import { ESTADO_INCIDENTE_UI, ESTADO_RECURSO_UI, SEVERIDAD_UI } from './presentacion';
@@ -94,7 +94,8 @@ export function PanelDetalle({
   const asignadas = recursos.filter((r) => r.incidente_asignado_id === incidente.id);
   const disponibles = recursos.filter((r) => r.estado_actual === 'Disponible');
   const inoperativas = recursos.filter((r) => r.estado_actual === 'Inoperativo');
-  const eventos = eventosVisibles(incidente.timeline);
+  const entradas = bitacora(incidente.timeline);
+  const totalEventos = entradas.filter((e) => e.tipo === 'evento').length;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto">
@@ -144,16 +145,23 @@ export function PanelDetalle({
       </section>
 
       <section aria-label="Línea de tiempo" className="shrink-0">
-        <SectionHeader index="04" title="Línea de tiempo" count={eventos.length} />
-        <ol className="space-y-1 px-4 pb-3 font-mono text-data-sm text-text-secondary">
-          {eventos.map((e, n) => (
-            <li key={`${n}-${e.descripcion}`}>
-              <time dateTime={e.iso ?? undefined} className="mr-2 font-bold tabular text-text-primary">
-                {e.hora}
-              </time>
-              {e.descripcion}
-            </li>
-          ))}
+        <SectionHeader index="04" title="Línea de tiempo" count={totalEventos} />
+        <ol className="px-4 pb-3 font-mono text-data-sm text-text-secondary">
+          {entradas.map((e, n) =>
+            e.tipo === 'fecha' ? (
+              <li key={`fecha-${e.clave}`} className="mt-2 border-t border-border-subtle pt-2 text-overline uppercase text-text-muted first:mt-0 first:border-t-0 first:pt-0">
+                <time dateTime={e.clave}>{e.etiqueta}</time>
+              </li>
+            ) : (
+              <li key={`${n}-${e.descripcion}`} className="py-0.5">
+                <time dateTime={e.iso ?? undefined} className="mr-2 font-bold tabular text-text-primary">
+                  {e.hora}
+                </time>
+                {e.descripcion}
+                <span className="text-text-muted"> · {e.autor ?? 'sin autor'}</span>
+              </li>
+            ),
+          )}
         </ol>
       </section>
 

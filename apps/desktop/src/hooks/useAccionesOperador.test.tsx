@@ -10,13 +10,13 @@ const poligono: GeoJsonPolygon = {
   coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]],
 };
 
-async function montar(seleccionadoId: string | null = 'demo-1') {
+async function montar(seleccionadoId: string | null = 'demo-1', operador?: string) {
   const servicio = crearServicioDemo();
   const incidentes = await servicio.listarIncidentes();
   const alAvisar = vi.fn();
   const alSeleccionar = vi.fn();
   const { result } = renderHook(() =>
-    useAccionesOperador({ servicio, incidentes, seleccionadoId, alSeleccionar, alAvisar }),
+    useAccionesOperador({ servicio, incidentes, seleccionadoId, alSeleccionar, alAvisar, operador }),
   );
   return { servicio, incidentes, alAvisar, alSeleccionar, acciones: result };
 }
@@ -119,6 +119,26 @@ describe('useAccionesOperador', () => {
     await waitFor(async () =>
       expect((await servicio.listarRecursos()).find((r) => r.id === 'demo-rec-4')?.incidente_asignado_id).toBe('demo-1'),
     );
+  });
+
+  it('el operador queda como autor de los eventos que añade a la bitácora', async () => {
+    const { servicio, acciones, incidentes } = await montar('demo-1', 'operador@argos.test');
+    const demo1 = incidentes.find((i) => i.id === 'demo-1') as Incidente;
+
+    acciones.current.cambiarEstadoIncidente(demo1, 'Contenido');
+    await waitFor(async () =>
+      expect((await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.estado).toBe('Contenido'),
+    );
+    const ultimo = (await servicio.listarIncidentes()).find((i) => i.id === 'demo-1')?.timeline.at(-1);
+    expect(ultimo).toMatchObject({ descripcion: 'Estado cambiado a Contenido', autor: 'operador@argos.test' });
+  });
+
+  it('un incidente creado al confirmar un reporte lleva al operador como autor del primer evento', async () => {
+    const { servicio, acciones, alSeleccionar } = await montar('demo-1', 'operador@argos.test');
+    acciones.current.confirmarReporte((await servicio.listarReportes())[0] as Reporte);
+    await waitFor(() => expect(alSeleccionar).toHaveBeenCalled());
+    const creado = (await servicio.listarIncidentes()).find((i) => i.id === alSeleccionar.mock.calls[0]?.[0]);
+    expect(creado?.timeline[0]).toMatchObject({ autor: 'operador@argos.test' });
   });
 
   it('guardarTrazado mantiene su identidad entre renders', async () => {

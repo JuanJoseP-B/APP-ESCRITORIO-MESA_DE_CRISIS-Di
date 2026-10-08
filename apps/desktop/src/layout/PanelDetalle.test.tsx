@@ -14,8 +14,8 @@ const incidente: Incidente = {
   estado: 'Abierto',
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: [
+    { timestamp: '2026-10-07T11:40:00Z', descripcion: 'Validado por operador', autor: 'operador@argos.test' },
     { timestamp: '2026-10-07T11:30:00Z', descripcion: 'Incidente registrado' },
-    { timestamp: '2026-10-07T11:40:00Z', descripcion: 'Validado por operador' },
   ],
 };
 
@@ -119,11 +119,16 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
     expect(screen.getByRole('button', { name: 'Marcar Contenido' })).toBeTruthy();
   });
 
-  it('lista los eventos de la línea de tiempo', () => {
+  it('la línea de tiempo va en orden cronológico, con separador de fecha y autor de cada evento', () => {
     render(<PanelDetalle {...base()} />);
     const bitacora = screen.getByRole('region', { name: 'Línea de tiempo' });
-    expect(within(bitacora).getAllByRole('listitem')).toHaveLength(2);
-    expect(bitacora.textContent).toContain('Validado por operador');
+    const items = within(bitacora).getAllByRole('listitem');
+    expect(items).toHaveLength(3); // fecha + 2 eventos
+    expect(items[0]?.querySelector('time')?.getAttribute('datetime')).toMatch(/^2026-10-0[78]$/);
+    expect(items[1]?.textContent).toContain('Incidente registrado');
+    expect(items[1]?.textContent).toContain('sin autor');
+    expect(items[2]?.textContent).toContain('Validado por operador');
+    expect(items[2]?.textContent).toContain('operador@argos.test');
   });
 
   it('los refugios se ajustan con o sin incidente', async () => {

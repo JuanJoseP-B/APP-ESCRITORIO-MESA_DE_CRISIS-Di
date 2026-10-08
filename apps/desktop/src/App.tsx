@@ -77,6 +77,7 @@ function Mesa({
     seleccionadoId,
     alSeleccionar: setSeleccionadoId,
     alAvisar: setAviso,
+    operador,
   });
 
   const { guardarTrazado } = acciones;
