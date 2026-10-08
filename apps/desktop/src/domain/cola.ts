@@ -1,7 +1,4 @@
-import type { Incidente, NivelCriticidad, Recurso } from '@argos/shared';
-
-// TODO(F2-01): migrar a Prioridad P1–P4 (hoy el orden usa `nivel_criticidad`: Crítico, Medio, Bajo).
-const RANGO_CRITICIDAD: Readonly<Record<NivelCriticidad, number>> = { Crítico: 0, Medio: 1, Bajo: 2 };
+import { rangoPrioridad, type Incidente, type Recurso } from '@argos/shared';
 
 const aMs = (valor: unknown): number | null => {
   if (typeof valor !== 'string') return null;
@@ -36,12 +33,12 @@ export const estaCerrado = (i: Pick<Incidente, 'estado'>): boolean => i.estado =
 export const incidentesActivos = (incidentes: readonly Incidente[]): readonly Incidente[] =>
   incidentes.filter((i) => !estaCerrado(i));
 
-/** Más crítico primero; a igual criticidad, el más antiguo primero (sin fecha, al final); luego por id. */
+/** P1 primero; a igual prioridad, el más antiguo primero (sin fecha, al final); luego por id. */
 export function ordenarCola(incidentes: readonly Incidente[]): readonly Incidente[] {
   const apertura = (i: Incidente) => aperturaDeIncidente(i) ?? Number.POSITIVE_INFINITY;
   return [...incidentes].sort((a, b) => {
-    const criticidad = RANGO_CRITICIDAD[a.nivel_criticidad] - RANGO_CRITICIDAD[b.nivel_criticidad];
-    if (criticidad !== 0) return criticidad;
+    const prioridad = rangoPrioridad(a.prioridad) - rangoPrioridad(b.prioridad);
+    if (prioridad !== 0) return prioridad;
     const antiguedad = apertura(a) - apertura(b);
     if (antiguedad !== 0 && !Number.isNaN(antiguedad)) return antiguedad;
     return a.id.localeCompare(b.id);

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PRIORIDAD_POR_CRITICIDAD, type EstadoIncidente, type Incidente, type NivelCriticidad, type Recurso } from '@argos/shared';
+import {
+  PRIORIDAD_POR_CRITICIDAD,
+  type EstadoIncidente,
+  type Incidente,
+  type NivelCriticidad,
+  type Prioridad,
+  type Recurso,
+} from '@argos/shared';
 import {
   aperturaDeIncidente,
   codigoIncidente,
@@ -17,11 +24,12 @@ const inc = (
   nivel: NivelCriticidad,
   abierto: string | null,
   estado: EstadoIncidente = 'Abierto',
+  prioridad: Prioridad = PRIORIDAD_POR_CRITICIDAD[nivel],
 ): Incidente => ({
   id,
   titulo: `Incidente ${id}`,
   nivel_criticidad: nivel,
-  prioridad: PRIORIDAD_POR_CRITICIDAD[nivel],
+  prioridad,
   tipo: 'INCENDIO',
   estado,
   geometria: { type: 'Point', coordinates: [0, 0] },
@@ -31,7 +39,7 @@ const inc = (
 const ids = (l: readonly Incidente[]) => l.map((i) => i.id);
 
 describe('ordenarCola', () => {
-  it('ordena por criticidad (Crítico, Medio, Bajo) y luego por antigüedad', () => {
+  it('ordena por prioridad P1 a P4 y luego por antigüedad', () => {
     const cola = ordenarCola([
       inc('bajo', 'Bajo', '2026-10-07T08:00:00Z'),
       inc('medio-nuevo', 'Medio', '2026-10-07T10:00:00Z'),
@@ -42,7 +50,17 @@ describe('ordenarCola', () => {
     expect(ids(cola)).toEqual(['critico-viejo', 'critico-nuevo', 'medio-viejo', 'medio-nuevo', 'bajo']);
   });
 
-  it('a igual criticidad, el incidente sin fecha va al final y el empate se resuelve por id', () => {
+  it('la prioridad manda sobre la criticidad: un Medio P1 va antes que un Crítico P3', () => {
+    const cola = ordenarCola([
+      inc('critico-p3', 'Crítico', '2026-10-07T06:00:00Z', 'Abierto', 'P3'),
+      inc('medio-p1', 'Medio', '2026-10-07T09:00:00Z', 'Abierto', 'P1'),
+      inc('bajo-p4', 'Bajo', '2026-10-07T05:00:00Z', 'Abierto', 'P4'),
+      inc('medio-p2', 'Medio', '2026-10-07T08:00:00Z', 'Abierto', 'P2'),
+    ]);
+    expect(ids(cola)).toEqual(['medio-p1', 'medio-p2', 'critico-p3', 'bajo-p4']);
+  });
+
+  it('a igual prioridad, el incidente sin fecha va al final y el empate se resuelve por id', () => {
     const cola = ordenarCola([
       inc('b', 'Medio', null),
       inc('c', 'Medio', '2026-10-07T09:00:00Z'),
