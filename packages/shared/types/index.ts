@@ -1,3 +1,4 @@
+export * from './asesor';
 export * from './emergencia';
 export * from './geo';
 export * from './incidente';
