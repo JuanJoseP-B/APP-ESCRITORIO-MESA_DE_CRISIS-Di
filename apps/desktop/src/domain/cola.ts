@@ -93,3 +93,8 @@ export function moverSeleccion(orden: readonly string[], actualId: string | null
   if (actual === -1) return orden[delta === 1 ? 0 : orden.length - 1] ?? null;
   return orden[Math.min(orden.length - 1, Math.max(0, actual + delta))] ?? null;
 }
+
+/** Deja solo los elementos cuyo id está en `ids`; con `ids` en `null` no filtra. */
+export function filtrarPorIds<T extends { readonly id: string }>(items: readonly T[], ids: ReadonlySet<string> | null): readonly T[] {
+  return ids === null ? items : items.filter((i) => ids.has(i.id));
+}

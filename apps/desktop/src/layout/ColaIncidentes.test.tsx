@@ -172,3 +172,27 @@ describe('bandeja de llamadas entrantes en la cola', () => {
     expect(descartar).toHaveBeenCalledWith(expect.objectContaining({ id: 'abc' }));
   });
 });
+
+describe('ColaIncidentes: filtro por SLA', () => {
+  it('sin filtro no muestra el chip', () => {
+    render(<ColaIncidentes {...base} />);
+    expect(screen.queryByText('Filtro: SLA')).toBeNull();
+    expect(filas()).toHaveLength(3);
+  });
+
+  it('con filtro lista solo los incidentes con SLA en riesgo y muestra el chip para quitarlo', async () => {
+    const quitar = vi.fn();
+    render(<ColaIncidentes {...base} filtroSla={{ incidentes: new Set(['critico']), onQuitar: quitar }} />);
+    expect(screen.getByText('Filtro: SLA')).toBeTruthy();
+    expect(filas().map((f) => f.textContent)).toEqual([expect.stringContaining('Incidente critico')]);
+    expect(screen.getByRole('tab', { name: /Activos \(1\)/ })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro de SLA' }));
+    expect(quitar).toHaveBeenCalledTimes(1);
+  });
+
+  it('si ningún incidente coincide lo dice, en vez de mostrar «sin incidentes activos»', () => {
+    render(<ColaIncidentes {...base} filtroSla={{ incidentes: new Set(), onQuitar: vi.fn() }} />);
+    expect(screen.getByText('Ningún incidente con SLA en riesgo')).toBeTruthy();
+    expect(screen.queryByText('Sin incidentes activos')).toBeNull();
+  });
+});

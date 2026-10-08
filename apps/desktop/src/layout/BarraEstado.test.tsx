@@ -89,17 +89,41 @@ describe('BarraEstado', () => {
     expect(container.querySelector('.ag-glyph--triangle')).not.toBeNull();
   });
 
-  it('el contador de SLA solo aparece si se informa, y filtra al pulsarlo', async () => {
+  it('el contador de SLA solo aparece si hay unidades en riesgo, y filtra al pulsarlo o con Enter', async () => {
     const filtrar = vi.fn();
     const { rerender } = render(<BarraEstado {...base} />);
     expect(screen.queryByText('SLA', { exact: false })).toBeNull();
 
-    rerender(<BarraEstado {...base} slaVencidos={2} onFiltrarSla={filtrar} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Filtrar cola: 2 SLA vencidos' }));
-    expect(filtrar).toHaveBeenCalledTimes(1);
+    rerender(<BarraEstado {...base} slaEnRiesgo={0} onFiltrarSla={filtrar} />);
+    expect(screen.queryByText('SLA', { exact: false })).toBeNull();
 
-    rerender(<BarraEstado {...base} slaVencidos={0} onFiltrarSla={filtrar} />);
-    expect((screen.getByRole('button', { name: 'Filtrar cola: 0 SLA vencidos' }) as HTMLButtonElement).disabled).toBe(true);
+    rerender(<BarraEstado {...base} slaEnRiesgo={2} slaNivel="VENCIDO" onFiltrarSla={filtrar} />);
+    const boton = screen.getByRole('button', { name: 'Filtrar la cola por SLA: 2 en alerta o vencidos, nivel vencido' });
+    await userEvent.click(boton);
+    expect(filtrar).toHaveBeenCalledTimes(1);
+    boton.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(filtrar).toHaveBeenCalledTimes(2);
+  });
+
+  it('el nivel más grave da el color, el glifo y la palabra al contador de SLA', () => {
+    const { container, rerender } = render(<BarraEstado {...base} slaEnRiesgo={1} slaNivel="ALERTA" />);
+    const boton = screen.getByRole('button', { name: /nivel alerta/ });
+    expect(boton.className).toContain('text-status-warning');
+    expect(boton.querySelector('.ag-glyph--triangle')).not.toBeNull();
+    expect(boton.textContent).toContain('1');
+
+    rerender(<BarraEstado {...base} slaEnRiesgo={3} slaNivel="VENCIDO" />);
+    const critico = screen.getByRole('button', { name: /nivel vencido/ });
+    expect(critico.className).toContain('text-status-critical');
+    expect(container.querySelector('.ag-glyph--square')).not.toBeNull();
+  });
+
+  it('indica con aria-pressed si el filtro de SLA está activo', () => {
+    const { rerender } = render(<BarraEstado {...base} slaEnRiesgo={1} />);
+    expect(screen.getByRole('button', { name: /Filtrar la cola por SLA/ }).getAttribute('aria-pressed')).toBe('false');
+    rerender(<BarraEstado {...base} slaEnRiesgo={1} filtroSlaActivo />);
+    expect(screen.getByRole('button', { name: /Filtrar la cola por SLA/ }).getAttribute('aria-pressed')).toBe('true');
   });
 });
 

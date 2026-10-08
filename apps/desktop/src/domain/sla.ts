@@ -72,26 +72,35 @@ export interface ResumenSla {
   readonly alertas: number;
   /** Nivel más grave presente; `NO_APLICA` si no hay ninguna unidad con SLA en curso. */
   readonly nivel: NivelSla;
-  /** Incidentes con al menos una unidad vencida. */
-  readonly incidentesVencidos: ReadonlySet<string>;
+  /** Incidentes con al menos una unidad en ALERTA o VENCIDO: los que muestra el filtro de la cola. */
+  readonly incidentesEnRiesgo: ReadonlySet<string>;
+  /** Ids de las unidades con el SLA vencido, para anunciar cada vencimiento nuevo. */
+  readonly unidadesVencidas: readonly string[];
 }
 
-/** Cuenta cuántas unidades están en ALERTA o VENCIDO y qué incidentes tienen alguna vencida. */
+/** Cuenta cuántas unidades están en ALERTA o VENCIDO y qué incidentes tienen alguna. */
 export function resumirSla(recursos: readonly Recurso[], estados: ReadonlyMap<string, EstadoSla>): ResumenSla {
   let vencidos = 0;
   let alertas = 0;
   let nivel: NivelSla = 'NO_APLICA';
-  const incidentesVencidos = new Set<string>();
+  const incidentesEnRiesgo = new Set<string>();
+  const unidadesVencidas: string[] = [];
   for (const r of recursos) {
     const e = estados.get(r.id);
     if (!e) continue;
     if (e.nivel === 'VENCIDO') {
       vencidos++;
-      if (r.incidente_asignado_id) incidentesVencidos.add(r.incidente_asignado_id);
+      unidadesVencidas.push(r.id);
     } else if (e.nivel === 'ALERTA') alertas++;
+    if ((e.nivel === 'VENCIDO' || e.nivel === 'ALERTA') && r.incidente_asignado_id) incidentesEnRiesgo.add(r.incidente_asignado_id);
     if (GRAVEDAD[e.nivel] > GRAVEDAD[nivel]) nivel = e.nivel;
   }
-  return { vencidos, alertas, nivel, incidentesVencidos };
+  return { vencidos, alertas, nivel, incidentesEnRiesgo, unidadesVencidas };
+}
+
+/** Ids que están vencidos ahora y no lo estaban antes: lo que hay que anunciar. */
+export function vencimientosNuevos(antes: ReadonlySet<string>, ahora: readonly string[]): readonly string[] {
+  return ahora.filter((id) => !antes.has(id));
 }
 
 /** `mm:ss` de una duración en segundos (minutos sin tope: 75 min → «75:00»); lo negativo cuenta como cero. */

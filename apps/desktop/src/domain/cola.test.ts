@@ -11,6 +11,7 @@ import {
   aperturaDeIncidente,
   codigoIncidente,
   dividirCola,
+  filtrarPorIds,
   incidentesActivos,
   minutosAbierto,
   moverSeleccion,
@@ -201,5 +202,18 @@ describe('moverSeleccion', () => {
 
   it('con la cola vacía no hay selección', () => {
     expect(moverSeleccion([], 'a', 1)).toBeNull();
+  });
+});
+
+describe('filtrarPorIds', () => {
+  const todos = [inc('a', 'Crítico', null), inc('b', 'Medio', null), inc('c', 'Bajo', null)];
+
+  it('deja solo los ids pedidos, en su orden', () => {
+    expect(ids(filtrarPorIds(todos, new Set(['c', 'a'])))).toEqual(['a', 'c']);
+    expect(filtrarPorIds(todos, new Set())).toEqual([]);
+  });
+
+  it('con null no filtra y devuelve la misma lista', () => {
+    expect(filtrarPorIds(todos, null)).toBe(todos);
   });
 });

@@ -16,14 +16,16 @@ import { useAtajos } from './hooks/useAtajos';
 import { usePreferencias } from './hooks/usePreferencias';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
+import { useAvisosSla } from './hooks/useAvisosSla';
 import { useSla } from './hooks/useSla';
 import { useSimulacion } from './hooks/useSimulacion';
 import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
-import { dividirCola, moverSeleccion } from './domain/cola';
+import { dividirCola, filtrarPorIds, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
 import { entrantes, reporteDeLlamada } from './domain/entrantes';
 import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
 import { unidadesParaMapa } from './domain/unidadesMapa';
+import { indicativosDe } from './domain/unidades';
 import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
 import { rutasAFeatureCollection } from './domain/geojson';
 import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
@@ -31,6 +33,7 @@ import { perimetroDeIncidente } from './domain/perimetro';
 import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
+import { AvisosSla } from './layout/AvisosSla';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
 import { FormularioLlamada } from './layout/FormularioLlamada';
@@ -109,6 +112,17 @@ function Mesa({
   const simulacion = useSimulacion(servicio, reloj);
   // Cronómetros SLA de las unidades despachadas: se recalculan a 1 Hz sobre la hora de la consola.
   const sla = useSla(recursos.datos, eventosRecurso.datos, incidentes.datos, desfaseMs, reloj?.ahora);
+  const slaEnRiesgo = sla.resumen.alertas + sla.resumen.vencidos;
+  // El filtro de la cola por SLA se retira solo cuando ya no queda ninguna unidad en riesgo.
+  const [filtroSla, setFiltroSla] = useState(false);
+  useEffect(() => {
+    if (slaEnRiesgo === 0) setFiltroSla(false);
+  }, [slaEnRiesgo]);
+  const idsFiltroSla = filtroSla ? sla.resumen.incidentesEnRiesgo : null;
+  const quitarFiltroSla = useCallback(() => setFiltroSla(false), []);
+  const alternarFiltroSla = useCallback(() => setFiltroSla((activo) => !activo), []);
+  const avisosSla = useAvisosSla(sla.resumen.unidadesVencidas);
+  const indicativos = useMemo(() => indicativosDe(recursos.datos), [recursos.datos]);
 
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
@@ -220,7 +234,7 @@ function Mesa({
     [recursos.datos],
   );
 
-  const ordenCola = useMemo(() => dividirCola(incidentes.datos).activos.map((i) => i.id), [incidentes.datos]);
+  const ordenCola = useMemo(() => filtrarPorIds(dividirCola(incidentes.datos).activos, idsFiltroSla).map((i) => i.id), [incidentes.datos, idsFiltroSla]);
   useAtajos({
     j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
     k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
@@ -295,6 +309,7 @@ function Mesa({
           </div>
         )}
       </div>
+      <AvisosSla avisos={avisosSla.avisos} indicativos={indicativos} onDescartar={avisosSla.descartar} />
       {mensaje && (
         <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
           <span aria-hidden="true" className="mr-2 text-status-info">◆</span>
@@ -316,6 +331,10 @@ function Mesa({
             operador={operador}
             enlace={enlace}
             entrantes={totalEntrantes}
+            slaEnRiesgo={slaEnRiesgo}
+            slaNivel={sla.resumen.nivel === 'VENCIDO' ? 'VENCIDO' : 'ALERTA'}
+            filtroSlaActivo={filtroSla}
+            onFiltrarSla={alternarFiltroSla}
             simulacion={
               simulacion && onReiniciarSimulacion
                 ? {
@@ -344,6 +363,7 @@ function Mesa({
             llamadaAbiertaId={llamadaAbiertaId}
             onAbrirLlamada={alAbrirLlamada}
             onDescartarLlamada={alDescartarLlamada}
+            filtroSla={idsFiltroSla ? { incidentes: idsFiltroSla, onQuitar: quitarFiltroSla } : null}
           />
         }
         mapa={mapa}

@@ -27,8 +27,12 @@ export interface BarraEstadoProps {
   turno: Tema;
   operador: string;
   enlace: EstadoEnlace;
-  /** Unidades con SLA vencido; si falta, el contador no se muestra (llega con la lógica CAD). */
-  slaVencidos?: number;
+  /** Unidades en ALERTA o VENCIDO; el contador solo se muestra si es mayor que 0. */
+  slaEnRiesgo?: number;
+  /** Nivel más grave entre ellas: da el color y el glifo del contador. */
+  slaNivel?: 'ALERTA' | 'VENCIDO';
+  /** La cola está filtrada por SLA. */
+  filtroSlaActivo?: boolean;
   /** Llamadas sin vincular en la bandeja de entrantes. */
   entrantes?: number;
   onFiltrarSla?: () => void;
@@ -50,7 +54,9 @@ export function BarraEstado({
   turno,
   operador,
   enlace,
-  slaVencidos,
+  slaEnRiesgo = 0,
+  slaNivel = 'ALERTA',
+  filtroSlaActivo = false,
   entrantes,
   onFiltrarSla,
   simulacion,
@@ -92,16 +98,16 @@ export function BarraEstado({
           <span className="tabular">{entrantes}</span> {t('barra.entrantes')}
         </span>
       )}
-      {slaVencidos !== undefined && (
+      {slaEnRiesgo > 0 && (
         <Button
           size="sm"
           variant="ghost"
-          aria-label={t('barra.sla.aria', { n: slaVencidos })}
-          disabled={slaVencidos === 0}
+          aria-label={t('barra.sla.aria', { n: slaEnRiesgo, nivel: slaNivel === 'VENCIDO' ? t('sla.vencido') : t('sla.alerta') })}
+          aria-pressed={filtroSlaActivo}
           onClick={onFiltrarSla}
-          className={slaVencidos > 0 ? 'text-status-critical' : undefined}
+          className={slaNivel === 'VENCIDO' ? 'text-status-critical' : 'text-status-warning'}
         >
-          <Glyph shape="square" /> <span className="tabular">{slaVencidos}</span> SLA
+          <Glyph shape={slaNivel === 'VENCIDO' ? 'square' : 'triangle'} /> <span className="tabular">{slaEnRiesgo}</span> SLA
         </Button>
       )}
       {simulacion && (

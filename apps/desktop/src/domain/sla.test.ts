@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EstadoRecurso, EventoRecurso, Incidente, Recurso } from '@argos/shared';
-import { calcularSla, formatearCronometro, resumirSla, slaDeRecursos } from './sla';
+import { calcularSla, formatearCronometro, resumirSla, slaDeRecursos, vencimientosNuevos } from './sla';
 
 const T0 = Date.parse('2026-10-08T10:00:00Z');
 const ev = (n: number, recursoId: string, hacia: EstadoRecurso, seg: number): EventoRecurso => ({
@@ -119,10 +119,20 @@ describe('slaDeRecursos y resumirSla', () => {
     expect(mapa.get('r2')).toMatchObject({ nivel: 'EN_TIEMPO', limiteSeg: 900, hito: 'EN_ESCENA' });
   });
 
-  it('el resumen cuenta vencidos y alertas, toma el nivel más grave y lista los incidentes vencidos', () => {
+  it('el resumen cuenta vencidos y alertas, toma el nivel más grave y lista incidentes y unidades afectados', () => {
     const resumen = resumirSla(recursos, slaDeRecursos(recursos, eventos, incidentes, T0 + 130_000));
+    expect(resumen).toMatchObject({ vencidos: 1, alertas: 0, nivel: 'VENCIDO', unidadesVencidas: ['r1'] });
+    expect([...resumen.incidentesEnRiesgo]).toEqual(['i1']);
+  });
+
+  it('un incidente con una unidad solo en ALERTA también está en riesgo, y mezclar niveles da el más grave', () => {
+    const mezcla = [recurso('r1', 'ASIGNADO', 'i1'), recurso('r2', 'ASIGNADO', 'i2')];
+    const evs = [ev(1, 'r1', 'ASIGNADO', 0), ev(2, 'r2', 'ASIGNADO', 50)];
+    const resumen = resumirSla(mezcla, slaDeRecursos(mezcla, evs, incidentes, T0 + 125_000));
     expect(resumen).toMatchObject({ vencidos: 1, alertas: 0, nivel: 'VENCIDO' });
-    expect([...resumen.incidentesVencidos]).toEqual(['i1']);
+    const resumen2 = resumirSla(mezcla, slaDeRecursos(mezcla, evs, incidentes, T0 + 100_000));
+    expect(resumen2).toMatchObject({ vencidos: 0, alertas: 1, nivel: 'ALERTA' });
+    expect([...resumen2.incidentesEnRiesgo]).toEqual(['i1']);
   });
 
   it('sin SLA en curso el nivel es NO_APLICA; con solo una alerta, ALERTA', () => {
@@ -132,6 +142,14 @@ describe('slaDeRecursos y resumirSla', () => {
       alertas: 1,
       nivel: 'ALERTA',
     });
+  });
+});
+
+describe('vencimientosNuevos', () => {
+  it('solo devuelve lo que antes no estaba vencido', () => {
+    expect(vencimientosNuevos(new Set(['a']), ['a', 'b', 'c'])).toEqual(['b', 'c']);
+    expect(vencimientosNuevos(new Set(), [])).toEqual([]);
+    expect(vencimientosNuevos(new Set(['a']), ['a'])).toEqual([]);
   });
 });
 

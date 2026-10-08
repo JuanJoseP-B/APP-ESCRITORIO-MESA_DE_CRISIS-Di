@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
-import { Badge } from '@argos/ui';
-import { codigoIncidente, dividirCola, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
+import { Badge, Button } from '@argos/ui';
+import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
 import { llamadasPorIncidente } from '../domain/entrantes';
 import { textoEstadoIncidente } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
@@ -20,6 +20,8 @@ export interface ColaIncidentesProps {
   llamadaAbiertaId?: string | null;
   onAbrirLlamada: (llamada: Llamada) => void;
   onDescartarLlamada?: (llamada: Llamada) => void;
+  /** Filtro por SLA: solo los incidentes con unidades en riesgo; `onQuitar` lo retira. `null` = sin filtro. */
+  filtroSla?: { readonly incidentes: ReadonlySet<string>; readonly onQuitar: () => void } | null;
 }
 
 /** "12 min", "2 h 05 min" o "—" cuando no se conoce la apertura. */
@@ -106,10 +108,14 @@ export function ColaIncidentes({
   llamadaAbiertaId,
   onAbrirLlamada,
   onDescartarLlamada,
+  filtroSla = null,
 }: ColaIncidentesProps) {
   const { t } = useTexto();
   const [pestana, setPestana] = useState<Pestana>('activos');
-  const { activos, cerrados } = dividirCola(incidentes);
+  const dividida = dividirCola(incidentes);
+  const ids = filtroSla?.incidentes ?? null;
+  const activos = filtrarPorIds(dividida.activos, ids);
+  const cerrados = filtrarPorIds(dividida.cerrados, ids);
   const unidades = unidadesPorIncidente(recursos);
   const vinculadas = llamadasPorIncidente(llamadas);
   const visibles = pestana === 'activos' ? activos : cerrados;
@@ -123,6 +129,15 @@ export function ColaIncidentes({
         onAbrir={onAbrirLlamada}
         onDescartar={onDescartarLlamada}
       />
+
+      {filtroSla && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border-strong px-4 py-1">
+          <span className="font-mono text-overline uppercase text-text-primary">{t('cola.filtro.sla')}</span>
+          <Button size="sm" variant="ghost" aria-label={t('cola.filtro.sla.quitar')} title={t('cola.filtro.sla.quitar')} onClick={filtroSla.onQuitar}>
+            <span aria-hidden="true">✕</span>
+          </Button>
+        </div>
+      )}
 
       <div role="tablist" aria-label={t('cola.tabs.aria')} className="flex shrink-0 border-y border-border-strong">
         {(
@@ -149,7 +164,7 @@ export function ColaIncidentes({
       <div id="lista-incidentes" role="tabpanel" aria-labelledby={`pestana-${pestana}`} className="min-h-0 flex-1 overflow-y-auto">
         {visibles.length === 0 ? (
           <p className="px-4 py-3 font-mono text-data-sm text-text-muted">
-            {pestana === 'activos' ? t('cola.activos.vacio') : t('cola.cerrados.vacio')}
+            {filtroSla ? t('cola.filtro.vacio') : pestana === 'activos' ? t('cola.activos.vacio') : t('cola.cerrados.vacio')}
           </p>
         ) : (
           <ul aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
