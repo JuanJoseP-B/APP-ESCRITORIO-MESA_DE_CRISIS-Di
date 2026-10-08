@@ -1,9 +1,9 @@
 /* ── TextField ──────────────────────────────────────────────────────────── */
 .ag-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
-.ag-field__label { font-family: var(--font-body); font-size: 14px; line-height: 20px; font-weight: 500; color: var(--input-label); }
+.ag-field__label { font-family: var(--font-body); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 500; color: var(--input-label); }
 .ag-field__control { position: relative; display: flex; align-items: center; }
-.ag-field__input { box-sizing: border-box; width: 100%; height: var(--control-lg); padding: 0 var(--space-3); background: var(--input-bg); color: var(--input-fg); border: var(--border-hairline) solid var(--input-border); border-radius: var(--radius-xs); font-family: var(--font-body); font-size: 16px; line-height: 24px; transition: border-color 80ms linear, box-shadow 80ms linear; }
-.ag-field--md .ag-field__input { height: var(--control-md); font-size: 14px; }
+.ag-field__input { box-sizing: border-box; width: 100%; height: var(--control-lg); padding: 0 var(--space-3); background: var(--input-bg); color: var(--input-fg); border: var(--border-hairline) solid var(--input-border); border-radius: var(--radius-xs); font-family: var(--font-body); font-size: calc(16px * var(--escala-texto, 1)); line-height: 24px; transition: border-color 80ms linear, box-shadow 80ms linear; }
+.ag-field--md .ag-field__input { height: var(--control-md); font-size: calc(14px * var(--escala-texto, 1)); }
 .ag-field--mono .ag-field__input { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .ag-field__input::placeholder { color: var(--input-placeholder); opacity: 1; }
 .ag-field__input:hover, .ag-field.is-hover .ag-field__input { border-color: var(--input-border-hover); }
@@ -12,6 +12,6 @@
 .ag-field--error .ag-field__input:focus, .ag-field--error.is-focus .ag-field__input { box-shadow: var(--error-ring), var(--focus-ring); }
 .ag-field__input:disabled { background: var(--input-bg-disabled); color: var(--text-disabled); border-color: var(--input-bg-disabled); cursor: not-allowed; }
 .ag-field--disabled .ag-field__label { color: var(--text-disabled); }
-.ag-field__hint { font-size: 12px; line-height: 16px; color: var(--input-hint); }
-.ag-field__error { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--input-error-fg); }
+.ag-field__hint { font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--input-hint); }
+.ag-field__error { display: flex; align-items: center; gap: var(--space-2); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 500; color: var(--input-error-fg); }
 .ag-field__adorn { position: absolute; right: var(--space-2); }

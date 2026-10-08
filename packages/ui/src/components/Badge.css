@@ -1,5 +1,5 @@
 /* ── Badge ──────────────────────────────────────────────────────────────── */
-.ag-badge { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 var(--space-2); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; box-sizing: border-box; }
+.ag-badge { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 var(--space-2); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(11px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; box-sizing: border-box; }
 .ag-badge .ag-glyph { width: 6px; height: 6px; }
 .ag-badge .ag-glyph--triangle { width: 8px; height: 7px; }
 .ag-badge--critical.ag-badge--solid { background: var(--badge-critical-bg); color: var(--badge-critical-fg); border-color: var(--badge-critical-bg); }

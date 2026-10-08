@@ -83,51 +83,51 @@
   --font-ui: Lexend, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 
-  --text-display-xl: 48px;
-  --text-display-xl--line-height: 52px;
+  --text-display-xl: calc(48px * var(--escala-texto, 1));
+  --text-display-xl--line-height: calc(52px * var(--escala-texto, 1));
   --text-display-xl--font-weight: 700;
   --text-display-xl--letter-spacing: -0.02em;
-  --text-display-lg: 32px;
-  --text-display-lg--line-height: 36px;
+  --text-display-lg: calc(32px * var(--escala-texto, 1));
+  --text-display-lg--line-height: calc(36px * var(--escala-texto, 1));
   --text-display-lg--font-weight: 700;
   --text-display-lg--letter-spacing: -0.015em;
-  --text-title-lg: 24px;
-  --text-title-lg--line-height: 28px;
+  --text-title-lg: calc(24px * var(--escala-texto, 1));
+  --text-title-lg--line-height: calc(28px * var(--escala-texto, 1));
   --text-title-lg--font-weight: 600;
   --text-title-lg--letter-spacing: -0.01em;
-  --text-title-md: 18px;
-  --text-title-md--line-height: 24px;
+  --text-title-md: calc(18px * var(--escala-texto, 1));
+  --text-title-md--line-height: calc(24px * var(--escala-texto, 1));
   --text-title-md--font-weight: 600;
-  --text-title-sm: 16px;
-  --text-title-sm--line-height: 20px;
+  --text-title-sm: calc(16px * var(--escala-texto, 1));
+  --text-title-sm--line-height: calc(20px * var(--escala-texto, 1));
   --text-title-sm--font-weight: 600;
-  --text-body-lg: 16px;
-  --text-body-lg--line-height: 24px;
-  --text-body-md: 14px;
-  --text-body-md--line-height: 20px;
-  --text-body-sm: 12px;
-  --text-body-sm--line-height: 16px;
+  --text-body-lg: calc(16px * var(--escala-texto, 1));
+  --text-body-lg--line-height: calc(24px * var(--escala-texto, 1));
+  --text-body-md: calc(14px * var(--escala-texto, 1));
+  --text-body-md--line-height: calc(20px * var(--escala-texto, 1));
+  --text-body-sm: calc(12px * var(--escala-texto, 1));
+  --text-body-sm--line-height: calc(16px * var(--escala-texto, 1));
   --text-body-sm--letter-spacing: 0.01em;
-  --text-label-md: 14px;
-  --text-label-md--line-height: 20px;
+  --text-label-md: calc(14px * var(--escala-texto, 1));
+  --text-label-md--line-height: calc(20px * var(--escala-texto, 1));
   --text-label-md--font-weight: 500;
-  --text-data-xl: 28px;
-  --text-data-xl--line-height: 32px;
+  --text-data-xl: calc(28px * var(--escala-texto, 1));
+  --text-data-xl--line-height: calc(32px * var(--escala-texto, 1));
   --text-data-xl--font-weight: 600;
   --text-data-xl--letter-spacing: -0.01em;
-  --text-data-md: 14px;
-  --text-data-md--line-height: 20px;
+  --text-data-md: calc(14px * var(--escala-texto, 1));
+  --text-data-md--line-height: calc(20px * var(--escala-texto, 1));
   --text-data-md--font-weight: 500;
-  --text-data-sm: 12px;
-  --text-data-sm--line-height: 16px;
+  --text-data-sm: calc(12px * var(--escala-texto, 1));
+  --text-data-sm--line-height: calc(16px * var(--escala-texto, 1));
   --text-data-sm--font-weight: 500;
   --text-data-sm--letter-spacing: 0.02em;
-  --text-overline: 12px;
-  --text-overline--line-height: 16px;
+  --text-overline: calc(12px * var(--escala-texto, 1));
+  --text-overline--line-height: calc(16px * var(--escala-texto, 1));
   --text-overline--font-weight: 600;
   --text-overline--letter-spacing: 0.08em;
-  --text-micro: 11px;
-  --text-micro--line-height: 16px;
+  --text-micro: calc(11px * var(--escala-texto, 1));
+  --text-micro--line-height: calc(16px * var(--escala-texto, 1));
   --text-micro--font-weight: 700;
   --text-micro--letter-spacing: 0.06em;
 
@@ -180,5 +180,12 @@
       transition: none !important;
       animation: none !important;
     }
+  }
+  /* El mismo apagado cuando el operador lo pide en Ajustes. */
+  :root[data-reduced-motion='true'] *,
+  :root[data-reduced-motion='true'] *::before,
+  :root[data-reduced-motion='true'] *::after {
+    transition: none !important;
+    animation: none !important;
   }
 }

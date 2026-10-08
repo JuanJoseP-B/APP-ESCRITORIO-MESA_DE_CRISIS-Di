@@ -1,5 +1,5 @@
 /* ── StatusIndicator ────────────────────────────────────────────────────── */
-.ag-status { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.ag-status { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .ag-status--disponible { color: var(--status-success); }
 .ag-status--despachado { color: var(--status-warning); }
 .ag-status--enruta { color: var(--status-warning); }

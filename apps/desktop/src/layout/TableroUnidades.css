@@ -2,8 +2,8 @@
 /* Chips de ancho fijo en una sola fila; el scroll horizontal solo aparece si no caben (más de 12 en 1280 px). */
 .ag-tablero { box-sizing: border-box; display: flex; align-items: stretch; gap: var(--space-4); height: 100%; padding: var(--space-2) var(--space-4); }
 .ag-tablero__resumen { display: flex; flex: none; flex-direction: column; justify-content: center; gap: var(--space-1); min-width: 88px; }
-.ag-tablero__titulo { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
-.ag-tablero__conteo { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); }
+.ag-tablero__titulo { font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
+.ag-tablero__conteo { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; color: var(--text-primary); }
 .ag-tablero__chips { display: flex; flex: 1 1 auto; align-items: center; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; list-style: none; overflow-x: auto; overflow-y: hidden; }
 .ag-tablero__chips > li { flex: none; }
-.ag-tablero__vacio { align-self: center; margin: 0; font-family: var(--font-mono); font-size: 12px; line-height: 16px; color: var(--text-muted); }
+.ag-tablero__vacio { align-self: center; margin: 0; font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--text-muted); }

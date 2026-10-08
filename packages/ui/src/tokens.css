@@ -256,6 +256,8 @@
   --error-ring: inset 0 0 0 1px #ff8f80;
 }
 :root {
+  /* Multiplica todo tamaño de texto (ajuste «texto grande»). */
+  --escala-texto: 1;
   --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
@@ -309,3 +311,6 @@
 .data-sm { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
 .overline { font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; text-transform: uppercase; }
 .micro { font-family: var(--font-mono); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; text-transform: uppercase; }
+[data-text-large="true"] {
+  --escala-texto: 1.15;
+}

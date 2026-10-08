@@ -4,7 +4,7 @@
 .ag-rail[data-lado="right"] { border-left: var(--border-hairline) solid var(--border-strong); }
 .ag-rail__body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .ag-rail__body[hidden] { display: none; }
-.ag-rail__toggle { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); background: transparent; color: var(--text-secondary); border: 0; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; }
+.ag-rail__toggle { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); background: transparent; color: var(--text-secondary); border: 0; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; cursor: pointer; }
 .ag-rail__toggle:hover { background: var(--surface-hover); color: var(--text-primary); }
 .ag-rail__toggle:focus { outline: none; }
 .ag-rail__toggle:focus-visible { box-shadow: var(--focus-ring); }
@@ -15,4 +15,4 @@
 /* Plegado: rail completo de 40 px con icono y rótulo vertical. */
 .ag-rail[data-colapsado="true"] .ag-rail__toggle { flex: 1; flex-direction: column; justify-content: flex-start; width: 100%; padding: var(--space-3) 0; }
 .ag-rail__icon { display: inline-flex; }
-.ag-rail__label { writing-mode: vertical-rl; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; line-height: 16px; }
+.ag-rail__label { writing-mode: vertical-rl; letter-spacing: .08em; text-transform: uppercase; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; }

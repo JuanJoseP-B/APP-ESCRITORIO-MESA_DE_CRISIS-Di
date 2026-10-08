@@ -11,6 +11,7 @@ import {
 } from './hooks/useListaRealtime';
 import { useAccionesLlamada } from './hooks/useAccionesLlamada';
 import { useAtajos } from './hooks/useAtajos';
+import { usePreferencias } from './hooks/usePreferencias';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
 import { useSimulacion } from './hooks/useSimulacion';
@@ -30,7 +31,6 @@ import { TableroUnidades } from './layout/TableroUnidades';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearServicioDemo } from './services/servicioDemo';
-import { aplicarTema, temaGuardado, type Tema } from './tema';
 
 /** Formulario de llamada abierto: vacío (F2) o precargado desde una entrante. `clave` lo remonta al cambiar de llamada. */
 interface FormularioAbierto {
@@ -73,9 +73,8 @@ function Mesa({
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
-  const [tema, setTema] = useState<Tema>(temaGuardado);
-  useEffect(() => aplicarTema(tema), [tema]);
-  const alternarTema = useCallback(() => setTema((actual) => (actual === 'crema' ? 'carbon' : 'crema')), []);
+  const { temaEfectivo, fijar } = usePreferencias();
+  const alternarTema = useCallback(() => fijar({ tema: temaEfectivo === 'crema' ? 'carbon' : 'crema' }), [fijar, temaEfectivo]);
 
   const [desfaseMs, setDesfaseMs] = useState(0);
   useEffect(() => {
@@ -248,7 +247,7 @@ function Mesa({
       barra={
         <BarraEstado
           hora={ahora}
-          turno={tema}
+          turno={temaEfectivo}
           onAlternarTurno={alternarTema}
           operador={operador}
           enlace={enlace}
