@@ -73,7 +73,7 @@ export function BarraEstado({
   /** Mientras t=0 y en pausa, el escenario aún no ha empezado. */
   const sinIniciar = simulacion !== undefined && !simulacion.reproduciendo && simulacion.tSeg === 0;
   return (
-    <header aria-label={t('barra.aria')} className="flex h-full items-center gap-4 px-4 text-text-primary">
+    <header aria-label={t('barra.aria')} className="flex h-full items-center gap-4 whitespace-nowrap px-4 text-text-primary">
       <span className="font-mono text-overline uppercase text-text-primary">
         <span aria-hidden="true">■ </span>ARGOS
       </span>
@@ -154,9 +154,11 @@ export function BarraEstado({
               </Button>
             ))}
           </span>
-          <Button size="sm" variant="ghost" onClick={simulacion.onReiniciar}>
-            {t('barra.sim.reiniciar')}
-          </Button>
+          {!sinIniciar && (
+            <Button size="sm" variant="ghost" onClick={simulacion.onReiniciar}>
+              {t('barra.sim.reiniciar')}
+            </Button>
+          )}
         </div>
       )}
       <span className="ml-auto flex items-center gap-2">
