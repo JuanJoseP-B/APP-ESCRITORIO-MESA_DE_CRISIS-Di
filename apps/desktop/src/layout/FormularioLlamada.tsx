@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CANALES_LLAMADA,
-  ETIQUETAS_CANAL_LLAMADA,
-  ETIQUETAS_TIPO_EMERGENCIA,
   PRIORIDADES,
   TIPOS_EMERGENCIA,
   esPrioridad,
@@ -22,9 +20,12 @@ import {
   validarBorrador,
   type Borrador,
   type CampoBorrador,
+  type ErroresBorrador,
 } from '../domain/llamadas';
 import { buscarDuplicados } from '../domain/duplicados';
 import { useAtajos } from '../hooks/useAtajos';
+import { textoCanal, textoTipoEmergencia } from '../i18n/etiquetas';
+import { useTexto } from '../i18n/IdiomaProvider';
 import { AvisoDuplicado } from './AvisoDuplicado';
 
 export interface FormularioLlamadaProps {
@@ -52,8 +53,6 @@ export interface FormularioLlamadaProps {
   readonly onResaltarIncidente: (incidenteId: string | null) => void;
 }
 
-const OPCIONES_CANAL = CANALES_LLAMADA.map((value) => ({ value, label: ETIQUETAS_CANAL_LLAMADA[value] }));
-const OPCIONES_TIPO = TIPOS_EMERGENCIA.map((value) => ({ value, label: ETIQUETAS_TIPO_EMERGENCIA[value] }));
 const OPCIONES_PRIORIDAD = PRIORIDADES.map((value) => ({ value, label: value }));
 
 const mismaUbicacion = (a: Coordenadas, b: Coordenadas): boolean => Math.abs(a.lat - b.lat) < 1e-9 && Math.abs(a.lng - b.lng) < 1e-9;
@@ -71,6 +70,9 @@ export function FormularioLlamada({
   onVincular,
   onResaltarIncidente,
 }: FormularioLlamadaProps) {
+  const { t } = useTexto();
+  const opcionesCanal = CANALES_LLAMADA.map((value) => ({ value, label: textoCanal(t, value) }));
+  const opcionesTipo = TIPOS_EMERGENCIA.map((value) => ({ value, label: textoTipoEmergencia(t, value) }));
   const [borrador, setBorrador] = useState<Borrador>(inicial);
   const [intentado, setIntentado] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -109,7 +111,15 @@ export function FormularioLlamada({
     if (campo === 'lat' || campo === 'lng') onUbicacionCambia(ubicacionDe(siguiente));
   };
 
-  const errores = intentado ? validarBorrador(borrador) : {};
+  const validados = intentado ? validarBorrador(borrador) : {};
+  // El dominio valida y el formulario redacta: cada campo tiene un único error posible.
+  const errores: ErroresBorrador = {
+    canal: validados.canal && t('llamada.error.canal'),
+    tipo: validados.tipo && t('llamada.error.tipo'),
+    prioridad: validados.prioridad && t('llamada.error.prioridad'),
+    lat: validados.lat && t('llamada.error.lat'),
+    lng: validados.lng && t('llamada.error.lng'),
+  };
 
   // Se reevalúa al cambiar el tipo o la ubicación, y cada segundo con el reloj (los minutos del candidato).
   const { tipo, lat, lng } = borrador;
@@ -157,10 +167,10 @@ export function FormularioLlamada({
       ref={raiz}
       role="dialog"
       aria-modal="false"
-      aria-label="Registro de llamada"
+      aria-label={t('llamada.titulo')}
       className="flex h-full min-h-0 flex-col border-l border-border-strong bg-surface-panel shadow-overlay"
     >
-      <SectionHeader title="Registro de llamada" count={entrante ? 'Entrante' : 'Manual'} />
+      <SectionHeader title={t('llamada.titulo')} count={entrante ? t('llamada.entrante') : t('llamada.manual')} />
       <form
         noValidate
         onSubmit={(e) => e.preventDefault()}
@@ -170,19 +180,19 @@ export function FormularioLlamada({
         <div className="grid grid-cols-2 gap-3">
           <SelectField
             size="md"
-            label="Canal"
+            label={t('llamada.canal')}
             name="canal"
-            placeholder="Elige"
-            options={OPCIONES_CANAL}
+            placeholder={t('llamada.elige')}
+            options={opcionesCanal}
             value={borrador.canal}
             error={errores.canal}
             onChange={(e) => cambiar('canal', esCanal(e.target.value) ? e.target.value : '')}
           />
           <SelectField
             size="md"
-            label="Prioridad"
+            label={t('llamada.prioridad')}
             name="prioridad"
-            placeholder="Elige"
+            placeholder={t('llamada.elige')}
             options={OPCIONES_PRIORIDAD}
             value={borrador.prioridad}
             error={errores.prioridad}
@@ -191,36 +201,36 @@ export function FormularioLlamada({
         </div>
         <SelectField
           size="md"
-          label="Tipo de emergencia"
+          label={t('llamada.tipo')}
           name="tipo"
-          placeholder="Elige"
-          options={OPCIONES_TIPO}
+          placeholder={t('llamada.elige')}
+          options={opcionesTipo}
           value={borrador.tipo}
           error={errores.tipo}
           onChange={(e) => cambiar('tipo', esTipoEmergencia(e.target.value) ? e.target.value : '')}
         />
         <div className="grid grid-cols-2 gap-3">
-          <TextField size="md" label="Reportante" name="reportante" value={borrador.reportante} onChange={(e) => cambiar('reportante', e.target.value)} />
-          <TextField size="md" mono label="Callback" name="callback" inputMode="tel" value={borrador.callback} onChange={(e) => cambiar('callback', e.target.value)} />
+          <TextField size="md" label={t('llamada.reportante')} name="reportante" value={borrador.reportante} onChange={(e) => cambiar('reportante', e.target.value)} />
+          <TextField size="md" mono label={t('llamada.callback')} name="callback" inputMode="tel" value={borrador.callback} onChange={(e) => cambiar('callback', e.target.value)} />
         </div>
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-2 gap-3">
-            <TextField size="md" mono label="Latitud" name="lat" inputMode="decimal" value={borrador.lat} error={errores.lat} onChange={(e) => cambiar('lat', e.target.value)} />
-            <TextField size="md" mono label="Longitud" name="lng" inputMode="decimal" value={borrador.lng} error={errores.lng} onChange={(e) => cambiar('lng', e.target.value)} />
+            <TextField size="md" mono label={t('llamada.lat')} name="lat" inputMode="decimal" value={borrador.lat} error={errores.lat} onChange={(e) => cambiar('lat', e.target.value)} />
+            <TextField size="md" mono label={t('llamada.lng')} name="lng" inputMode="decimal" value={borrador.lng} error={errores.lng} onChange={(e) => cambiar('lng', e.target.value)} />
           </div>
           <p className="flex items-center gap-2 font-ui text-body-sm text-text-secondary">
             <Glyph shape="diamond" />
-            Haz clic en el mapa para fijar la ubicación.
+            {t('llamada.pistaMapa')}
           </p>
         </div>
-        <TextAreaField label="Narrativa" name="narrativa" rows={4} value={borrador.narrativa} onChange={(e) => cambiar('narrativa', e.target.value)} />
+        <TextAreaField label={t('llamada.narrativa')} name="narrativa" rows={4} value={borrador.narrativa} onChange={(e) => cambiar('narrativa', e.target.value)} />
       </form>
       <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
         <Button variant="ghost" onClick={onCerrar}>
-          Cancelar <kbd className="font-mono text-overline">Esc</kbd>
+          {t('llamada.cancelar')} <kbd className="font-mono text-overline">Esc</kbd>
         </Button>
         <Button variant="primary" disabled={enviando} onClick={() => void crearIncidente()}>
-          Crear incidente <kbd className="font-mono text-overline">Ctrl+Enter</kbd>
+          {t('llamada.crear')} <kbd className="font-mono text-overline">Ctrl+Enter</kbd>
         </Button>
       </div>
     </section>

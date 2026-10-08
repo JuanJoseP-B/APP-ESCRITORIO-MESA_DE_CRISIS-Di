@@ -55,7 +55,7 @@ export function PanelDetalle({
   onCambiarEstadoRecurso,
   onCambiarOcupacion,
 }: PanelDetalleProps) {
-  const { t } = useTexto();
+  const { t, idioma } = useTexto();
   const refugios = <PanelRefugios zonas={zonas} onCambiarOcupacion={onCambiarOcupacion} />;
 
   if (incidente === null) {
@@ -101,7 +101,7 @@ export function PanelDetalle({
   const asignadas = recursos.filter((r) => r.incidente_asignado_id === incidente.id);
   const disponibles = recursos.filter((r) => r.estado_actual === 'DISPONIBLE');
   const inoperativas = recursos.filter((r) => r.estado_actual === 'INOPERATIVO');
-  const entradas = bitacora(incidente.timeline);
+  const entradas = bitacora(incidente.timeline, undefined, idioma);
   const totalEventos = entradas.filter((e) => e.tipo === 'evento').length;
 
   return (

@@ -2,6 +2,7 @@ import { useEffect, type FocusEvent } from 'react';
 import type { CandidatoDuplicado } from '@argos/shared';
 import { Button, Glyph } from '@argos/ui';
 import { describirCandidato } from '../domain/duplicados';
+import { useTexto } from '../i18n/IdiomaProvider';
 
 export interface AvisoDuplicadoProps {
   /** Hasta tres, del más probable al menos. */
@@ -14,6 +15,7 @@ export interface AvisoDuplicadoProps {
 
 /** Aviso dentro del formulario: la llamada podría ser de un incidente ya abierto. */
 export function AvisoDuplicado({ candidatos, onVincular, onResaltar, deshabilitado = false }: AvisoDuplicadoProps) {
+  const { t, idioma } = useTexto();
   // Si el aviso desaparece (se arregló la ubicación, se vinculó, se cerró) no puede quedar nada resaltado.
   useEffect(() => () => onResaltar(null), [onResaltar]);
   useEffect(() => {
@@ -28,13 +30,13 @@ export function AvisoDuplicado({ candidatos, onVincular, onResaltar, deshabilita
   return (
     <section
       role="region"
-      aria-label="Posibles duplicados"
+      aria-label={t('duplicado.aria')}
       aria-live="polite"
       className="flex flex-col gap-2 border border-status-warning bg-status-warning-bg p-3"
     >
       <h3 className="flex items-center gap-2 font-mono text-overline uppercase text-status-warning">
         <Glyph shape="triangle" />
-        {candidatos.length === 1 ? 'Posible duplicado' : `${candidatos.length} posibles duplicados`}
+        {candidatos.length === 1 ? t('duplicado.uno') : t('duplicado.varios', { n: candidatos.length })}
       </h3>
       <ul className="flex flex-col gap-2">
         {candidatos.map((c) => (
@@ -48,22 +50,22 @@ export function AvisoDuplicado({ candidatos, onVincular, onResaltar, deshabilita
             className="flex items-center gap-3"
           >
             <span className="flex-1 font-ui text-body-sm text-text-primary">
-              Posible duplicado de <span className="font-mono font-semibold tabular">#{c.codigo}</span>
-              <span className="block font-mono text-data-sm tabular text-text-secondary">{describirCandidato(c)}</span>
+              {t('duplicado.de')} <span className="font-mono font-semibold tabular">#{c.codigo}</span>
+              <span className="block font-mono text-data-sm tabular text-text-secondary">{describirCandidato(c, idioma)}</span>
             </span>
             <Button
               size="sm"
               variant="secondary"
               disabled={deshabilitado}
-              aria-label={`Vincular a #${c.codigo}`}
+              aria-label={t('duplicado.vincular.aria', { codigo: c.codigo })}
               onClick={() => onVincular(c)}
             >
-              Vincular
+              {t('duplicado.vincular')}
             </Button>
           </li>
         ))}
       </ul>
-      <p className="font-ui text-body-sm text-text-secondary">Elige Vincular o Crear incidente.</p>
+      <p className="font-ui text-body-sm text-text-secondary">{t('duplicado.ayuda')}</p>
     </section>
   );
 }

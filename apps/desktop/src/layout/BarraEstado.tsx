@@ -55,7 +55,7 @@ export function BarraEstado({
   simulacion,
   onCerrarSesion,
 }: BarraEstadoProps) {
-  const { t } = useTexto();
+  const { t, idioma } = useTexto();
   const estadoEnlace = ENLACE_UI[enlace];
   const palabraEnlace = t(`enlace.${enlace}`);
   const nombreTurno = turno === 'carbon' ? t('barra.turno.noche') : t('barra.turno.dia');
@@ -68,7 +68,7 @@ export function BarraEstado({
       </span>
       <span className="flex items-baseline gap-2">
         <time dateTime={new Date(hora).toISOString()} className="font-mono text-data-md tabular">
-          {formatearHoraConSegundos(hora, zona)}
+          {formatearHoraConSegundos(hora, zona, idioma)}
         </time>
         <span className="font-mono text-data-sm text-text-muted">{etiquetaZonaHoraria(hora, zona)}</span>
       </span>

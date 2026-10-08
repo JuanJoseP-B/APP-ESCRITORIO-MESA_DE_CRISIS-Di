@@ -6,6 +6,7 @@ import {
   type ParametrosDuplicados,
   type TipoEmergencia,
 } from '@argos/shared';
+import type { Idioma } from '../i18n/idioma';
 import { aperturaDeIncidente, codigoIncidente, estaCerrado } from './cola';
 import { distanciaM, ubicacionDeIncidente } from './geo';
 
@@ -74,8 +75,12 @@ export function formatearDistancia(metros: number): string {
 }
 
 /** "hace 4 min"; por debajo del minuto, "hace menos de 1 min". */
-export const formatearHace = (minutos: number): string => (minutos < 1 ? 'hace menos de 1 min' : `hace ${Math.floor(minutos)} min`);
+export function formatearHace(minutos: number, idioma: Idioma = 'es'): string {
+  const m = Math.floor(minutos);
+  if (idioma === 'en') return minutos < 1 ? 'less than 1 min ago' : `${m} min ago`;
+  return minutos < 1 ? 'hace menos de 1 min' : `hace ${m} min`;
+}
 
 /** "120 m, hace 4 min": lo que el operador necesita para decidir si la llamada es del mismo incidente. */
-export const describirCandidato = (c: Pick<CandidatoDuplicado, 'distanciaM' | 'minutosDesde'>): string =>
-  `${formatearDistancia(c.distanciaM)}, ${formatearHace(c.minutosDesde)}`;
+export const describirCandidato = (c: Pick<CandidatoDuplicado, 'distanciaM' | 'minutosDesde'>, idioma: Idioma = 'es'): string =>
+  `${formatearDistancia(c.distanciaM)}, ${formatearHace(c.minutosDesde, idioma)}`;

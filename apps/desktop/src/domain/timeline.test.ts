@@ -133,6 +133,13 @@ describe('bitacora', () => {
     expect(separador?.tipo === 'fecha' && separador.etiqueta).toMatch(/^0?7 oct 2026$|^07 oct 2026$/);
   });
 
+  it('la fecha y la hora siguen el idioma activo', () => {
+    const [separador, evento] = bitacora([{ timestamp: '2026-10-07T12:00:00Z', descripcion: 'x' }], 'UTC', 'en');
+    expect(separador?.tipo === 'fecha' && separador.etiqueta).toBe('Oct 07, 2026');
+    expect(evento?.tipo === 'evento' && evento.hora).toBe('12:00');
+    expect(eventosVisibles([{ timestamp: '2026-10-07T12:00:00Z' }], 'UTC', 'en')[0]?.descripcion).toBe('Event without description');
+  });
+
   it('un mismo día lleva un solo separador y cada evento conserva su autor', () => {
     const entradas = bitacora(
       [

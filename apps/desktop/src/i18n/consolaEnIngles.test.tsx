@@ -1,11 +1,15 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
+import { BORRADOR_VACIO } from '../domain/llamadas';
 import { Login } from '../components/Login';
 import { BandejaEntrantes } from '../layout/BandejaEntrantes';
 import { BarraEstado } from '../layout/BarraEstado';
 import { ColaIncidentes } from '../layout/ColaIncidentes';
+import { AvisoDuplicado } from '../layout/AvisoDuplicado';
+import { FormularioLlamada } from '../layout/FormularioLlamada';
 import { PanelDetalle } from '../layout/PanelDetalle';
 import { TableroUnidades } from '../layout/TableroUnidades';
 import { IdiomaProvider } from './IdiomaProvider';
@@ -89,6 +93,39 @@ describe('la consola en inglés', () => {
     enIngles(<TableroUnidades recursos={[recurso]} incidenteSeleccionadoId={null} onSeleccionarUnidad={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'M10, Ambulance, Available' }).textContent).toContain('AVAIL');
     expect(screen.getByText('1/1 avail.')).toBeTruthy();
+  });
+
+  it('el formulario de llamada: etiquetas, opciones y errores', async () => {
+    enIngles(
+      <FormularioLlamada
+        inicial={BORRADOR_VACIO}
+        entrante={false}
+        ubicacion={null}
+        onUbicacionCambia={vi.fn()}
+        incidentes={[]}
+        ahora={AHORA}
+        onCerrar={vi.fn()}
+        onCrearIncidente={vi.fn().mockResolvedValue(true)}
+        onVincular={vi.fn().mockResolvedValue(true)}
+        onResaltarIncidente={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Call log' })).toBeTruthy();
+    expect(screen.getByLabelText('Emergency type')).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Gas leak' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'VHF radio' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: /Create incident/ }));
+    expect(screen.getByText('Say the emergency type')).toBeTruthy();
+    expect(screen.getByText('Latitude between -90 and 90')).toBeTruthy();
+  });
+
+  it('el aviso de duplicados', () => {
+    enIngles(
+      <AvisoDuplicado candidatos={[{ incidenteId: 'a', codigo: 'A3F', distanciaM: 120, minutosDesde: 4, puntaje: 0.9 }]} onVincular={vi.fn()} onResaltar={vi.fn()} />,
+    );
+    expect(screen.getByRole('region', { name: 'Possible duplicates' })).toBeTruthy();
+    expect(screen.getByText('120 m, 4 min ago')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Link to #A3F' }).textContent).toBe('Link');
   });
 
   it('el acceso de operador', () => {

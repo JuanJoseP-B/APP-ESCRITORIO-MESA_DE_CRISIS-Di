@@ -148,4 +148,9 @@ describe('textos del aviso', () => {
   it('describe al candidato con distancia y tiempo', () => {
     expect(describirCandidato({ distanciaM: 120, minutosDesde: 4 })).toBe('120 m, hace 4 min');
   });
+
+  it('en inglés el tiempo es "N min ago"', () => {
+    expect(formatearHace(0, 'en')).toBe('less than 1 min ago');
+    expect(describirCandidato({ distanciaM: 120, minutosDesde: 4 }, 'en')).toBe('120 m, 4 min ago');
+  });
 });

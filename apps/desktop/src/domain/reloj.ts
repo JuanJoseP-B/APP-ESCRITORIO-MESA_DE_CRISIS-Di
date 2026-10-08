@@ -1,3 +1,5 @@
+import type { Idioma } from '../i18n/idioma';
+
 /**
  * Desfase (ms) entre el reloj del servidor y el local: positivo si el servidor va adelantado.
  * Se asume que la respuesta se generó a mitad del viaje, así que el reloj local se compara con el
@@ -8,8 +10,8 @@ export function calcularDesfaseMs(horaServidorMs: number, envioMs: number, recep
 }
 
 /** "HH:mm:ss" en 24 h; `zona` es un identificador IANA (por defecto, la del sistema). */
-export function formatearHoraConSegundos(ms: number, zona?: string): string {
-  return new Intl.DateTimeFormat('es', {
+export function formatearHoraConSegundos(ms: number, zona?: string, idioma: Idioma = 'es'): string {
+  return new Intl.DateTimeFormat(idioma, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
