@@ -40,11 +40,12 @@ const CLAVE_CAPA: Readonly<Record<CapaMapa, ClaveTexto>> = {
   bloqueos: 'capa.bloqueos',
 };
 
+/** Plegada por defecto: desplegada tapa el centro del mapa, donde se centra el incidente. Solo se despliega si el operador lo pidió. */
 function plegadaGuardada(): boolean {
   try {
-    return localStorage.getItem(CLAVE_PLEGADA) === 'true';
+    return localStorage.getItem(CLAVE_PLEGADA) !== 'false';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -52,7 +53,7 @@ function guardarPlegada(plegada: boolean): void {
   try {
     localStorage.setItem(CLAVE_PLEGADA, String(plegada));
   } catch {
-    // Sin almacenamiento la leyenda arranca desplegada cada vez: no pasa nada.
+    // Sin almacenamiento la leyenda arranca plegada cada vez: no pasa nada.
   }
 }
 

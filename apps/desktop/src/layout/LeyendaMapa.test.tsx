@@ -7,7 +7,8 @@ import { IdiomaProvider } from '../i18n/IdiomaProvider';
 import { LeyendaMapa } from './LeyendaMapa';
 import css from './LeyendaMapa.css?raw';
 
-beforeEach(() => localStorage.clear());
+// Las pruebas de contenido parten con la leyenda desplegada; la de arranque limpia el almacenamiento.
+beforeEach(() => localStorage.setItem('argos.leyendaPlegada', 'false'));
 afterEach(cleanup);
 
 const montar = (extra: Partial<Parameters<typeof LeyendaMapa>[0]> = {}) =>
@@ -73,15 +74,23 @@ describe('LeyendaMapa', () => {
 });
 
 describe('LeyendaMapa: plegado', () => {
-  it('arranca desplegada y se pliega con su cabecera, recordándolo', async () => {
+  it('el primer arranque la deja plegada para no tapar el mapa, y se despliega con su cabecera, recordándolo', async () => {
+    localStorage.clear();
     montar();
     const cabecera = screen.getByRole('button', { name: /Leyenda/ });
-    expect(cabecera.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('list', { name: 'Unidades' })).toBeTruthy();
-    await userEvent.click(cabecera);
     expect(cabecera.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('list', { name: 'Unidades' })).toBeNull();
+    await userEvent.click(cabecera);
+    expect(cabecera.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('list', { name: 'Unidades' })).toBeTruthy();
+    expect(localStorage.getItem('argos.leyendaPlegada')).toBe('false');
+    await userEvent.click(cabecera);
     expect(localStorage.getItem('argos.leyendaPlegada')).toBe('true');
+  });
+
+  it('si la última vez quedó desplegada, vuelve desplegada', () => {
+    montar();
+    expect(screen.getByRole('button', { name: /Leyenda/ }).getAttribute('aria-expanded')).toBe('true');
   });
 
   it('si la última vez quedó plegada, vuelve plegada', () => {
