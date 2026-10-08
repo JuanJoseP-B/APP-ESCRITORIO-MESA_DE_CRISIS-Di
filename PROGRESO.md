@@ -22,10 +22,8 @@ repo tal cual y NO se aplican al proyecto real. `medirDesfaseServidor` sigue exp
 - Valores del dominio (`Crítico`, `DISPONIBLE`…) siguen guardados en español; solo su etiqueta se traduce (`i18n/etiquetas.ts`). El texto de la bitácora que escribe la consola y el canal crudo (`123`, `VHF`) de la bandeja no se traducen.
 - `@argos/ui`: `DispatchRow.statusLabel`, `UnitChip.statusLabel/statusShort` y `StatusIndicator.label` (también con `glyphOnly`) permiten traducir; `RailColapsable` aún dice «Expandir/Colapsar» en español. Nuevos `SegmentedControl` y `Switch`.
 - Idioma: `IdiomaProvider` es la única fuente (`argos.idioma`, `<html lang>`); `PreferenciasProvider` lo delega y guarda tema, `reducirMovimiento` y `textoGrande`. Tema `sistema` sigue `prefers-color-scheme` en vivo. El botón «Turno noche/día» se retiró de la barra.
-- Texto grande: token `--escala-texto` (1 → 1,15 con `data-text-large`) multiplica todos los `font-size` de `@argos/ui` y de `theme.css`. Reducir movimiento: `data-reduced-motion` apaga transiciones y animaciones.
-- Ajustes es un drawer a la derecha sin telón translúcido (capturador invisible que cierra al hacer clic fuera). Con él abierto, los atajos globales de Mesa se desactivan.
-- Fuera de U3, aún en español: textos internos de `MapaTactico`, avisos de `useAccionesOperador`/`useAccionesLlamada` (van a U4/U8).
-- Los archivos nuevos quedan en LF y los CRLF existentes se respetaron (el índice de git guarda LF).
+- Texto grande: token `--escala-texto` (1 → 1,15 con `data-text-large`) multiplica todos los `font-size` de `@argos/ui` y de `theme.css`. Reducir movimiento: `data-reduced-motion` apaga transiciones y animaciones. Ajustes es un drawer a la derecha sin telón translúcido (capturador invisible que cierra al hacer clic fuera). Con él abierto, los atajos globales de Mesa se desactivan.
+- Aún en español (U4/U8): textos internos de `MapaTactico` y avisos de `useAccionesOperador`/`useAccionesLlamada`.
 
 ## Pendiente heredado
 - Retirar `Reporte` en favor de `Llamada`; `recursos_operativos` solo para operadores en los docs. Supabase solo con `VITE_USAR_SUPABASE=true` (0006 sin aplicar).
