@@ -34,7 +34,8 @@ import { rutasAFeatureCollection } from './domain/geojson';
 import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
 import { perimetroDeIncidente } from './domain/perimetro';
 import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
-import { crearRelojSimulado, type RelojSimulado } from './domain/relojSimulado';
+import type { RelojSimulado } from './domain/relojSimulado';
+import { ESCENARIO_INICIAL, type Escenario, type IdEscenario } from './domain/escenario';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
 import { AvisosSla } from './layout/AvisosSla';
 import { ConfirmacionPlan } from './layout/ConfirmacionPlan';
@@ -50,7 +51,7 @@ import { InvitacionTutorial } from './layout/InvitacionTutorial';
 import { TutorialProvider } from './layout/TutorialProvider';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
-import { crearServicioDemo } from './services/servicioDemo';
+import { crearEntornoDemo, type EntornoDemo } from './services/entornoDemo';
 
 const SIN_MOVIMIENTOS: readonly MovimientoUnidad[] = [];
 
@@ -61,24 +62,22 @@ interface FormularioAbierto {
   readonly llamadaId: string | null;
 }
 
-/** Servicio demo con su reloj simulado: la consola y los datos comparten la misma hora acelerable. */
-function crearEntornoDemo(): { readonly servicio: ServicioMesa; readonly reloj: RelojSimulado } {
-  const reloj = crearRelojSimulado();
-  return { servicio: crearServicioDemo({ ahora: reloj.ahora }), reloj };
-}
-
 function Mesa({
   servicio,
   reloj,
+  escenario,
   operador,
   onReiniciarSimulacion,
+  onElegirEscenario,
   onCerrarSesion,
 }: {
   readonly servicio: ServicioMesa;
   /** Solo en modo demo. */
   readonly reloj?: RelojSimulado;
+  readonly escenario?: Escenario;
   readonly operador: string;
   readonly onReiniciarSimulacion?: () => void;
+  readonly onElegirEscenario?: (id: IdEscenario) => void;
   readonly onCerrarSesion: () => void;
 }) {
   const { t } = useTexto();
@@ -127,7 +126,8 @@ function Mesa({
   }, [servicio]);
   // En el demo la hora corre acelerada y las unidades se desplazan: se refresca varias veces por segundo.
   const ahora = useReloj(desfaseMs, reloj ? 250 : 1000, reloj?.ahora);
-  const simulacion = useSimulacion(servicio, reloj);
+  const simulacion = useSimulacion(servicio, reloj, escenario);
+  const retraso = escenario?.retraso ?? null;
   // Cronómetros SLA de las unidades despachadas: se recalculan a 1 Hz sobre la hora de la consola.
   const sla = useSla(recursos.datos, eventosRecurso.datos, incidentes.datos, desfaseMs, reloj?.ahora);
   const slaEnRiesgo = sla.resumen.alertas + sla.resumen.vencidos;
@@ -225,15 +225,15 @@ function Mesa({
   const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
-  useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos });
+  useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos, retraso });
   // Las unidades EN_RUTA se interpolan según el reloj; con «reducir movimiento» saltan por tramos en vez de deslizarse.
   const movimientos = useMemo(() => {
     const m = reloj
-      ? movimientosEnRuta(recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento ? PASOS_SIN_ANIMACION : undefined)
+      ? movimientosEnRuta(recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento ? PASOS_SIN_ANIMACION : undefined, retraso)
       : SIN_MOVIMIENTOS;
     // Sin unidades en ruta se devuelve siempre el mismo arreglo: el mapa no se repinta cada cuarto de segundo.
     return m.length === 0 ? SIN_MOVIMIENTOS : m;
-  }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento]);
+  }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento, retraso]);
   const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
   // Los anillos se generan al crear o seleccionar un incidente; solo cambian si cambia su tipo, su lugar o su perímetro.
   const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado ?? {};
@@ -427,6 +427,7 @@ function Mesa({
                     onAlternar: simulacion.alternar,
                     onVelocidad: simulacion.fijarVelocidad,
                     onReiniciar: onReiniciarSimulacion,
+                    escenario: escenario && onElegirEscenario ? { actual: escenario.id, onElegir: onElegirEscenario } : undefined,
                   }
                 : undefined
             }
@@ -532,18 +533,26 @@ function Mesa({
   );
 }
 
-/** Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador. */
-export function App() {
+/**
+ * Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador.
+ * `crearEntorno` fabrica el demo de un escenario (las pruebas inyectan otro).
+ */
+export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno?: (id: IdEscenario) => EntornoDemo } = {}) {
   const { t } = useTexto();
   const real = useMemo(() => crearServicioDesdeEntorno(), []);
-  const [demo, setDemo] = useState(() => (real ? null : crearEntornoDemo()));
+  const [demo, setDemo] = useState(() => (real ? null : crearEntorno(ESCENARIO_INICIAL)));
   const servicio = real ?? demo?.servicio;
   const [corrida, setCorrida] = useState(0);
-  // Reiniciar descarta el servicio y el reloj del demo y monta la consola de nuevo, con los datos de partida.
-  const reiniciarSimulacion = useCallback(() => {
-    setDemo(crearEntornoDemo());
-    setCorrida((n) => n + 1);
-  }, []);
+  // Reiniciar o cambiar de escenario descarta el servicio y el reloj del demo y monta la consola de nuevo, con los datos de partida.
+  const escenarioActual = demo?.escenario.id ?? ESCENARIO_INICIAL;
+  const elegirEscenario = useCallback(
+    (id: IdEscenario) => {
+      setDemo(crearEntorno(id));
+      setCorrida((n) => n + 1);
+    },
+    [crearEntorno],
+  );
+  const reiniciarSimulacion = useCallback(() => elegirEscenario(escenarioActual), [elegirEscenario, escenarioActual]);
   const [sesion, setSesion] = useState<SesionOperador | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -589,8 +598,10 @@ export function App() {
       key={corrida}
       servicio={servicio}
       reloj={demo?.reloj}
+      escenario={demo?.escenario}
       operador={sesion.email}
       onReiniciarSimulacion={demo ? reiniciarSimulacion : undefined}
+      onElegirEscenario={demo ? elegirEscenario : undefined}
       onCerrarSesion={cerrarSesion}
     />
   );

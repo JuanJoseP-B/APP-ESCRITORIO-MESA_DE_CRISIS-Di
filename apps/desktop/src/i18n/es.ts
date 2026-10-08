@@ -62,6 +62,13 @@ export const es = {
   'barra.sim.velocidad': 'Velocidad',
   'barra.sim.velocidad.aria': 'Velocidad {v}×',
   'barra.sim.reiniciar': 'Reiniciar',
+  'escenario.aria': 'Escenario del demo',
+  'escenario.A.titulo': 'Fuga de gas urbana',
+  'escenario.A.desc': 'Una fuga de gas llega por varios canales, con llamadas duplicadas y una unidad retrasada por el tráfico.',
+  'escenario.B.titulo': 'Deslizamiento por lluvias',
+  'escenario.B.desc': 'Un deslizamiento corta la vía, crece el río cercano y los refugios ya están casi llenos.',
+  'escenario.C.titulo': 'Incidentes simultáneos',
+  'escenario.C.desc': 'Un incendio, una fuga de gas, un deslizamiento y una inundación compiten por las mismas unidades.',
   'barra.salir': 'Salir',
   'barra.ajustes': 'Ajustes',
 

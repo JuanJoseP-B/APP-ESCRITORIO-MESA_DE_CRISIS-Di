@@ -58,6 +58,13 @@ export const en: Diccionario = {
   'barra.sim.velocidad': 'Speed',
   'barra.sim.velocidad.aria': 'Speed {v}×',
   'barra.sim.reiniciar': 'Restart',
+  'escenario.aria': 'Demo scenario',
+  'escenario.A.titulo': 'Urban gas leak',
+  'escenario.A.desc': 'A gas leak comes in through several channels, with duplicate calls and a unit delayed by traffic.',
+  'escenario.B.titulo': 'Rain-triggered landslide',
+  'escenario.B.desc': 'A landslide cuts the road, the nearby river rises and the shelters are almost full.',
+  'escenario.C.titulo': 'Simultaneous incidents',
+  'escenario.C.desc': 'A fire, a gas leak, a landslide and a flood compete for the same units.',
   'barra.salir': 'Sign out',
   'barra.ajustes': 'Settings',
 

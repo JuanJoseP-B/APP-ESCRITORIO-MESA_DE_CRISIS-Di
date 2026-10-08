@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { agregarEvento } from '@argos/shared';
-import { DURACION_ESCENARIO_SEG, GUION_CRISIS, TRAFICO_ESCENARIO, eventosEntre, type Guion } from '../domain/escenario';
+import { DURACION_ESCENARIO_SEG, ESCENARIOS, eventosEntre, type Escenario } from '../domain/escenario';
 import type { RelojSimulado, Velocidad } from '../domain/relojSimulado';
 import type { ServicioMesa } from '../services/supabaseClient';
 import { AUTOR_SISTEMA } from './useLlegadaUnidades';
@@ -15,6 +15,9 @@ export interface EstadoSimulacion {
   fijarVelocidad(velocidad: Velocidad): void;
 }
 
+/** Lo que la simulación necesita del escenario: su guion y la unidad retenida. */
+export type GuionSimulado = Pick<Escenario, 'guion' | 'retraso'>;
+
 /**
  * Hace avanzar el escenario del demo: cada `intervaloMs` reales inyecta por el servicio las llamadas del
  * guion que ya tocan según el reloj simulado. Sin `reloj` (backend real) no hace nada y devuelve `null`.
@@ -22,38 +25,44 @@ export interface EstadoSimulacion {
 export function useSimulacion(
   servicio: ServicioMesa,
   reloj: RelojSimulado | undefined,
-  guion: Guion = GUION_CRISIS,
+  escenario: GuionSimulado = ESCENARIOS.A,
   intervaloMs = 250,
 ): EstadoSimulacion | null {
   const [, repintar] = useReducer((n: number) => n + 1, 0);
   const inyectadoHastaSeg = useRef(0);
   const retrasoAnotado = useRef(false);
+  const { guion, retraso } = escenario;
 
   useEffect(() => {
     if (!reloj) return;
+    let buscandoRetraso = false;
     const id = setInterval(() => {
       const t = reloj.transcurridoSeg();
       for (const evento of eventosEntre(guion, inyectadoHastaSeg.current, t)) {
         servicio.registrarLlamada(evento.llamada).catch(() => undefined);
       }
-      // El retraso por tráfico del escenario queda en la bitácora del incidente, una sola vez.
-      if (guion === GUION_CRISIS && !retrasoAnotado.current && t >= TRAFICO_ESCENARIO.tSeg) {
-        retrasoAnotado.current = true;
-        servicio
-          .listarIncidentes()
-          .then((incidentes) => {
-            const incidente = incidentes.find((i) => i.id === TRAFICO_ESCENARIO.incidenteId);
-            if (!incidente) return undefined;
-            const timeline = agregarEvento(incidente.timeline, TRAFICO_ESCENARIO.nota, new Date(reloj.ahora()), AUTOR_SISTEMA);
+      // El retraso de la unidad retenida queda en la bitácora del incidente al que va, una sola vez y en cuanto sale.
+      if (retraso && !retrasoAnotado.current && !buscandoRetraso && t >= retraso.tSeg) {
+        buscandoRetraso = true;
+        Promise.all([servicio.listarRecursos(), servicio.listarIncidentes()])
+          .then(([recursos, incidentes]) => {
+            const unidad = recursos.find((r) => r.etiqueta === retraso.etiqueta && r.estado_actual === 'EN_RUTA');
+            const incidente = incidentes.find((i) => i.id === unidad?.incidente_asignado_id);
+            if (retrasoAnotado.current || !incidente) return undefined;
+            retrasoAnotado.current = true;
+            const timeline = agregarEvento(incidente.timeline, retraso.nota, new Date(reloj.ahora()), AUTOR_SISTEMA);
             return servicio.actualizarIncidente(incidente.id, { timeline });
           })
-          .catch(() => undefined);
+          .catch(() => undefined)
+          .finally(() => {
+            buscandoRetraso = false;
+          });
       }
       inyectadoHastaSeg.current = Math.max(inyectadoHastaSeg.current, t);
       repintar();
     }, intervaloMs);
     return () => clearInterval(id);
-  }, [servicio, reloj, guion, intervaloMs]);
+  }, [servicio, reloj, guion, retraso, intervaloMs]);
 
   const alternar = useCallback(() => {
     if (!reloj) return;

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { IdiomaProvider } from './i18n/IdiomaProvider';
+import { crearEntornoSemilla } from './testing/entornoSemilla';
 
 // MapLibre necesita WebGL, que jsdom no tiene: el mapa se sustituye por un hueco.
 vi.mock('./layout/MapaTactico', () => ({ MapaTactico: () => null }));
@@ -19,7 +20,7 @@ const filaFuga = () => screen.findByRole('button', { name: /Fuga de gas en secto
 async function abrirConsola() {
   render(
     <IdiomaProvider inicial="es">
-      <App />
+      <App crearEntorno={crearEntornoSemilla} />
     </IdiomaProvider>,
   );
   await screen.findByRole('banner', { name: 'Barra de estado' });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ESCENARIOS } from '../domain/escenario';
 import { movimientosEnRuta } from '../domain/movimiento';
 import { slaDeRecursos } from '../domain/sla';
 import { crearServicioDemo } from './servicioDemo';
@@ -257,5 +258,37 @@ describe('servicioDemo: SLA del escenario', () => {
     const antes = movimientosEnRuta(recursos, eventos, incidentes, AHORA + 300_000).find((m) => m.recursoId === 'demo-rec-6');
     expect(antes?.llego).toBe(false);
     expect(llegada?.llego).toBe(true);
+  });
+});
+
+describe('servicioDemo con escenario (arranque limpio)', () => {
+  it('todas las unidades parten DISPONIBLES en su base, sin incidentes, llamadas ni eventos previos', async () => {
+    const servicio = crearServicioDemo({ escenario: ESCENARIOS.A });
+    const recursos = await servicio.listarRecursos();
+    expect(recursos).toHaveLength(6);
+    for (const r of recursos) {
+      expect(r.estado_actual).toBe('DISPONIBLE');
+      expect(r.incidente_asignado_id).toBeNull();
+      expect(r.ubicacion).toEqual(r.base);
+    }
+    expect(await servicio.listarIncidentes()).toEqual([]);
+    expect(await servicio.listarLlamadas()).toEqual([]);
+    expect(await servicio.listarEventosRecurso()).toEqual([]);
+  });
+
+  it('los refugios son los del escenario', async () => {
+    const b = await crearServicioDemo({ escenario: ESCENARIOS.B }).listarZonasPublicas();
+    expect(b).toEqual(ESCENARIOS.B.zonas);
+    const a = await crearServicioDemo({ escenario: ESCENARIOS.A }).listarZonasPublicas();
+    expect(a).toEqual(ESCENARIOS.A.zonas);
+  });
+
+  it('dos servicios del mismo escenario no comparten estado: lo hecho en uno no aparece en el otro', async () => {
+    const primero = crearServicioDemo({ escenario: ESCENARIOS.A });
+    await primero.registrarLlamada({ canal: '123', tipo: 'INCENDIO', prioridad: 'P2', ubicacion: { lat: 1.21, lng: -77.28 }, narrativa: 'Humo', reportante: null, callback: null });
+    await primero.cambiarEstadoRecurso('demo-rec-1', 'ASIGNADO', 'x');
+    const segundo = crearServicioDemo({ escenario: ESCENARIOS.A });
+    expect(await segundo.listarLlamadas()).toEqual([]);
+    expect((await segundo.listarRecursos()).every((r) => r.estado_actual === 'DISPONIBLE')).toBe(true);
   });
 });

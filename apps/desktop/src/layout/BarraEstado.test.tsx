@@ -182,6 +182,25 @@ describe('BarraEstado: simulación (modo demo)', () => {
     expect(velocidad).toHaveBeenCalledWith(10);
   });
 
+  it('antes de iniciar ofrece elegir el escenario A, B o C, marcando el activo', async () => {
+    const elegir = vi.fn();
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 0, escenario: { actual: 'B', onElegir: elegir } })} />);
+    const grupo = screen.getByRole('radiogroup', { name: 'Escenario del demo' });
+    expect(grupo).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'B' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('radio', { name: 'A' }).getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByText('Deslizamiento por lluvias')).toBeTruthy();
+    await userEvent.click(screen.getByRole('radio', { name: 'C' }));
+    expect(elegir).toHaveBeenCalledWith('C');
+  });
+
+  it('una vez iniciado el escenario ya no se puede cambiar', () => {
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: true, tSeg: 30, escenario: { actual: 'A', onElegir: vi.fn() } })} />);
+    expect(screen.queryByRole('radiogroup', { name: 'Escenario del demo' })).toBeNull();
+    render(<BarraEstado {...base} simulacion={simulacion({ reproduciendo: false, tSeg: 40, escenario: { actual: 'A', onElegir: vi.fn() } })} />);
+    expect(screen.queryByRole('radiogroup', { name: 'Escenario del demo' })).toBeNull();
+  });
+
   it('reinicia el escenario', async () => {
     const reiniciar = vi.fn();
     render(<BarraEstado {...base} simulacion={simulacion({ onReiniciar: reiniciar })} />);

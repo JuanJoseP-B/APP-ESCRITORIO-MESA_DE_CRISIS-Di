@@ -1,6 +1,7 @@
 import { Settings } from 'lucide-react';
-import { Button, Glyph, type FormaGlifo } from '@argos/ui';
+import { Button, Glyph, SegmentedControl, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
+import { IDS_ESCENARIO, type IdEscenario } from '../domain/escenario';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { etiquetaZonaHoraria, formatearHoraConSegundos, formatearMinSeg } from '../domain/reloj';
 import { VELOCIDADES, type Velocidad } from '../domain/relojSimulado';
@@ -16,6 +17,8 @@ export interface SimulacionBarra {
   onAlternar: () => void;
   onVelocidad: (velocidad: Velocidad) => void;
   onReiniciar: () => void;
+  /** Escenario activo y cómo cambiarlo; el selector solo se ofrece antes de iniciar (t = 0). */
+  escenario?: { actual: IdEscenario; onElegir: (id: IdEscenario) => void };
 }
 
 export interface BarraEstadoProps {
@@ -112,7 +115,19 @@ export function BarraEstado({
       )}
       {simulacion && (
         <div role="group" aria-label={t('barra.sim.aria')} className="flex items-center gap-2">
-          <span className="font-mono text-overline uppercase text-text-secondary">{t('barra.sim')}</span>
+          {sinIniciar && simulacion.escenario ? (
+            <span className="flex items-center gap-2" title={t(`escenario.${simulacion.escenario.actual}.desc`)}>
+              <SegmentedControl
+                label={t('escenario.aria')}
+                options={IDS_ESCENARIO.map((id) => ({ value: id, label: id }))}
+                value={simulacion.escenario.actual}
+                onChange={simulacion.escenario.onElegir}
+              />
+              <span className="font-ui text-body-sm text-text-primary">{t(`escenario.${simulacion.escenario.actual}.titulo`)}</span>
+            </span>
+          ) : (
+            <span className="font-mono text-overline uppercase text-text-secondary">{t('barra.sim')}</span>
+          )}
           <span className="font-mono text-data-sm tabular text-text-primary">
             {formatearMinSeg(simulacion.tSeg)} / {formatearMinSeg(simulacion.duracionSeg)}
           </span>

@@ -1,5 +1,5 @@
 import type { Coordenadas, EventoRecurso, Incidente, Recurso, TipoRecurso } from '@argos/shared';
-import { TRAFICO_ESCENARIO } from './escenario';
+import { TRAFICO_ESCENARIO, type RetrasoUnidad } from './escenario';
 import { distanciaM, ubicacionDeIncidente } from './geo';
 
 /**
@@ -47,9 +47,9 @@ export function duracionTrayectoSeg(
   return distanciaM(trayecto.origen, trayecto.destino) / (VELOCIDAD_MS[tipo] * (trayecto.factorVelocidad ?? 1));
 }
 
-/** Fracción de la velocidad con que avanza la unidad: la del tráfico del escenario si es la retenida, 1 en el resto. */
-export const factorVelocidadDe = (recurso: Pick<Recurso, 'etiqueta'>): number =>
-  recurso.etiqueta === TRAFICO_ESCENARIO.etiqueta ? TRAFICO_ESCENARIO.factorVelocidad : 1;
+/** Fracción de la velocidad con que avanza la unidad: la del retraso del escenario si es la retenida, 1 en el resto. */
+export const factorVelocidadDe = (recurso: Pick<Recurso, 'etiqueta'>, retraso: RetrasoUnidad | null = TRAFICO_ESCENARIO): number =>
+  retraso && recurso.etiqueta === retraso.etiqueta ? retraso.factorVelocidad : 1;
 
 /**
  * Dónde está la unidad en `ahoraMs`: interpolación lineal entre origen y destino a la velocidad de su tipo.
@@ -84,7 +84,8 @@ function salidas(eventos: readonly EventoRecurso[]): ReadonlyMap<string, number>
 
 /**
  * Avance de cada unidad EN_RUTA con incidente asignado, base conocida y salida registrada. Las que les falte
- * alguno de esos datos no se mueven: se quedan en su `ubicacion`.
+ * alguno de esos datos no se mueven: se quedan en su `ubicacion`. `retraso` es la unidad retenida del escenario
+ * activo (por defecto la del A; `null` si el escenario no tiene).
  */
 export function movimientosEnRuta(
   recursos: readonly Recurso[],
@@ -92,6 +93,7 @@ export function movimientosEnRuta(
   incidentes: readonly Incidente[],
   ahoraMs: number,
   pasos?: number,
+  retraso: RetrasoUnidad | null = TRAFICO_ESCENARIO,
 ): readonly MovimientoUnidad[] {
   const salida = salidas(eventos);
   const movimientos: MovimientoUnidad[] = [];
@@ -106,7 +108,7 @@ export function movimientosEnRuta(
       recursoId: r.id,
       incidenteId: incidente.id,
       destino,
-      ...estadoTrayecto(r.tipo, { origen, destino, salidaMs, factorVelocidad: factorVelocidadDe(r) }, ahoraMs, pasos),
+      ...estadoTrayecto(r.tipo, { origen, destino, salidaMs, factorVelocidad: factorVelocidadDe(r, retraso) }, ahoraMs, pasos),
     });
   }
   return movimientos;

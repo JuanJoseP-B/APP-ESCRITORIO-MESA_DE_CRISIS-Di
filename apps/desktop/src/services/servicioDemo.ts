@@ -9,6 +9,7 @@ import {
   type Recurso,
   type ZonaPublica,
 } from '@argos/shared';
+import type { Escenario } from '../domain/escenario';
 import type { CambioRealtime } from '../domain/realtime';
 import { reporteDeLlamada } from '../domain/entrantes';
 import { ubicacionDeIncidente } from '../domain/geo';
@@ -99,6 +100,14 @@ function eventosIniciales(ahoraMs: number): readonly EventoRecurso[] {
   ];
 }
 
+/** Con un escenario todas las unidades arrancan DISPONIBLES en su base, sin incidentes ni llamadas previas. */
+const recursosEnBase: readonly Recurso[] = recursosIniciales.map((r) => ({
+  ...r,
+  estado_actual: 'DISPONIBLE',
+  incidente_asignado_id: null,
+  ubicacion: r.base,
+}));
+
 const zonasIniciales: readonly ZonaPublica[] = [
   {
     id: 'demo-z1',
@@ -152,15 +161,17 @@ function crearTabla<T extends { readonly id: string }>(inicial: readonly T[]) {
 export interface OpcionesDemo {
   /** Reloj del "servidor" simulado (ms epoch); por defecto el del equipo. */
   readonly ahora?: () => number;
+  /** Escenario del demo: parte limpio (unidades libres, sin incidentes). Sin él, la semilla fija de las pruebas. */
+  readonly escenario?: Escenario;
 }
 
 /** Datos locales de ejemplo para desarrollar la UI sin backend; no hace consultas de red. */
-export function crearServicioDemo({ ahora = Date.now }: OpcionesDemo = {}): ServicioMesa {
-  const tIncidentes = crearTabla<Incidente>(incidentesIniciales(ahora()));
-  const tLlamadas = crearTabla<Llamada>(llamadasIniciales(ahora()));
-  const tRecursos = crearTabla<Recurso>(recursosIniciales);
-  const tEventos = crearTabla<EventoRecurso>(eventosIniciales(ahora()));
-  const tZonas = crearTabla<ZonaPublica>(zonasIniciales);
+export function crearServicioDemo({ ahora = Date.now, escenario }: OpcionesDemo = {}): ServicioMesa {
+  const tIncidentes = crearTabla<Incidente>(escenario ? [] : incidentesIniciales(ahora()));
+  const tLlamadas = crearTabla<Llamada>(escenario ? [] : llamadasIniciales(ahora()));
+  const tRecursos = crearTabla<Recurso>(escenario ? recursosEnBase : recursosIniciales);
+  const tEventos = crearTabla<EventoRecurso>(escenario ? [] : eventosIniciales(ahora()));
+  const tZonas = crearTabla<ZonaPublica>(escenario ? escenario.zonas : zonasIniciales);
   let contador = 0;
   let eventos = 0;
   const sesion = { email: 'demo@local', esOperador: true };

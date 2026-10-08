@@ -113,6 +113,21 @@ describe('tráfico', () => {
     const m = movimientosEnRuta([retenida], [evento(1, 'r1', 'EN_RUTA', salidaIso)], [incidente('i1')], mitad);
     expect(m[0]?.progreso).toBeCloseTo(0.5 * TRAFICO_ESCENARIO.factorVelocidad, 6);
   });
+
+  it('un escenario sin unidad retenida (retraso null) no frena a nadie, ni a la M12', () => {
+    expect(factorVelocidadDe({ etiqueta: 'M12' }, null)).toBe(1);
+    const mitad = SALIDA + (duracionTrayectoSeg('Ambulancia', trayecto) * 1000) / 2;
+    const salidaIso = new Date(SALIDA).toISOString();
+    const m12 = recurso('r1', 'EN_RUTA', { etiqueta: 'M12' });
+    const m = movimientosEnRuta([m12], [evento(1, 'r1', 'EN_RUTA', salidaIso)], [incidente('i1')], mitad, undefined, null);
+    expect(m[0]?.progreso).toBeCloseTo(0.5, 6);
+  });
+
+  it('la unidad retenida es la que fije el escenario', () => {
+    const otro = { ...TRAFICO_ESCENARIO, etiqueta: 'U01', factorVelocidad: 0.5 };
+    expect(factorVelocidadDe({ etiqueta: 'U01' }, otro)).toBe(0.5);
+    expect(factorVelocidadDe({ etiqueta: 'M12' }, otro)).toBe(1);
+  });
 });
 
 describe('movimientosEnRuta', () => {
