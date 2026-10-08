@@ -6,6 +6,7 @@ import {
   transicionarRecurso,
   type Recurso,
 } from './recurso';
+import type { Coordenadas } from './geo';
 
 const base: Recurso = { id: 'r1', tipo: 'Bomberos', estado_actual: 'DISPONIBLE', incidente_asignado_id: null };
 
@@ -72,8 +73,38 @@ describe('máquina de estados de recursos', () => {
     expect(() => transicionarRecurso(base, 'EN_ESCENA')).toThrow('DISPONIBLE');
   });
 
-  it('Recurso no expone lat ni lng', () => {
+  it('Recurso no expone lat ni lng: la posición va en `ubicacion`', () => {
     expectTypeOf<Recurso>().not.toHaveProperty('lat');
     expectTypeOf<Recurso>().not.toHaveProperty('lng');
+    expectTypeOf<Recurso['ubicacion']>().toEqualTypeOf<Coordenadas | null | undefined>();
+  });
+
+  describe('posición', () => {
+    const base_: Coordenadas = { lat: 1.2136, lng: -77.2811 };
+    const escena: Coordenadas = { lat: 1.2201, lng: -77.2765 };
+    const unidad: Recurso = { ...base, base: base_, ubicacion: base_ };
+
+    it('al llegar a la escena copia la ubicación del incidente', () => {
+      const enRuta = transicionarRecurso(transicionarRecurso(unidad, 'ASIGNADO', 'inc-1'), 'EN_RUTA');
+      expect(enRuta.ubicacion).toEqual(base_);
+      expect(transicionarRecurso(enRuta, 'EN_ESCENA', undefined, escena).ubicacion).toEqual(escena);
+    });
+
+    it('sin ubicación del incidente conserva la actual', () => {
+      const enRuta = transicionarRecurso(transicionarRecurso(unidad, 'ASIGNADO', 'inc-1'), 'EN_RUTA');
+      expect(transicionarRecurso(enRuta, 'EN_ESCENA').ubicacion).toEqual(base_);
+    });
+
+    it('al quedar disponible regresa a su base, también si se cancela el despacho', () => {
+      const enEscena: Recurso = { ...unidad, estado_actual: 'EN_ESCENA', incidente_asignado_id: 'inc-1', ubicacion: escena };
+      expect(transicionarRecurso(enEscena, 'DISPONIBLE').ubicacion).toEqual(base_);
+      const asignado = transicionarRecurso(unidad, 'ASIGNADO', 'inc-1');
+      expect(transicionarRecurso(asignado, 'DISPONIBLE').ubicacion).toEqual(base_);
+    });
+
+    it('sin base conocida, DISPONIBLE no inventa una posición', () => {
+      const sinBase: Recurso = { ...base, estado_actual: 'EN_ESCENA', incidente_asignado_id: 'inc-1', ubicacion: escena };
+      expect(transicionarRecurso(sinBase, 'DISPONIBLE').ubicacion).toEqual(escena);
+    });
   });
 });
