@@ -135,7 +135,7 @@ export function reportesAFeatureCollection(
   };
 }
 
-/** Tramo que le falta recorrer a cada unidad en ruta, de su posición actual al incidente. */
+/** Tramo que le falta recorrer a cada unidad en ruta, de su posiciÃ³n actual al incidente. */
 export const COLOR_RUTA: TokenColor = 'status-warning';
 
 export interface FeatureRuta {

@@ -10,7 +10,7 @@ export interface TableroUnidadesProps {
   recursos: readonly Recurso[];
   /** Resalta las unidades asignadas a este incidente. */
   incidenteSeleccionadoId: string | null;
-  /** Unidad elegida (aqu� o en el mapa): se resalta igual en los dos sitios. */
+  /** Unidad elegida (aquí o en el mapa): se resalta igual en los dos sitios. */
   unidadSeleccionadaId?: string | null;
   /** Clic en un chip: la app selecciona el incidente al que está asignada la unidad. */
   onSeleccionarUnidad: (recurso: Recurso) => void;

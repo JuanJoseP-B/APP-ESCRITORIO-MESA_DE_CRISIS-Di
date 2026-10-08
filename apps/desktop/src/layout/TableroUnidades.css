@@ -7,5 +7,5 @@
 .ag-tablero__chips { display: flex; flex: 1 1 auto; align-items: center; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; list-style: none; overflow-x: auto; overflow-y: hidden; }
 .ag-tablero__chips > li { flex: none; }
 .ag-tablero__vacio { align-self: center; margin: 0; font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--text-muted); }
-/* Unidad elegida (en el tablero o en el mapa): anillo de foco adem·s del fondo de selecciÛn. */
+/* Unidad elegida (en el tablero o en el mapa): anillo de foco adem√°s del fondo de selecci√≥n. */
 .ag-tablero .ag-unit.ag-unit--foco { box-shadow: inset 0 0 0 1px var(--card-border-selected), var(--focus-ring); }

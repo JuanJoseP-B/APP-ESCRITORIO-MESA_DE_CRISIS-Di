@@ -87,7 +87,7 @@ interface Props {
   readonly unidades?: readonly UnidadMapa[];
   readonly unidadSeleccionadaId?: string | null;
   readonly onSeleccionarUnidad?: (id: string) => void;
-  /** Tramo que le falta a cada unidad en ruta; se dibuja como línea discontinua hasta el incidente. */
+  /** Tramo que le falta a cada unidad en ruta; se dibuja como lÃ­nea discontinua hasta el incidente. */
   readonly rutas?: FeatureCollectionRutas;
 }
 

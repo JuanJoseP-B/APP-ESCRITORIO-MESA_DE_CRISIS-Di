@@ -182,7 +182,7 @@ function Mesa({
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
   useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos });
-  // Las unidades EN_RUTA se interpolan según el reloj; con «reducir movimiento» saltan por tramos en vez de deslizarse.
+  // Las unidades EN_RUTA se interpolan segÃºn el reloj; con Â«reducir movimientoÂ» saltan por tramos en vez de deslizarse.
   const movimientos = useMemo(() => {
     const m = reloj
       ? movimientosEnRuta(recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento ? PASOS_SIN_ANIMACION : undefined)
@@ -192,7 +192,7 @@ function Mesa({
   }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento]);
   const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
-  // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
+  // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva tambiÃ©n al incidente al que va.
   const alSeleccionarUnidad = useCallback(
     (id: string) => {
       setUnidadId((actual) => (actual === id ? null : id));
