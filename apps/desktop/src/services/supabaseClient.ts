@@ -284,5 +284,6 @@ export function crearServicioDesdeEntorno(): ServicioMesa | null {
   const key = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string | undefined;
   if (!url || !key) return null;
   const client = createClient(url, key);
-  return crearServicioMesa(client, () => medirDesfaseServidor(client));
+  // Backend congelado: el reloj es local. `medirDesfaseServidor` queda sin uso (desfase fijo en 0).
+  return crearServicioMesa(client);
 }
