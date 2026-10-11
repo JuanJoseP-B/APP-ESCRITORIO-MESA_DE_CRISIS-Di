@@ -424,6 +424,73 @@ export function MapaTactico({
     mapa.getSource<GeoJSONSource>(FUENTE_RUTAS)?.setData(colorearFeatures(rutasVisibles, leerToken) as never);
   }, [mapa, listo, rutasVisibles, versionTema]);
 
+  // Dash animado en las rutas de despacho (marching dash)
+  useEffect(() => {
+    if (!mapa || !listo || reducirMovimiento || rutasVisibles.features.length === 0) return;
+    const dashSecuencia = [
+      [0, 4, 3],
+      [0.5, 4, 2.5],
+      [1, 4, 2],
+      [1.5, 4, 1.5],
+      [2, 4, 1],
+      [2.5, 4, 0.5],
+      [3, 4, 0],
+      [0, 0.5, 3.5, 3],
+    ];
+    let paso = 0;
+    let animId: number;
+    let cancelado = false;
+    let ultimoTiempo = performance.now();
+    const pasoMs = 80;
+
+    const animar = (ahoraMs: number) => {
+      if (cancelado) return;
+      if (ahoraMs - ultimoTiempo >= pasoMs) {
+        ultimoTiempo = ahoraMs;
+        paso = (paso + 1) % dashSecuencia.length;
+        if (mapa.getLayer('rutas-linea')) {
+          mapa.setPaintProperty('rutas-linea', 'line-dasharray', dashSecuencia[paso]);
+        }
+      }
+      animId = requestAnimationFrame(animar);
+    };
+    animId = requestAnimationFrame(animar);
+    return () => {
+      cancelado = true;
+      cancelAnimationFrame(animId);
+      if (mapa.getLayer('rutas-linea')) {
+        mapa.setPaintProperty('rutas-linea', 'line-dasharray', [2, 2]);
+      }
+    };
+  }, [mapa, listo, rutasVisibles.features.length, reducirMovimiento]);
+
+  // Al resolver un incidente: los anillos se contraen, el marcador muestra ✓ y se desvanece
+  const previosEstadosRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    for (const inc of incidentes) {
+      const previo = previosEstadosRef.current.get(inc.id);
+      if (previo && previo !== 'Resuelto' && inc.estado === 'Resuelto') {
+        if (inc.geometria?.type === 'Point') {
+          const [lng, lat] = inc.geometria.coordinates;
+          const el = document.createElement('div');
+          el.className = 'ag-marcador-resuelto';
+          el.textContent = '✓';
+          el.setAttribute('aria-hidden', 'true');
+          const m = new Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(mapa);
+          const dur = reducirMovimiento ? 80 : (duracion('slow') || 400);
+          setTimeout(() => m.remove(), dur);
+        }
+        if (inc.id === seleccionadoId && !reducirMovimiento) {
+          setPasoAnillos(2);
+          setTimeout(() => setPasoAnillos(1), 75);
+          setTimeout(() => setPasoAnillos(0), 150);
+        }
+      }
+      previosEstadosRef.current.set(inc.id, inc.estado);
+    }
+  }, [mapa, listo, incidentes, seleccionadoId, reducirMovimiento]);
+
   // Perímetro y líneas hacia las unidades que sugiere el asesor mientras su tarjeta está abierta.
   useEffect(() => {
     if (!mapa || !listo) return;
@@ -581,11 +648,13 @@ export function MapaTactico({
     mapa.setPaintProperty(CAPA_BASE, 'raster-brightness-max', pintura['raster-brightness-max']);
   }, [mapa, listo, versionTema]);
 
+  const duracionVuelo = reducirMovimiento ? 0 : (duracion('slow') || 400);
+
   // Vuela al reporte elegido en la bandeja.
   useEffect(() => {
     if (!mapa || !listo || !foco) return;
-    mapa.flyTo({ center: [foco.lng, foco.lat], zoom: Math.max(mapa.getZoom(), ZOOM_REPORTE), duration: 800 });
-  }, [mapa, listo, foco]);
+    mapa.flyTo({ center: [foco.lng, foco.lat], zoom: Math.max(mapa.getZoom(), ZOOM_REPORTE), duration: duracionVuelo });
+  }, [mapa, listo, foco, duracionVuelo]);
 
   // Centra el mapa en el incidente seleccionado.
   // Solo al elegir otro incidente o cambiar su geometría: una nota nueva en la bitácora no debe mover la cámara.
@@ -598,12 +667,16 @@ export function MapaTactico({
     const puntos: readonly Posicion[] = g.type === 'Point' ? [g.coordinates] : (g.coordinates[0] ?? []);
     const primero = puntos[0];
     if (!primero) return;
-    const limites = puntos.reduce(
-      (b, p) => b.extend([p[0], p[1]]),
-      new LngLatBounds([primero[0], primero[1]], [primero[0], primero[1]]),
-    );
-    mapa.fitBounds(limites, { padding: 80, maxZoom: 15, duration: 600 });
-  }, [mapa, listo, seleccionadoId, claveGeometria]);
+    if (g.type === 'Point') {
+      mapa.flyTo({ center: [primero[0], primero[1]], zoom: Math.max(mapa.getZoom(), 15), duration: duracionVuelo });
+    } else {
+      const limites = puntos.reduce(
+        (b, p) => b.extend([p[0], p[1]]),
+        new LngLatBounds([primero[0], primero[1]], [primero[0], primero[1]]),
+      );
+      mapa.fitBounds(limites, { padding: 80, maxZoom: 15, duration: duracionVuelo });
+    }
+  }, [mapa, listo, seleccionadoId, claveGeometria, duracionVuelo]);
 
   useMarcadoresUnidades({
     mapa,
@@ -632,8 +705,8 @@ export function MapaTactico({
   useEffect(() => {
     if (!mapa || !listo || !unidadSeleccionadaId) return;
     const u = unidadesVigentes.current.find((x) => x.id === unidadSeleccionadaId);
-    if (u) mapa.flyTo({ center: [u.posicion.lng, u.posicion.lat], zoom: Math.max(mapa.getZoom(), ZOOM_UNIDAD), duration: 600 });
-  }, [mapa, listo, unidadSeleccionadaId]);
+    if (u) mapa.flyTo({ center: [u.posicion.lng, u.posicion.lat], zoom: Math.max(mapa.getZoom(), ZOOM_UNIDAD), duration: duracionVuelo });
+  }, [mapa, listo, unidadSeleccionadaId, duracionVuelo]);
 
   // Herramienta de dibujo (mapbox-gl-draw): el control solo existe mientras se traza, para que
   // fuera de ese modo no intercepte los clics de selección sobre el mapa.

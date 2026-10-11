@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
 import { Badge, Button, duracion, duracionSegundos } from '@argos/ui';
 import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
@@ -187,25 +187,30 @@ export function ColaIncidentes({
             {filtroSla ? t('cola.filtro.vacio') : pestana === 'activos' ? t('cola.activos.vacio') : t('cola.cerrados.vacio')}
           </p>
         ) : (
-          <ul aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
-            {visibles.map((i) => (
-              <motion.li
-                key={i.id}
-                layout
-                layoutId={`incidente-${i.id}`}
-                transition={{ duration: duracionSegundos('base'), ease: [0.16, 1, 0.3, 1] }}
-              >
-                <FilaIncidente
-                  incidente={i}
-                  unidades={unidades.get(i.id) ?? 0}
-                  llamadas={vinculadas.get(i.id) ?? 0}
-                  ahora={ahora}
-                  seleccionado={i.id === seleccionadoId}
-                  cerrado={pestana === 'cerrados'}
-                  onSeleccionar={() => onSeleccionar(i.id)}
-                />
-              </motion.li>
-            ))}
+          <ul key={pestana} aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
+            <AnimatePresence initial={false}>
+              {visibles.map((i) => (
+                <motion.li
+                  key={i.id}
+                  layout
+                  layoutId={`incidente-${i.id}`}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                  transition={{ duration: duracionSegundos('base'), ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <FilaIncidente
+                    incidente={i}
+                    unidades={unidades.get(i.id) ?? 0}
+                    llamadas={vinculadas.get(i.id) ?? 0}
+                    ahora={ahora}
+                    seleccionado={i.id === seleccionadoId}
+                    cerrado={pestana === 'cerrados'}
+                    onSeleccionar={() => onSeleccionar(i.id)}
+                  />
+                </motion.li>
+              ))}
+            </AnimatePresence>
           </ul>
         )}
       </div>

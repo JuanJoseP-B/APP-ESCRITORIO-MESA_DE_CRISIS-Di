@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, duracion } from '@argos/ui';
 import { Login } from './components/Login';
 import { MapaTactico } from './layout/MapaTactico';
@@ -142,6 +142,21 @@ function Mesa({
   const alternarFiltroSla = useCallback(() => setFiltroSla((activo) => !activo), []);
   const avisosSla = useAvisosSla(sla.resumen.unidadesVencidas);
   const indicativos = useMemo(() => indicativosDe(recursos.datos), [recursos.datos]);
+
+  // Un SLA vencido dispara un único pulso sutil en el borde de la ventana
+  const [pulsoSla, setPulsoSla] = useState(false);
+  const prevVencidasRef = useRef<readonly string[]>([]);
+  useEffect(() => {
+    const actuales = sla.resumen.unidadesVencidas;
+    const nuevas = actuales.filter((id) => !prevVencidasRef.current.includes(id));
+    if (nuevas.length > 0 && !reducirMovimiento) {
+      setPulsoSla(true);
+      const timer = setTimeout(() => setPulsoSla(false), duracion('slow') || 400);
+      prevVencidasRef.current = actuales;
+      return () => clearTimeout(timer);
+    }
+    prevVencidasRef.current = actuales;
+  }, [sla.resumen.unidadesVencidas, reducirMovimiento]);
 
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
@@ -422,6 +437,7 @@ function Mesa({
   return (
     <TutorialProvider preparacion={{ expandirCola, expandirDetalle, seleccionarPrimero, cerrarFormulario }} simulacion={simulacion} reducirMovimiento={reducirMovimiento}>
       <GrillaTactica
+        className={pulsoSla ? 'ag-pulso-sla' : undefined}
         panelCola={panelCola}
         panelDetalle={panelDetalle}
         barra={

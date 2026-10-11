@@ -18,19 +18,20 @@ export interface GrillaTacticaProps {
   tablero: ReactNode;
   panelCola: PanelColapsable;
   panelDetalle: PanelColapsable;
+  className?: string;
 }
 
 /**
  * Zero-Scroll Tactical Grid (ROADMAP_CAD §2.1): cinco áreas fijas sobre `100dvh`. La página nunca
  * desplaza; solo las listas internas de B y D llevan `overflow-y: auto`.
  */
-export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, panelDetalle }: GrillaTacticaProps) {
+export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, panelDetalle, className }: GrillaTacticaProps) {
   const { t } = useTexto();
   useAtajos({ '[': panelCola.alternar, ']': panelDetalle.alternar });
 
   return (
     <div
-      className="ag-grilla"
+      className={`ag-grilla ${className ?? ''}`.trim()}
       data-cola={panelCola.colapsado ? 'colapsada' : 'expandida'}
       data-detalle={panelDetalle.colapsado ? 'colapsado' : 'expandido'}
     >

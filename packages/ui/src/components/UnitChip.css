@@ -16,3 +16,22 @@ button.ag-unit:hover { background: var(--card-bg-hover); border-color: var(--car
 .ag-unit--inoperativo .ag-unit__state { color: var(--status-offline); }
 /* El cronómetro (CronometroSla) trae sus propios colores y el parpadeo de VENCIDO. */
 .ag-unit__timer { align-self: stretch; }
+
+@keyframes ag-unit-volteo {
+  0% { transform: perspective(300px) rotateX(0deg); }
+  50% { transform: perspective(300px) rotateX(-90deg); }
+  100% { transform: perspective(300px) rotateX(0deg); }
+}
+
+.ag-unit--volteo {
+  animation: ag-unit-volteo var(--dur-base, 240ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-unit--volteo {
+    animation: none;
+  }
+}
+:root[data-reduced-motion] .ag-unit--volteo {
+  animation: none;
+}

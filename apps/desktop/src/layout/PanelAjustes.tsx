@@ -39,7 +39,7 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
         aria-modal="true"
         aria-label={t('ajustes.titulo')}
         onKeyDown={alPulsar}
-        className="fixed inset-y-0 right-0 z-modal flex w-panel max-w-full flex-col border-l border-border-strong bg-surface-panel shadow-overlay"
+        className="fixed inset-y-0 right-0 z-modal flex w-panel max-w-full flex-col border-l border-border-strong bg-surface-panel shadow-overlay ag-drawer-derecha"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border-strong px-4 py-3">
           <h2 className="font-display text-title-md text-text-primary">{t('ajustes.titulo')}</h2>

@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { cx } from '../cx';
 import { ESTADOS_RECURSO_UI, type EstadoRecursoUI } from './StatusIndicator';
 import { Glyph } from './Glyph';
 import { CronometroSla, PALABRAS_CRONOMETRO, type NivelCronometro, type PalabrasCronometro } from './CronometroSla';
+import { duracion } from '../movimiento';
 import './UnitChip.css';
 
 /** Palabra corta del estado: cabe en el chip de ancho fijo sin truncar el indicativo. */
@@ -41,6 +43,22 @@ export function UnitChip({ callsign, status, kind, statusLabel, statusShort, tim
   const nombre = [callsign, kind, statusLabel ?? estado.label, timer ? `${timer}${palabraNivel ? `, ${palabraNivel}` : ''}` : null]
     .filter(Boolean)
     .join(', ');
+
+  const [volteando, setVolteando] = useState(false);
+  const prevStatusRef = useRef(status);
+
+  useEffect(() => {
+    if (prevStatusRef.current !== status) {
+      prevStatusRef.current = status;
+      if (!reduceMotion) {
+        setVolteando(true);
+        const dur = duracion('base') || 240;
+        const timerId = setTimeout(() => setVolteando(false), dur);
+        return () => clearTimeout(timerId);
+      }
+    }
+  }, [status, reduceMotion]);
+
   const contenido = (
     <>
       <span className="ag-unit__callsign">{callsign}</span>
@@ -53,7 +71,7 @@ export function UnitChip({ callsign, status, kind, statusLabel, statusShort, tim
       ) : null}
     </>
   );
-  const clases = cx('ag-unit', `ag-unit--${status}`, className);
+  const clases = cx('ag-unit', `ag-unit--${status}`, volteando && 'ag-unit--volteo', className);
   return onSelect ? (
     <button type="button" className={clases} aria-pressed={selected ? 'true' : 'false'} aria-label={nombre} onClick={onSelect}>
       {contenido}
