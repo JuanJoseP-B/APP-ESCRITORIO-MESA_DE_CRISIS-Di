@@ -392,7 +392,13 @@ function Mesa({
         )}
       </div>
       <InvitacionTutorial />
-      <AvisosSla avisos={avisosSla.avisos} indicativos={indicativos} onDescartar={avisosSla.descartar} />
+      <AvisosSla
+        avisos={avisosSla.avisos}
+        agrupado={avisosSla.agrupado}
+        indicativos={indicativos}
+        onDescartar={avisosSla.descartar}
+        onDescartarTodos={avisosSla.descartarTodos}
+      />
       {mensaje && (
         <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
           <span aria-hidden="true" className="mr-2 text-status-info">◆</span>

@@ -30,6 +30,19 @@ describe('AvisosSla', () => {
     expect(descartar).toHaveBeenCalledWith(7);
   });
 
+  it('agrupado muestra un único aviso con el total y se cierra de una vez', async () => {
+    const descartarTodos = vi.fn();
+    const avisos = ['r1', 'r2', 'r3', 'r4', 'r5'].map((recursoId, i) => ({ id: i + 1, recursoId }));
+    const { container } = render(
+      <AvisosSla avisos={avisos} agrupado indicativos={indicativos} onDescartar={vi.fn()} onDescartarTodos={descartarTodos} />,
+    );
+    expect(screen.getByText('5 unidades con SLA vencido')).toBeTruthy();
+    expect(screen.queryByText(/SLA vencido · /)).toBeNull();
+    expect(container.querySelectorAll('.ag-glyph--square')).toHaveLength(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar el aviso agrupado de SLA' }));
+    expect(descartarTodos).toHaveBeenCalledTimes(1);
+  });
+
   it('usa el id si no conoce el indicativo', () => {
     render(<AvisosSla avisos={[{ id: 1, recursoId: 'zzz' }]} indicativos={indicativos} onDescartar={vi.fn()} />);
     expect(screen.getByText('SLA vencido · zzz')).toBeTruthy();

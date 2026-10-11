@@ -211,6 +211,8 @@ export const es = {
   'sla.aviso': 'SLA vencido · {unidad}',
   'sla.aviso.aria': 'Avisos de SLA',
   'sla.aviso.cerrar': 'Cerrar el aviso de {unidad}',
+  'sla.aviso.agrupado': '{n} unidades con SLA vencido',
+  'sla.aviso.agrupado.cerrar': 'Cerrar el aviso agrupado de SLA',
   'analisis.titulo': 'Análisis del perímetro',
   'analisis.radios': 'Anillos del perímetro',
   'analisis.alerta': 'ALERTA · Unidades dentro de la zona caliente',

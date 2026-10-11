@@ -202,6 +202,8 @@ export const en: Diccionario = {
   'sla.aviso': 'SLA overdue · {unidad}',
   'sla.aviso.aria': 'SLA notices',
   'sla.aviso.cerrar': 'Dismiss the notice for {unidad}',
+  'sla.aviso.agrupado': '{n} units with SLA overdue',
+  'sla.aviso.agrupado.cerrar': 'Dismiss the grouped SLA notice',
   'analisis.titulo': 'Perimeter analysis',
   'analisis.radios': 'Perimeter rings',
   'analisis.alerta': 'ALERT · Units inside the hot zone',

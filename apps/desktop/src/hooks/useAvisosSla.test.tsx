@@ -46,6 +46,40 @@ describe('useAvisosSla', () => {
     expect(result.current.avisos).toEqual([]);
   });
 
+  it('con tres avisos a la vez se agrupan y duran hasta que el operador los descarta', () => {
+    const { result, rerender } = montar([]);
+    rerender({ vencidas: ['a', 'b'] });
+    expect(result.current.agrupado).toBe(false);
+    rerender({ vencidas: ['a', 'b', 'c', 'd', 'e'] });
+    expect(result.current.agrupado).toBe(true);
+    expect(result.current.avisos).toHaveLength(5);
+    act(() => void vi.advanceTimersByTime(DURACION_AVISO_SLA_MS * 3));
+    expect(result.current.avisos).toHaveLength(5);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('un vencimiento posterior se suma al aviso agrupado sin volver a avisos sueltos', () => {
+    const { result, rerender } = montar([]);
+    rerender({ vencidas: ['a', 'b', 'c'] });
+    rerender({ vencidas: ['a', 'b', 'c', 'd'] });
+    expect(result.current.agrupado).toBe(true);
+    expect(result.current.avisos).toHaveLength(4);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('descartarTodos retira el grupo y el siguiente vencimiento vuelve a ser un aviso suelto', () => {
+    const { result, rerender } = montar([]);
+    rerender({ vencidas: ['a', 'b', 'c'] });
+    act(() => result.current.descartarTodos());
+    expect(result.current.avisos).toEqual([]);
+    expect(result.current.agrupado).toBe(false);
+    rerender({ vencidas: ['a', 'b', 'c', 'd'] });
+    expect(result.current.agrupado).toBe(false);
+    expect(result.current.avisos.map((a) => a.recursoId)).toEqual(['d']);
+    act(() => void vi.advanceTimersByTime(DURACION_AVISO_SLA_MS));
+    expect(result.current.avisos).toEqual([]);
+  });
+
   it('se puede descartar a mano y no deja temporizadores al desmontar', () => {
     const { result, rerender, unmount } = montar([]);
     rerender({ vencidas: ['m12', 'u02'] });
