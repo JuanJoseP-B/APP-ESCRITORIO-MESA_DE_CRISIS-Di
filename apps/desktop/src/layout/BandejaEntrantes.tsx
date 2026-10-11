@@ -37,7 +37,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
         (lista.length === 0 ? (
           <p className="px-4 pb-3 font-mono text-data-sm text-text-muted">{t('entrantes.vacio')}</p>
         ) : (
-          <ul aria-label={t('entrantes.lista')} className="max-h-56 overflow-y-auto pb-2">
+          <ul aria-label={t('entrantes.lista')} className="max-h-56 overflow-y-auto overflow-x-hidden pb-2">
             {lista.map((l) => {
               const nueva = esLlamadaNueva(l, ahora);
               const prioridad = PRIORIDAD_UI[l.prioridad];
@@ -53,7 +53,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
                     aria-label={t(nueva ? 'entrantes.abrir.nueva' : 'entrantes.abrir', { canal: l.canal, tipo, prioridad: l.prioridad })}
                     aria-current={l.id === abiertaId}
                     onClick={() => onAbrir(l)}
-                    className="grid min-h-row flex-1 grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 px-4 py-2 text-left hover:bg-surface-hover"
+                    className="grid min-h-row min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2 text-left hover:bg-surface-hover"
                   >
                     <Badge tone={prioridad.tone} emphasis={prioridad.emphasis}>
                       {l.prioridad}
@@ -66,7 +66,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
                     )}
                   </button>
                   {onDescartar && (
-                    <Button size="sm" variant="ghost" className="mr-2" aria-label={t('entrantes.descartar.aria', { canal: l.canal, tipo })} onClick={() => onDescartar(l)}>
+                    <Button size="sm" variant="ghost" className="mr-2 shrink-0" aria-label={t('entrantes.descartar.aria', { canal: l.canal, tipo })} onClick={() => onDescartar(l)}>
                       {t('entrantes.descartar')}
                     </Button>
                   )}

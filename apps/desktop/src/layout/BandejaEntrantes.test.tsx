@@ -41,6 +41,17 @@ describe('BandejaEntrantes', () => {
     expect(screen.getByText('Sin llamadas entrantes')).toBeTruthy();
   });
 
+  it('con muchas llamadas la lista no hace scroll horizontal: sin desborde en x y la fila puede encogerse', () => {
+    const muchas = ['a', 'b', 'c', 'd'].map((id) => llamada(id, { tipo: 'CRECIENTE_SUBITA' }));
+    render(<BandejaEntrantes {...props({ llamadas: muchas, onDescartar: vi.fn() })} />);
+    const lista = screen.getByRole('list', { name: 'Llamadas entrantes' });
+    expect(lista.className).toContain('overflow-x-hidden');
+    for (const fila of within(lista).getAllByRole('listitem')) {
+      expect(within(fila as HTMLElement).getAllByRole('button')[0]?.className).toContain('min-w-0');
+      expect(within(fila as HTMLElement).getByRole('button', { name: /^Descartar/ }).className).toContain('shrink-0');
+    }
+  });
+
   it('cada fila muestra prioridad, canal, tipo y el tiempo desde que entró', () => {
     render(<BandejaEntrantes {...props({ llamadas: [llamada('a', { canal: 'VHF', prioridad: 'P2', creadoEn: hace(125) })] })} />);
     const fila = filas()[0] as HTMLElement;
