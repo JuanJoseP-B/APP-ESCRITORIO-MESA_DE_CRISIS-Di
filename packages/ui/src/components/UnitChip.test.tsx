@@ -76,6 +76,13 @@ describe('UnitChip', () => {
     expect(container.querySelector('.ag-unit__state')?.textContent).toBe('RTE');
   });
 
+  it('la ficha crece con su contenido (mínimo 80 px) para que palabras largas como OVERDUE no toquen el borde', () => {
+    const regla = css.match(/\.ag-unit\s*\{[^}]*\}/)?.[0] ?? '';
+    expect(regla).toMatch(/min-width:\s*80px/);
+    expect(regla).toMatch(/width:\s*max-content/);
+    expect(regla).not.toMatch(/(^|[;{\s])width:\s*80px/);
+  });
+
   it('no usa colores sueltos en su hoja de estilos', () => {
     expect(css).toContain('.ag-unit');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);

@@ -1,6 +1,6 @@
 /* ── UnitChip ───────────────────────────────────────────────────────────── */
-/* Tres líneas (indicativo, estado, cronómetro) en 80 px: caben 12 en la fila del tablero a 1280 px. */
-.ag-unit { box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: flex-start; flex: none; width: 80px; padding: var(--space-1) var(--space-2); background: var(--card-bg); border: var(--border-hairline) solid var(--card-border); border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); text-align: left; }
+/* Tres líneas (indicativo, estado, cronómetro) en 80 px (crecen con su contenido si hace falta): caben 12 en la fila del tablero a 1280 px. */
+.ag-unit { box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: flex-start; flex: none; min-width: 80px; width: max-content; padding: var(--space-1) var(--space-2); background: var(--card-bg); border: var(--border-hairline) solid var(--card-border); border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); text-align: left; }
 button.ag-unit { cursor: pointer; transition: background-color 80ms linear, border-color 80ms linear; }
 button.ag-unit:hover { background: var(--card-bg-hover); border-color: var(--card-border-hover); }
 .ag-unit:focus { outline: none; }
