@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { RecomendacionAsesor, SnapshotAsesor } from '@argos/shared';
 import { Button, Glyph, Kbd, SectionHeader } from '@argos/ui';
 import { accionesDeRecomendacion, claveAccion, type AccionAsesor } from '../domain/asesor';
-import { useAtajos } from '../hooks/useAtajos';
+import { useCapaEscape } from '../hooks/useCapaEscape';
 import { textoTipoRecurso } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
 
@@ -33,7 +33,7 @@ export function ConfirmacionPlan({ snapshot, recomendacion, onConfirmar, onCance
     };
   }, []);
 
-  useAtajos({ Escape: onCancelar });
+  useCapaEscape(onCancelar);
 
   const alternar = (clave: string) =>
     setMarcadas((actuales) => {

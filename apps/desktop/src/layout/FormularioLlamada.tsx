@@ -24,6 +24,7 @@ import {
 } from '../domain/llamadas';
 import { buscarDuplicados } from '../domain/duplicados';
 import { useAtajos } from '../hooks/useAtajos';
+import { useCapaEscape } from '../hooks/useCapaEscape';
 import { textoCanal, textoTipoEmergencia } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { AvisoDuplicado } from './AvisoDuplicado';
@@ -160,7 +161,8 @@ export function FormularioLlamada({
       return false;
     });
 
-  useAtajos({ Escape: onCerrar, 'Ctrl+Enter': () => void confirmarConAtajo() });
+  useCapaEscape(onCerrar);
+  useAtajos({ 'Ctrl+Enter': () => void confirmarConAtajo() });
 
   return (
     <section

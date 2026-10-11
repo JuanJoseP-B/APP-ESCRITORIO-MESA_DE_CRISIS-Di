@@ -3,7 +3,7 @@ import type { Incidente, Recurso } from '@argos/shared';
 import { Button, Glyph, Kbd, SectionHeader } from '@argos/ui';
 import { codigoIncidente } from '../domain/cola';
 import { candidatasDeDespacho, formatearDistancia } from '../domain/despacho';
-import { useAtajos } from '../hooks/useAtajos';
+import { useCapaEscape } from '../hooks/useCapaEscape';
 import { textoTipoRecurso } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
 
@@ -35,7 +35,7 @@ export function DialogoDespacho({ incidente, recursos, onConfirmar, onCancelar }
     };
   }, []);
 
-  useAtajos({ Escape: onCancelar });
+  useCapaEscape(onCancelar);
 
   // Enter en la lista despacha; sobre un botón conserva su propia acción (Cancelar, Despachar).
   const alPulsar = (e: KeyboardEvent<HTMLElement>) => {

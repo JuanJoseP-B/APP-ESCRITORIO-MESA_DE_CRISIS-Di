@@ -101,6 +101,16 @@ describe('ConfirmacionPlan', () => {
     expect(onConfirmar).not.toHaveBeenCalled();
   });
 
+  it('el Esc de la confirmación no sube a los atajos globales (no cierra además la tarjeta)', async () => {
+    const { onCancelar } = montar();
+    const global = vi.fn();
+    document.addEventListener('keydown', global);
+    await userEvent.keyboard('{Escape}');
+    document.removeEventListener('keydown', global);
+    expect(onCancelar).toHaveBeenCalledTimes(1);
+    expect(global).not.toHaveBeenCalled();
+  });
+
   it('con todo desmarcado no se puede confirmar, ni con Enter', async () => {
     const { onConfirmar } = montar();
     for (const c of screen.getAllByRole('checkbox')) await userEvent.click(c);

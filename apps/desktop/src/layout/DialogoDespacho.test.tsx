@@ -92,6 +92,16 @@ describe('DialogoDespacho', () => {
     expect(props.onConfirmar).not.toHaveBeenCalled();
   });
 
+  it('el Esc de la lista no sube a los atajos globales (no cierra además otra cosa)', async () => {
+    const { props } = montar();
+    const global = vi.fn();
+    document.addEventListener('keydown', global);
+    await userEvent.keyboard('{Escape}');
+    document.removeEventListener('keydown', global);
+    expect(props.onCancelar).toHaveBeenCalledTimes(1);
+    expect(global).not.toHaveBeenCalled();
+  });
+
   it('Enter sobre el botón Cancelar cancela en vez de despachar', async () => {
     const { props } = montar();
     screen.getByRole('button', { name: 'Cancelar' }).focus();
