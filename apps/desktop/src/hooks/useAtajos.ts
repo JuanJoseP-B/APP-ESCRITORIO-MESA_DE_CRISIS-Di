@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { resolverAtajo, type MapaAtajos } from '../domain/atajos';
+import { nombreDeTecla, resolverAtajo, type MapaAtajos } from '../domain/atajos';
+import { destellarAtajo } from '../domain/destelloAtajo';
 import { hayCapaEscape } from './useCapaEscape';
 
 export type { MapaAtajos };
@@ -20,6 +21,10 @@ export function useAtajos(mapa: MapaAtajos, activo = true): void {
       if (e.key === 'Escape' && hayCapaEscape()) return;
       const accion = resolverAtajo(mapaActual.current, e, e.target);
       if (accion === null) return;
+      const tecla = nombreDeTecla(e);
+      if (tecla !== null) {
+        destellarAtajo(tecla);
+      }
       e.preventDefault();
       accion();
     };

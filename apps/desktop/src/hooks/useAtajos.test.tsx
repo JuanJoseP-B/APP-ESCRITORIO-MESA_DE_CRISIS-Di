@@ -85,4 +85,22 @@ describe('useAtajos', () => {
     fireEvent.keyDown(document.body, { key: 'j' });
     expect(mapa.j).not.toHaveBeenCalled();
   });
+
+  it('hace destellar el <kbd> correspondiente al dispararse el atajo', () => {
+    const mapa = acciones();
+    renderHook(() => useAtajos(mapa));
+    const { container } = render(
+      <div>
+        <button>Despachar <kbd className="ag-kbd">D</kbd></button>
+        <button>Registrar <kbd className="ag-kbd">F2</kbd></button>
+      </div>,
+    );
+    const kbdF2 = container.querySelectorAll('kbd')[1];
+    expect(kbdF2?.dataset.destello).toBeUndefined();
+
+    fireEvent.keyDown(document.body, { key: 'F2' });
+
+    expect(mapa.F2).toHaveBeenCalledTimes(1);
+    expect(kbdF2?.dataset.destello).toBe('true');
+  });
 });

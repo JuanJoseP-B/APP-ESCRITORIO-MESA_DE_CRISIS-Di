@@ -9,3 +9,25 @@
 body {
   margin: 0;
 }
+
+@keyframes ag-kbd-destello {
+  0% {
+    background-color: var(--action-primary);
+    color: var(--text-on-accent);
+    border-color: var(--action-primary);
+    transform: scale(1.15);
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+    border-color: currentColor;
+    transform: scale(1);
+  }
+}
+
+.ag-kbd--destello,
+.ag-kbd[data-destello='true'],
+kbd[data-destello='true'] {
+  animation: ag-kbd-destello var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}
+
