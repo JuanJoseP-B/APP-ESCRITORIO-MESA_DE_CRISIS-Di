@@ -78,6 +78,16 @@ export function useAsesor({ motor, incidenteId, construir, esperaMs = ESPERA_ANA
     });
   }, [esperaMs]);
 
+  // Si cambia el motor (p. ej. el idioma de sus textos) con la tarjeta abierta, la recomendación se rehace con el nuevo.
+  const fase = useRef(estado.fase);
+  fase.current = estado.fase;
+  const ultimoMotor = useRef(motor);
+  useEffect(() => {
+    if (ultimoMotor.current === motor) return;
+    ultimoMotor.current = motor;
+    if (fase.current !== 'inactivo') abrir();
+  }, [motor, abrir]);
+
   const alternar = useCallback(() => (estado.fase === 'inactivo' ? abrir() : cerrar()), [estado.fase, abrir, cerrar]);
 
   return { estado, abrir, cerrar, alternar };

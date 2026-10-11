@@ -129,6 +129,38 @@ describe('useAsesor', () => {
     expect(motor.recomendar).not.toHaveBeenCalled();
   });
 
+  describe('al cambiar el motor (idioma)', () => {
+    const conMotor = (motor: MotorAsesor) =>
+      renderHook(({ m }: { m: MotorAsesor }) => useAsesor({ motor: m, incidenteId: 'inc-1', construir: () => snapshot }), {
+        initialProps: { m: motor },
+      });
+    const nueva: RecomendacionAsesor = { ...recomendacion, idRecomendacion: 'rec-2', justificacion: 'Text.' };
+
+    it('con la tarjeta abierta la recomendación se recalcula con el motor nuevo', async () => {
+      const viejo = motorCon({ ok: true, recomendacion });
+      const nuevo = motorCon({ ok: true, recomendacion: nueva });
+      const { result, rerender } = conMotor(viejo);
+      act(() => result.current.abrir());
+      await avanzar(ESPERA_ANALISIS_MS);
+      expect(result.current.estado).toEqual({ fase: 'listo', snapshot, recomendacion });
+
+      rerender({ m: nuevo });
+      expect(result.current.estado.fase).toBe('analizando');
+      await avanzar(ESPERA_ANALISIS_MS);
+      expect(result.current.estado).toEqual({ fase: 'listo', snapshot, recomendacion: nueva });
+      expect(nuevo.recomendar).toHaveBeenCalledTimes(1);
+    });
+
+    it('con la tarjeta cerrada no consulta nada', async () => {
+      const nuevo = motorCon({ ok: true, recomendacion: nueva });
+      const { result, rerender } = conMotor(motorCon({ ok: true, recomendacion }));
+      rerender({ m: nuevo });
+      await avanzar(ESPERA_ANALISIS_MS);
+      expect(result.current.estado).toEqual({ fase: 'inactivo' });
+      expect(nuevo.recomendar).not.toHaveBeenCalled();
+    });
+  });
+
   it('al cambiar de incidente la tarjeta se cierra', async () => {
     const { result, rerender } = montar(motorCon({ ok: true, recomendacion }));
     act(() => result.current.abrir());
