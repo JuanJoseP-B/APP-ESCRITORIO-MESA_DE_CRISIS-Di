@@ -49,4 +49,8 @@ describe('Switch', () => {
     expect(css).toContain('.ag-switch');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
   });
+
+  it('el deslizamiento de la perilla usa los tokens de movimiento', () => {
+    expect(css).toMatch(/\.ag-switch__thumb \{[^}]*transition: transform var\(--dur-fast, 150ms\) var\(--ease-mecanico,/);
+  });
 });

@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { cx } from '../cx';
 import { Glyph } from './Glyph';
 import './SegmentedControl.css';
@@ -20,6 +20,20 @@ export interface SegmentedControlProps<V extends string = string> {
 /** Elige una sola opción entre pocas: grupo de radio con teclado en flechas. La elegida lleva glifo y color. */
 export function SegmentedControl<V extends string>({ label, options, value, onChange, className }: SegmentedControlProps<V>) {
   const grupo = useRef<HTMLDivElement>(null);
+  const [ind, setInd] = useState<{ x: number; w: number } | null>(null);
+
+  // El indicador se coloca sobre la opción elegida y se desliza al cambiar; sin medidas (jsdom) no se pinta
+  // y la propia opción conserva su fondo.
+  useLayoutEffect(() => {
+    const medir = () => {
+      const opcion = grupo.current?.querySelectorAll<HTMLElement>('[role="radio"]')[options.findIndex((o) => o.value === value)];
+      setInd(opcion && opcion.offsetWidth > 0 ? { x: opcion.offsetLeft, w: opcion.offsetWidth } : null);
+    };
+    medir();
+    const observador = typeof ResizeObserver === 'function' && grupo.current ? new ResizeObserver(medir) : null;
+    if (grupo.current) observador?.observe(grupo.current);
+    return () => observador?.disconnect();
+  }, [options, value]);
 
   const alPulsar = (e: KeyboardEvent<HTMLButtonElement>, indice: number) => {
     const paso = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
@@ -32,7 +46,8 @@ export function SegmentedControl<V extends string>({ label, options, value, onCh
   };
 
   return (
-    <div ref={grupo} role="radiogroup" aria-label={label} className={cx('ag-seg', className)}>
+    <div ref={grupo} role="radiogroup" aria-label={label} className={cx('ag-seg', className)} data-indicador={ind ? 'true' : undefined}>
+      {ind && <span aria-hidden="true" className="ag-seg__ind" style={{ width: ind.w, transform: `translateX(${ind.x}px)` }} />}
       {options.map((o, i) => {
         const elegida = o.value === value;
         return (

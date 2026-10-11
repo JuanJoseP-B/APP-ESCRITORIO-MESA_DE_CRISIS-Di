@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ShelterGauge } from './ShelterGauge';
+import css from './ShelterGauge.css?raw';
 
 afterEach(cleanup);
 
@@ -46,5 +47,12 @@ describe('ShelterGauge', () => {
     render(<ShelterGauge name="X" current={5} capacity={20} decrementLabel="Reducir X" incrementLabel="Aumentar X" />);
     expect(screen.getByRole('button', { name: 'Reducir X' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Aumentar X' })).toBeTruthy();
+  });
+
+  it('el aforo rueda al cambiar y el llenado de la barra se anima con tokens', () => {
+    const { rerender } = render(<ShelterGauge name="Coliseo" current={45} capacity={200} />);
+    rerender(<ShelterGauge name="Coliseo" current={50} capacity={200} />);
+    expect(screen.getByText('050/200').classList.contains('ag-rodante__valor--sube')).toBe(true);
+    expect(css).toMatch(/\.ag-gauge__fill \{[^}]*transition: width var\(--dur-slow, 400ms\)/);
   });
 });

@@ -15,6 +15,7 @@ export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps } from './compo
 export { CronometroSla, PALABRAS_CRONOMETRO, type CronometroSlaProps, type NivelCronometro, type PalabrasCronometro } from './components/CronometroSla';
 export { SegmentedControl, type SegmentedControlProps, type OpcionSegmento } from './components/SegmentedControl';
 export { Switch, type SwitchProps } from './components/Switch';
+export { ContadorRodante, type ContadorRodanteProps } from './components/ContadorRodante';
 export { Kbd, type KbdProps } from './components/Kbd';
 export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';
 export { Coachmark, posicionarPopover, type CoachmarkProps, type EtiquetasCoachmark, type ColocacionCoachmark, type RectCoachmark, type PosicionCoachmark } from './components/Coachmark';

@@ -5,7 +5,7 @@
 .ag-gauge__value { font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; color: var(--text-primary); }
 .ag-gauge__cap { font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--text-muted); }
 .ag-gauge__bar { grid-column: 1 / 2; position: relative; height: 8px; background: var(--gauge-track); }
-.ag-gauge__fill { position: absolute; inset: 0 auto 0 0; background: var(--gauge-fill); }
+.ag-gauge__fill { position: absolute; inset: 0 auto 0 0; background: var(--gauge-fill); transition: width var(--dur-slow, 400ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)), background-color var(--dur-base, 240ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); }
 .ag-gauge__tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--text-muted); }
 .ag-gauge--warning .ag-gauge__fill { background: var(--gauge-fill-warning); }
 .ag-gauge--critical .ag-gauge__fill { background: var(--gauge-fill-critical); }

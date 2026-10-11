@@ -51,4 +51,26 @@ describe('SegmentedControl', () => {
     expect(css).toContain('.ag-seg');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);
   });
+
+  it('con medidas, un indicador se coloca bajo la opción elegida y la opción deja su fondo', () => {
+    const offsetLeft = vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockReturnValue(40);
+    const offsetWidth = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(80);
+    const { container } = render(<SegmentedControl label="Tema" options={OPCIONES} value="b" onChange={() => {}} />);
+    const ind = container.querySelector<HTMLElement>('.ag-seg__ind');
+    expect(ind?.style.transform).toBe('translateX(40px)');
+    expect(ind?.style.width).toBe('80px');
+    expect(screen.getByRole('radiogroup').getAttribute('data-indicador')).toBe('true');
+    offsetLeft.mockRestore();
+    offsetWidth.mockRestore();
+  });
+
+  it('sin medidas no hay indicador y la opción elegida conserva su fondo', () => {
+    const { container } = render(<SegmentedControl label="Tema" options={OPCIONES} value="b" onChange={() => {}} />);
+    expect(container.querySelector('.ag-seg__ind')).toBeNull();
+    expect(screen.getByRole('radiogroup').hasAttribute('data-indicador')).toBe(false);
+  });
+
+  it('el indicador se desliza con los tokens de movimiento', () => {
+    expect(css).toMatch(/\.ag-seg__ind \{[^}]*transition: transform var\(--dur-fast, 150ms\) var\(--ease-mecanico,/);
+  });
 });

@@ -1,0 +1,7 @@
+/* ── ContadorRodante ────────────────────────────────────────────────────── */
+.ag-rodante { display: inline-block; overflow: hidden; vertical-align: bottom; font-variant-numeric: tabular-nums slashed-zero; }
+.ag-rodante__valor { display: inline-block; }
+.ag-rodante__valor--sube { animation: ag-rueda-sube var(--dur-base, 240ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); }
+.ag-rodante__valor--baja { animation: ag-rueda-baja var(--dur-base, 240ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); }
+@keyframes ag-rueda-sube { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes ag-rueda-baja { from { transform: translateY(-100%); } to { transform: translateY(0); } }

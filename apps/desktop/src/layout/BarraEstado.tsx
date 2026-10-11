@@ -1,5 +1,5 @@
 import { Settings } from 'lucide-react';
-import { Button, Glyph, SegmentedControl, type FormaGlifo } from '@argos/ui';
+import { Button, ContadorRodante, Glyph, SegmentedControl, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
 import { IDS_ESCENARIO, type IdEscenario } from '../domain/escenario';
 import { useTexto } from '../i18n/IdiomaProvider';
@@ -107,7 +107,7 @@ export function BarraEstado({
           className={`flex items-center gap-2 font-mono text-data-sm uppercase ${entrantes > 0 ? 'text-status-warning' : 'text-text-muted'}`}
         >
           <Glyph shape={entrantes > 0 ? 'triangle' : 'ring'} />
-          <span className="tabular">{entrantes}</span> {t('barra.entrantes')}
+          <ContadorRodante className="tabular" valor={entrantes} /> {t('barra.entrantes')}
         </span>
       )}
       {slaEnRiesgo > 0 && (
@@ -119,7 +119,7 @@ export function BarraEstado({
           onClick={onFiltrarSla}
           className={slaNivel === 'VENCIDO' ? 'text-status-critical' : 'text-status-warning'}
         >
-          <Glyph shape={slaNivel === 'VENCIDO' ? 'square' : 'triangle'} /> <span className="tabular">{slaEnRiesgo}</span> SLA
+          <Glyph shape={slaNivel === 'VENCIDO' ? 'square' : 'triangle'} /> <ContadorRodante className="tabular" valor={slaEnRiesgo} /> SLA
         </Button>
       )}
       {simulacion && (
