@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
-import type { Anillo, Coordenadas, EstadoSla, Incidente, Posicion, Reporte, ZonaPublica } from '@argos/shared';
+import type { Anillo, Coordenadas, EstadoSla, Incidente, Llamada, Posicion, Reporte, ZonaPublica } from '@argos/shared';
 import { leerToken, observarTema, opacidadZona } from '@argos/ui';
 import {
   colorearFeatures,
@@ -20,6 +20,7 @@ import type { UnidadMapa } from '../domain/unidadesMapa';
 import { LeyendaMapa } from './LeyendaMapa';
 import { useEtiquetasAnillos } from './useEtiquetasAnillos';
 import { useMarcadoresUnidades } from './useMarcadoresUnidades';
+import { useOndasRadarLlamadas } from './useOndasRadarLlamadas';
 
 const CAPA_BASE = 'base';
 const FUENTE = 'incidentes';
@@ -117,6 +118,10 @@ interface Props {
   readonly reducirMovimiento?: boolean;
   /** Lo que sugiere el asesor (perímetro y unidades), en trazo discontinuo; `null` si su tarjeta está cerrada. */
   readonly previsualizacion?: PrevisualizacionAsesor | null;
+  /** Llamadas de la consola para mostrar ondas de radar en las entrantes nuevas. */
+  readonly llamadas?: readonly Llamada[];
+  /** Hora de la consola (ms epoch). */
+  readonly ahora?: number;
 }
 
 export function MapaTactico({
@@ -144,6 +149,8 @@ export function MapaTactico({
   sla = SIN_SLA,
   reducirMovimiento = false,
   previsualizacion = null,
+  llamadas,
+  ahora,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -519,6 +526,14 @@ export function MapaTactico({
     resaltadaId: resaltado?.tipo === 'unidad' ? resaltado.id : null,
     onSeleccionar: onSeleccionarUnidad,
     sla,
+    reducirMovimiento,
+  });
+
+  useOndasRadarLlamadas({
+    mapa,
+    listo,
+    llamadas,
+    ahora,
     reducirMovimiento,
   });
 

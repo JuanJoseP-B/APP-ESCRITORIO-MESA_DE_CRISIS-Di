@@ -31,3 +31,86 @@ kbd[data-destello='true'] {
   animation: ag-kbd-destello var(--dur-fast, 150ms) var(--ease-salida, ease-out);
 }
 
+/* ── Coreografía de llegada de llamada ─────────────────────────────────── */
+@keyframes ag-deslizar-abajo {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ag-barrido-franja {
+  0% {
+    left: -100%;
+    opacity: 0.8;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.ag-fila-entrante[data-nueva='true'] {
+  position: relative;
+  overflow: hidden;
+  animation: ag-deslizar-abajo var(--dur-base, 240ms) var(--ease-salida, ease-out);
+}
+
+.ag-fila-entrante[data-nueva='true']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, var(--status-warning-bg), var(--status-warning), transparent);
+  animation: ag-barrido-franja var(--dur-slow, 400ms) var(--ease-salida, ease-out);
+  pointer-events: none;
+}
+
+@keyframes ag-contador-golpe {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.ag-contador-golpe {
+  display: inline-flex;
+  animation: ag-contador-golpe var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}
+
+@keyframes ag-radar-onda {
+  0% {
+    width: 6px;
+    height: 6px;
+    opacity: 0.9;
+    border-width: 2px;
+  }
+  100% {
+    width: 64px;
+    height: 64px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+.ag-radar-contenedor {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.ag-radar-onda {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border-style: solid;
+  transform: translate(-50%, -50%);
+  animation: ag-radar-onda 1400ms var(--ease-salida, ease-out) infinite;
+}
+
+

@@ -337,6 +337,8 @@ function Mesa({
         incidentes={incidentes.datos}
         zonas={zonas.datos}
         reportes={reportes}
+        llamadas={llamadas.datos}
+        ahora={ahora}
         seleccionadoId={seleccionadoId}
         reporteSeleccionadoId={llamadaAbiertaId}
         onSeleccionar={setSeleccionadoId}

@@ -219,4 +219,14 @@ describe('BarraEstado: simulación (modo demo)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reiniciar' }));
     expect(reiniciar).toHaveBeenCalledTimes(1);
   });
+
+  it('el contador de entrantes da un golpe breve cuando aumenta la cuenta', () => {
+    const { rerender } = render(<BarraEstado {...base} entrantes={0} />);
+    const region = screen.getByRole('status', { name: /llamadas entrantes/i });
+    expect(region.dataset.golpe).toBeUndefined();
+
+    rerender(<BarraEstado {...base} entrantes={1} />);
+    expect(region.dataset.golpe).toBe('true');
+    expect(region.classList.contains('ag-contador-golpe')).toBe(true);
+  });
 });

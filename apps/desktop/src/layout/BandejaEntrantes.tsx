@@ -46,7 +46,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
                 <li
                   key={l.id}
                   data-nueva={nueva || undefined}
-                  className={`flex items-center border-b border-border-subtle ${nueva ? 'bg-status-warning-bg' : ''} ${l.id === abiertaId ? 'bg-surface-selected' : ''}`}
+                  className={`ag-fila-entrante flex items-center border-b border-border-subtle ${nueva ? 'bg-status-warning-bg' : ''} ${l.id === abiertaId ? 'bg-surface-selected' : ''}`}
                 >
                   <button
                     type="button"

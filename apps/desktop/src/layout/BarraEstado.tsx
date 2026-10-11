@@ -1,5 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import { Settings } from 'lucide-react';
-import { Button, ContadorRodante, Glyph, SegmentedControl, type FormaGlifo } from '@argos/ui';
+import { Button, ContadorRodante, Glyph, SegmentedControl, duracion, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
 import { IDS_ESCENARIO, type IdEscenario } from '../domain/escenario';
 import { useTexto } from '../i18n/IdiomaProvider';
@@ -74,6 +75,19 @@ export function BarraEstado({
   const sinIniciar = simulacion !== undefined && !simulacion.reproduciendo && simulacion.tSeg === 0;
   /** Con el selector a la vista el reloj (siempre 00:00) sobra: la barra no tiene sitio para ambos a 1366 px. */
   const eligiendoEscenario = sinIniciar && simulacion?.escenario !== undefined;
+
+  const previoEntrantes = useRef(entrantes ?? 0);
+  const [golpeEntrantes, setGolpeEntrantes] = useState(false);
+  useEffect(() => {
+    if (entrantes !== undefined && entrantes > previoEntrantes.current) {
+      setGolpeEntrantes(true);
+      const timer = setTimeout(() => setGolpeEntrantes(false), duracion('fast') || 150);
+      previoEntrantes.current = entrantes;
+      return () => clearTimeout(timer);
+    }
+    previoEntrantes.current = entrantes ?? 0;
+  }, [entrantes]);
+
   return (
     <header aria-label={t('barra.aria')} className="flex h-full items-center gap-3 whitespace-nowrap px-4 text-text-primary">
       <span className="font-mono text-overline uppercase text-text-primary">
@@ -103,8 +117,9 @@ export function BarraEstado({
       {entrantes !== undefined && (
         <span
           role="status"
+          data-golpe={golpeEntrantes || undefined}
           aria-label={t('barra.entrantes.aria', { n: entrantes })}
-          className={`flex items-center gap-2 font-mono text-data-sm uppercase ${entrantes > 0 ? 'text-status-warning' : 'text-text-muted'}`}
+          className={`flex items-center gap-2 font-mono text-data-sm uppercase ${entrantes > 0 ? 'text-status-warning' : 'text-text-muted'} ${golpeEntrantes ? 'ag-contador-golpe' : ''}`}
         >
           <Glyph shape={entrantes > 0 ? 'triangle' : 'ring'} />
           <ContadorRodante className="tabular" valor={entrantes} /> {t('barra.entrantes')}
