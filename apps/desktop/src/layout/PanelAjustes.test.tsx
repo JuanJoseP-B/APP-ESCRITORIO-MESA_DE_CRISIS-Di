@@ -55,15 +55,17 @@ describe('PanelAjustes', () => {
     }
   });
 
-  it('el tema cambia al instante, incluido «Sistema», y se recuerda', async () => {
+  it('el tema cambia al instante entre claro y oscuro (sin opción «Sistema») y se recuerda', async () => {
     montar();
     const panel = await abrir();
     await userEvent.click(within(panel).getByRole('radio', { name: 'Carbón (noche)' }));
     expect(document.documentElement.dataset['theme']).toBe('carbon');
     expect(localStorage.getItem('argos.tema')).toBe('carbon');
     expect(within(panel).getByRole('radio', { name: 'Carbón (noche)' }).getAttribute('aria-checked')).toBe('true');
-    await userEvent.click(within(panel).getByRole('radio', { name: 'Sistema' }));
-    expect(localStorage.getItem('argos.tema')).toBe('sistema');
+    expect(within(panel).queryByRole('radio', { name: 'Sistema' })).toBeNull();
+    expect(within(panel).getAllByRole('radio', { name: /\((día|noche)\)/ })).toHaveLength(2);
+    await userEvent.click(within(panel).getByRole('radio', { name: 'Crema (día)' }));
+    expect(localStorage.getItem('argos.tema')).toBe('crema');
     expect(document.documentElement.dataset['theme']).toBe('crema');
   });
 

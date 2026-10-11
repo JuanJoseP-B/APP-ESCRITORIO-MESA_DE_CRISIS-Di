@@ -5,7 +5,7 @@ import { useDialogoModal } from '../hooks/useDialogoModal';
 import { usePreferencias } from '../hooks/usePreferencias';
 import { IDIOMAS, type Idioma } from '../i18n/idioma';
 import { useTexto } from '../i18n/IdiomaProvider';
-import { TEMAS_PREFERIDOS, type TemaPreferido } from '../tema';
+import { TEMAS, type Tema } from '../tema';
 import { useTutorial } from './TutorialProvider';
 
 export interface PanelAjustesProps {
@@ -21,13 +21,13 @@ export interface PanelAjustesProps {
  */
 export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
   const { t } = useTexto();
-  const { preferencias, fijar } = usePreferencias();
+  const { preferencias, temaEfectivo, fijar } = usePreferencias();
   const panel = useRef<HTMLElement>(null);
   const tutorial = useTutorial();
 
   const alPulsar = useDialogoModal(panel, onCerrar);
 
-  const opcionesTema = TEMAS_PREFERIDOS.map((value) => ({ value, label: t(`ajustes.tema.${value}`) }));
+  const opcionesTema = TEMAS.map((value) => ({ value, label: t(`ajustes.tema.${value}`) }));
   const opcionesIdioma = IDIOMAS.map((value) => ({ value, label: t(`idioma.${value}`) }));
 
   return (
@@ -53,10 +53,10 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
             <SectionHeader index="01" title={t('ajustes.apariencia')} />
             <div className="flex flex-col gap-2 px-4 pb-4">
               <p className="font-ui text-body-md text-text-primary">{t('ajustes.tema')}</p>
-              <SegmentedControl<TemaPreferido>
+              <SegmentedControl<Tema>
                 label={t('ajustes.tema')}
                 options={opcionesTema}
-                value={preferencias.tema}
+                value={temaEfectivo}
                 onChange={(tema) => fijar({ tema })}
               />
             </div>

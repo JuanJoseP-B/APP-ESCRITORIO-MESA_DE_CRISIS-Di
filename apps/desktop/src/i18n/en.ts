@@ -74,7 +74,6 @@ export const en: Diccionario = {
   'ajustes.tema': 'Theme',
   'ajustes.tema.crema': 'Cream (day)',
   'ajustes.tema.carbon': 'Charcoal (night)',
-  'ajustes.tema.sistema': 'System',
   'ajustes.idioma': 'Language',
   'ajustes.idioma.consola': 'Console language',
   'ajustes.accesibilidad': 'Accessibility',

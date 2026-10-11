@@ -79,7 +79,6 @@ export const es = {
   'ajustes.tema': 'Tema',
   'ajustes.tema.crema': 'Crema (día)',
   'ajustes.tema.carbon': 'Carbón (noche)',
-  'ajustes.tema.sistema': 'Sistema',
   'ajustes.idioma': 'Idioma',
   'ajustes.idioma.consola': 'Idioma de la consola',
   'ajustes.accesibilidad': 'Accesibilidad',
