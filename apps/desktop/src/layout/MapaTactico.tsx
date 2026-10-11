@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { LngLatBounds, Map as MapLibreMap, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
+import { LngLatBounds, Map as MapLibreMap, Marker, type GeoJSONSource, type StyleSpecification } from 'maplibre-gl';
 import MapboxDraw, { type EventoCambioModo, type EventoCrear, type ModoDibujo } from '@mapbox/mapbox-gl-draw';
 import type { Anillo, Coordenadas, EstadoSla, Incidente, Llamada, Posicion, Reporte, ZonaPublica } from '@argos/shared';
-import { leerToken, observarTema, opacidadZona } from '@argos/ui';
+import { duracion, leerToken, observarTema, opacidadZona } from '@argos/ui';
 import {
   colorearFeatures,
   incidentesAFeatureCollection,
@@ -29,6 +29,7 @@ const FUENTE_REPORTES = 'reportes';
 const FUENTE_UBICACION = 'llamada-ubicacion';
 const FUENTE_RUTAS = 'rutas';
 const FUENTE_ANILLOS = 'anillos';
+const FUENTE_VINCULACION = 'vinculacion-linea';
 const FUENTE_ASESOR_PERIMETRO = 'asesor-perimetro';
 const FUENTE_ASESOR_UNIDADES = 'asesor-unidades';
 const CENTRO_INICIAL: [number, number] = [-77.2811, 1.2136];
@@ -122,6 +123,8 @@ interface Props {
   readonly llamadas?: readonly Llamada[];
   /** Hora de la consola (ms epoch). */
   readonly ahora?: number;
+  /** Línea animada entre llamada e incidente al vincular. */
+  readonly lineaVinculacion?: { readonly origen: Coordenadas; readonly destino: Coordenadas } | null;
 }
 
 export function MapaTactico({
@@ -151,6 +154,7 @@ export function MapaTactico({
   previsualizacion = null,
   llamadas,
   ahora,
+  lineaVinculacion = null,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -330,6 +334,14 @@ export function MapaTactico({
         layout: { 'line-cap': 'butt' },
         paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-dasharray': [1, 2] },
       });
+      m.addSource(FUENTE_VINCULACION, { type: 'geojson', data: VACIO as never });
+      m.addLayer({
+        id: 'vinculacion-linea',
+        type: 'line',
+        source: FUENTE_VINCULACION,
+        layout: { 'line-cap': 'round' },
+        paint: { 'line-color': leerToken('action-primary'), 'line-width': 3, 'line-dasharray': [2, 2] },
+      });
       m.addSource(FUENTE_UBICACION, { type: 'geojson', data: VACIO as never });
       m.addLayer({
         id: 'llamada-ubicacion-anillo',
@@ -419,14 +431,89 @@ export function MapaTactico({
     mapa.getSource<GeoJSONSource>(FUENTE_ASESOR_UNIDADES)?.setData(colorearFeatures(previsualizacion?.unidades ?? VACIO, leerToken) as never);
   }, [mapa, listo, previsualizacion, versionTema]);
 
+  // Expansión en secuencia de los anillos: 100 → 300 → 500 m con --dur-fast. Con reducirMovimiento aparecen todos.
+  const [pasoAnillos, setPasoAnillos] = useState(3);
+  useEffect(() => {
+    if (anillosVisibles.length === 0) {
+      setPasoAnillos(0);
+      return;
+    }
+    if (reducirMovimiento) {
+      setPasoAnillos(anillosVisibles.length);
+      return;
+    }
+    setPasoAnillos(1);
+    const d = duracion('fast') || 150;
+    const t1 = setTimeout(() => setPasoAnillos(2), d);
+    const t2 = setTimeout(() => setPasoAnillos(3), d * 2);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [anillosVisibles, reducirMovimiento]);
+
   // La opacidad de cada anillo parte de la del tema activo, así que se recalcula al cambiar de turno.
   useEffect(() => {
     if (!mapa || !listo) return;
+    const anillosEscalonados = anillosVisibles.slice(0, pasoAnillos);
     mapa
       .getSource<GeoJSONSource>(FUENTE_ANILLOS)
-      ?.setData(colorearFeatures(anillosAFeatureCollection(anillosVisibles, opacidadZona()), leerToken) as never);
-  }, [mapa, listo, anillosVisibles, versionTema]);
+      ?.setData(colorearFeatures(anillosAFeatureCollection(anillosEscalonados, opacidadZona()), leerToken) as never);
+  }, [mapa, listo, anillosVisibles, pasoAnillos, versionTema]);
   useEtiquetasAnillos({ mapa, listo, anillos: anillosVisibles });
+
+  // Caída con impacto del marcador al seleccionar un incidente nuevo (o al crearlo).
+  const ultimoSeleccionado = useRef(seleccionadoId);
+  const marcadorCaidaRef = useRef<Marker | null>(null);
+  useEffect(() => {
+    if (!mapa || !listo || !seleccionadoId || reducirMovimiento) return;
+    if (seleccionadoId !== ultimoSeleccionado.current) {
+      ultimoSeleccionado.current = seleccionadoId;
+      const inc = incidentes.find((i) => i.id === seleccionadoId);
+      if (inc?.geometria?.type === 'Point') {
+        const [lng, lat] = inc.geometria.coordinates;
+        if (marcadorCaidaRef.current) {
+          marcadorCaidaRef.current.remove();
+          marcadorCaidaRef.current = null;
+        }
+        const el = document.createElement('div');
+        el.className = 'ag-marcador-caida';
+        el.setAttribute('aria-hidden', 'true');
+        const m = new Marker({ element: el, anchor: 'center' }).setLngLat([lng, lat]).addTo(mapa);
+        marcadorCaidaRef.current = m;
+        const dur = (duracion('base') || 240) + 60;
+        const timer = setTimeout(() => {
+          m.remove();
+          if (marcadorCaidaRef.current === m) marcadorCaidaRef.current = null;
+        }, dur);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [mapa, listo, seleccionadoId, incidentes, reducirMovimiento]);
+
+  // Línea animada entre la llamada y el incidente al vincular duplicados.
+  useEffect(() => {
+    if (!mapa || !listo) return;
+    const datos = lineaVinculacion
+      ? {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [
+                  [lineaVinculacion.origen.lng, lineaVinculacion.origen.lat],
+                  [lineaVinculacion.destino.lng, lineaVinculacion.destino.lat],
+                ],
+              },
+            },
+          ],
+        }
+      : VACIO;
+    mapa.getSource<GeoJSONSource>(FUENTE_VINCULACION)?.setData(datos as never);
+  }, [mapa, listo, lineaVinculacion]);
 
   // Resalta la zona señalada en el análisis (las unidades se resaltan en su propio marcador).
   useEffect(() => {
@@ -481,6 +568,7 @@ export function MapaTactico({
     mapa.setPaintProperty('llamada-ubicacion-anillo', 'circle-stroke-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-color', leerToken('action-secondary'));
     mapa.setPaintProperty('llamada-ubicacion-centro', 'circle-stroke-color', halo);
+    mapa.setPaintProperty('vinculacion-linea', 'line-color', leerToken('action-primary'));
   }, [mapa, listo, versionTema]);
 
   // Basemap desaturado: la pintura depende del turno activo.

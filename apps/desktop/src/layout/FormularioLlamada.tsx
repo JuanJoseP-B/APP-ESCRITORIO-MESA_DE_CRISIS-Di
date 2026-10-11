@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import {
   CANALES_LLAMADA,
   PRIORIDADES,
@@ -10,7 +11,7 @@ import {
   type Incidente,
   type NuevaLlamada,
 } from '@argos/shared';
-import { Button, Glyph, Kbd, SectionHeader, SelectField, TextAreaField, TextField } from '@argos/ui';
+import { Button, Glyph, Kbd, SectionHeader, SelectField, TextAreaField, TextField, duracionSegundos } from '@argos/ui';
 import {
   aNuevaLlamada,
   esCanal,
@@ -165,12 +166,15 @@ export function FormularioLlamada({
   useAtajos({ 'Ctrl+Enter': () => void confirmarConAtajo() });
 
   return (
-    <section
+    <motion.section
+      layout
+      layoutId="formulario-incidente"
       ref={raiz}
       role="dialog"
       aria-modal="false" data-tutorial="formulario"
       aria-label={t('llamada.titulo')}
       className="flex h-full min-h-0 flex-col border-l border-border-strong bg-surface-panel shadow-overlay"
+      transition={{ duration: duracionSegundos('base'), ease: [0.16, 1, 0.3, 1] }}
     >
       <SectionHeader title={t('llamada.titulo')} count={entrante ? t('llamada.entrante') : t('llamada.manual')} />
       <form
@@ -235,6 +239,6 @@ export function FormularioLlamada({
           {t('llamada.crear')} <Kbd>Ctrl+Enter</Kbd>
         </Button>
       </div>
-    </section>
+    </motion.section>
   );
 }

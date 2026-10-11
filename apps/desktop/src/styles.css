@@ -113,4 +113,44 @@ kbd[data-destello='true'] {
   animation: ag-radar-onda 1400ms var(--ease-salida, ease-out) infinite;
 }
 
+/* ── Coreografía de creación y vinculación ─────────────────────────────── */
+@keyframes ag-badge-salto {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) translateY(-2px); }
+  100% { transform: scale(1); }
+}
+
+.ag-badge-salto {
+  display: inline-block;
+  animation: ag-badge-salto var(--dur-base, 240ms) var(--ease-salida, ease-out);
+}
+
+@keyframes ag-marcador-caida {
+  0% {
+    transform: translate(-50%, -40px) scale(1.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.ag-marcador-caida {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--action-primary);
+  background: var(--status-warning-bg);
+  transform: translate(-50%, -50%);
+  animation: ag-marcador-caida var(--dur-base, 240ms) var(--ease-salida, ease-out) forwards;
+  pointer-events: none;
+}
+
+
 

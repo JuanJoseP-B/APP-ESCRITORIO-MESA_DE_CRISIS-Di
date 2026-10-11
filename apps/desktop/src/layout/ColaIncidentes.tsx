@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
-import { Badge, Button } from '@argos/ui';
+import { Badge, Button, duracion, duracionSegundos } from '@argos/ui';
 import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
 import { llamadasPorIncidente } from '../domain/entrantes';
 import { textoEstadoIncidente } from '../i18n/etiquetas';
@@ -60,6 +61,19 @@ function FilaIncidente({
   useEffect(() => {
     if (seleccionado) fila.current?.scrollIntoView?.({ block: 'nearest' });
   }, [seleccionado]);
+
+  const previoLlamadas = useRef(llamadas);
+  const [saltoLlamadas, setSaltoLlamadas] = useState(false);
+  useEffect(() => {
+    if (llamadas > previoLlamadas.current) {
+      setSaltoLlamadas(true);
+      const timer = setTimeout(() => setSaltoLlamadas(false), duracion('base') || 240);
+      previoLlamadas.current = llamadas;
+      return () => clearTimeout(timer);
+    }
+    previoLlamadas.current = llamadas;
+  }, [llamadas]);
+
   return (
     <button
       ref={fila}
@@ -91,7 +105,7 @@ function FilaIncidente({
         {unidades} U{cerrado ? ` · ${estado}` : ''}
       </span>
       {llamadas > 0 && (
-        <span className="justify-self-end">
+        <span className={`justify-self-end ${saltoLlamadas ? 'ag-badge-salto' : ''}`} data-salto={saltoLlamadas || undefined}>
           <Badge tone="neutral" emphasis="outline" glyph={false}>
             <span role="img" aria-label={llamadas === 1 ? t('cola.llamadas.una') : t('cola.llamadas.varias', { n: llamadas })} className="font-mono tabular">
               <span aria-hidden="true">☎</span> {llamadas}
@@ -175,7 +189,12 @@ export function ColaIncidentes({
         ) : (
           <ul aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
             {visibles.map((i) => (
-              <li key={i.id}>
+              <motion.li
+                key={i.id}
+                layout
+                layoutId={`incidente-${i.id}`}
+                transition={{ duration: duracionSegundos('base'), ease: [0.16, 1, 0.3, 1] }}
+              >
                 <FilaIncidente
                   incidente={i}
                   unidades={unidades.get(i.id) ?? 0}
@@ -185,7 +204,7 @@ export function ColaIncidentes({
                   cerrado={pestana === 'cerrados'}
                   onSeleccionar={() => onSeleccionar(i.id)}
                 />
-              </li>
+              </motion.li>
             ))}
           </ul>
         )}

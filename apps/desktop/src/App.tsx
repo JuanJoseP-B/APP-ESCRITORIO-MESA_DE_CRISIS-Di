@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@argos/ui';
+import { Button, duracion } from '@argos/ui';
 import { Login } from './components/Login';
 import { MapaTactico } from './layout/MapaTactico';
 import { PanelAjustes } from './layout/PanelAjustes';
@@ -133,6 +133,7 @@ function Mesa({
   const slaEnRiesgo = sla.resumen.alertas + sla.resumen.vencidos;
   // El filtro de la cola por SLA se retira solo cuando ya no queda ninguna unidad en riesgo.
   const [filtroSla, setFiltroSla] = useState(false);
+  const [lineaVinculacion, setLineaVinculacion] = useState<{ origen: Coordenadas; destino: Coordenadas } | null>(null);
   useEffect(() => {
     if (slaEnRiesgo === 0) setFiltroSla(false);
   }, [slaEnRiesgo]);
@@ -217,9 +218,16 @@ function Mesa({
     [accionesLlamada, formulario?.llamadaId],
   );
   const alVincularLlamada = useCallback(
-    (datos: NuevaLlamada, candidato: CandidatoDuplicado) =>
-      accionesLlamada.vincular(datos, formulario?.llamadaId ?? null, candidato.incidenteId),
-    [accionesLlamada, formulario?.llamadaId],
+    (datos: NuevaLlamada, candidato: CandidatoDuplicado) => {
+      const inc = incidentes.datos.find((i) => i.id === candidato.incidenteId);
+      if (inc?.geometria?.type === 'Point') {
+        const [lng, lat] = inc.geometria.coordinates;
+        setLineaVinculacion({ origen: datos.ubicacion, destino: { lng, lat } });
+        setTimeout(() => setLineaVinculacion(null), (duracion('slow') || 400) * 2);
+      }
+      return accionesLlamada.vincular(datos, formulario?.llamadaId ?? null, candidato.incidenteId);
+    },
+    [accionesLlamada, formulario?.llamadaId, incidentes.datos],
   );
   const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
   const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
@@ -360,6 +368,7 @@ function Mesa({
         unidadSeleccionadaId={unidadId}
         onSeleccionarUnidad={alSeleccionarUnidad}
         previsualizacion={previsualizacion}
+        lineaVinculacion={lineaVinculacion}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
