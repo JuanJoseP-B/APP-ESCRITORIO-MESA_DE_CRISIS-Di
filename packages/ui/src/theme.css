@@ -142,6 +142,24 @@
 @utility tabular {
   font-variant-numeric: tabular-nums slashed-zero;
 }
+@utility dur-instant {
+  transition-duration: var(--dur-instant);
+}
+@utility dur-fast {
+  transition-duration: var(--dur-fast);
+}
+@utility dur-base {
+  transition-duration: var(--dur-base);
+}
+@utility dur-slow {
+  transition-duration: var(--dur-slow);
+}
+@utility ease-mecanico {
+  transition-timing-function: var(--ease-mecanico);
+}
+@utility ease-salida {
+  transition-timing-function: var(--ease-salida);
+}
 @utility press-mechanical {
   box-shadow: none;
   transform: translate(2px, 2px);

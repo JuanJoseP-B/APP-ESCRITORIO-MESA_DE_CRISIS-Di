@@ -80,6 +80,12 @@ Tema: `document.documentElement.dataset.theme = "crema" | "carbon"` (en desktop,
 - Secciones del panel: filete `border-t-rule border-border-strong` (ya lo trae `SectionHeader`) + overline numerado ("01 INCIDENTES").
 - Espaciado solo en la escala 4px (`1,2,3,4,5,6,8,10,12,16`); alturas `h-control-sm|md|lg`, filas `min-h-row`, panel `w-panel`.
 
+### Movimiento
+- Cada animación comunica un cambio de estado, un origen o un destino; estética mecánica y seca, sin rebotes elásticos ni giros.
+- Duraciones y curvas **solo** de tokens (`tokens.css`): `--dur-instant` 80 ms, `--dur-fast` 150 ms, `--dur-base` 240 ms, `--dur-slow` 400 ms, `--ease-mecanico` y `--ease-salida`. En Tailwind: `dur-fast`, `ease-mecanico`… En JS y en el mapa: `duracion('base')` (ms) o `duracionSegundos('base')` de `@argos/ui`; nunca números sueltos.
+- Con `prefers-reduced-motion` o `data-reduced-motion="true"` en `<html>` todos los tokens valen 0 ms y `theme.css` apaga transiciones y animaciones: el estado final tiene que ser el mismo sin animación (no dependas de `animation-fill-mode`).
+- `motion` (Motion para React, dependencia de `apps/desktop`): `import { motion, AnimatePresence } from 'motion/react'`. Úsalo para layout compartido (`layout`, `layoutId`), entrada y salida de elementos. Pasa `duration` con `duracionSegundos(...)` y `ease` con la curva del token; con `movimientoReducido()` verdadero, `duration: 0`.
+
 ### Prohibido (AI slop)
 - ❌ Hex, `rgb()` o clases arbitrarias de color (`bg-[#...]`, `text-[...]`). Usa solo clases semánticas.
 - ❌ Glasmorfismo: `backdrop-blur`, fondos translúcidos o `/opacity` en paneles sobre el mapa. Paneles sólidos + `border-border-strong` + `shadow-overlay`.

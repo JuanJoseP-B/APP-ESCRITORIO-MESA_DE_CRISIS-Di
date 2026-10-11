@@ -296,6 +296,28 @@
   --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
   --font-body: Lexend, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  /* Movimiento: mecánico y seco, sin rebotes. Toda duración sale de aquí (CSS y, con `duracion()`, JS y mapa). */
+  --dur-instant: 80ms;
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 400ms;
+  --ease-mecanico: cubic-bezier(0.2, 0, 0, 1);
+  --ease-salida: cubic-bezier(0, 0, 0.2, 1);
+}
+/* Con movimiento reducido (sistema o ajuste del operador) toda duración vale 0: el estado final es el mismo. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}
+:root[data-reduced-motion='true'] {
+  --dur-instant: 0ms;
+  --dur-fast: 0ms;
+  --dur-base: 0ms;
+  --dur-slow: 0ms;
 }
 .display-xl { font-family: var(--font-display); font-size: 48px; line-height: 52px; font-weight: 700; letter-spacing: -0.02em; }
 .display-lg { font-family: var(--font-display); font-size: 32px; line-height: 36px; font-weight: 700; letter-spacing: -0.015em; }

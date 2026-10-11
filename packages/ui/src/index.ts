@@ -19,3 +19,4 @@ export { Kbd, type KbdProps } from './components/Kbd';
 export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';
 export { Coachmark, posicionarPopover, type CoachmarkProps, type EtiquetasCoachmark, type ColocacionCoachmark, type RectCoachmark, type PosicionCoachmark } from './components/Coachmark';
 export { leerToken, observarTema, opacidadZona } from './mapaTema';
+export { duracion, duracionSegundos, milisegundos, movimientoReducido, NOMBRES_DURACION, type NombreDuracion } from './movimiento';
