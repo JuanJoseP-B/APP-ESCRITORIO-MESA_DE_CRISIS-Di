@@ -1,5 +1,6 @@
 /* ── Button ─────────────────────────────────────────────────────────────── */
-.ag-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--control-md); padding: 0 var(--space-4); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background-color 80ms linear, transform 60ms ease-out, box-shadow 60ms ease-out; -webkit-tap-highlight-color: transparent; }
+.ag-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--control-md); padding: 0 var(--space-4); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background-color var(--ag-btn-t) var(--ag-btn-ease), transform var(--ag-btn-t) var(--ag-btn-ease), box-shadow var(--ag-btn-t) var(--ag-btn-ease); -webkit-tap-highlight-color: transparent; }
+.ag-btn { --ag-btn-t: var(--dur-fast, 150ms); --ag-btn-t-press: var(--dur-instant, 80ms); --ag-btn-ease: var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); --ag-btn-lift: -1px; --ag-btn-sink: 2px; --ag-btn-grow: 1; }
 .ag-btn:focus { outline: none; }
 .ag-btn--sm { height: var(--control-sm); padding: 0 var(--space-3); font-size: calc(11px * var(--escala-texto, 1)); letter-spacing: .06em; }
 .ag-btn--lg { height: var(--control-lg); padding: 0 var(--space-5); font-size: calc(13px * var(--escala-texto, 1)); }
@@ -7,26 +8,34 @@
 .ag-btn--square.ag-btn--sm { width: var(--control-sm); padding: 0; }
 
 .ag-btn--primary { background: var(--button-primary-bg); color: var(--button-primary-fg); border-color: var(--button-primary-border); box-shadow: var(--elev-offset); margin: 0 2px 2px 0; }
-.ag-btn--primary:hover, .ag-btn--primary.is-hover { background: var(--button-primary-bg-hover); }
-.ag-btn--primary:active, .ag-btn--primary.is-active { background: var(--button-primary-bg-pressed); box-shadow: none; transform: translate(2px, 2px); }
+/* La sombra offset "crece" 1px hacia abajo: una copia suya desplazada 1px, visible solo en hover. */
+.ag-btn--primary::after { content: ""; position: absolute; inset: calc(-1 * var(--border-hairline)); border-radius: inherit; box-shadow: var(--elev-offset); opacity: 0; transform: translateY(1px); pointer-events: none; transition: opacity var(--ag-btn-t) var(--ag-btn-ease); }
+.ag-btn--primary:where(:hover, .is-hover):where(:not(:disabled, [aria-disabled="true"])) { background: var(--button-primary-bg-hover); transform: translateY(var(--ag-btn-lift)); }
+.ag-btn--primary:where(:hover, .is-hover):where(:not(:disabled, [aria-disabled="true"]))::after { opacity: var(--ag-btn-grow); }
+.ag-btn--primary:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"]) { --ag-btn-t: var(--ag-btn-t-press); background: var(--button-primary-bg-pressed); box-shadow: none; transform: translate(var(--ag-btn-sink), var(--ag-btn-sink)); }
+.ag-btn--primary:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"])::after { opacity: 0; }
 
 .ag-btn--secondary { background: var(--button-secondary-bg); color: var(--button-secondary-fg); border-color: var(--button-secondary-bg-pressed); }
 .ag-btn--secondary:hover, .ag-btn--secondary.is-hover { background: var(--button-secondary-bg-hover); }
-.ag-btn--secondary:active, .ag-btn--secondary.is-active { background: var(--button-secondary-bg-pressed); transform: translateY(1px); }
+.ag-btn--secondary:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"]) { --ag-btn-t: var(--ag-btn-t-press); background: var(--button-secondary-bg-pressed); transform: translate(var(--ag-btn-sink), var(--ag-btn-sink)); }
 
 .ag-btn--ghost { background: transparent; color: var(--button-ghost-fg); border-color: var(--button-ghost-border); }
 .ag-btn--ghost:hover, .ag-btn--ghost.is-hover { background: var(--button-ghost-bg-hover); }
-.ag-btn--ghost:active, .ag-btn--ghost.is-active { background: var(--button-ghost-bg-pressed); transform: translateY(1px); }
+.ag-btn--ghost:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"]) { --ag-btn-t: var(--ag-btn-t-press); background: var(--button-ghost-bg-pressed); transform: translate(var(--ag-btn-sink), var(--ag-btn-sink)); }
 
 .ag-btn--danger { background: var(--button-danger-bg); color: var(--button-danger-fg); border-color: var(--button-danger-bg); }
 .ag-btn--danger:hover, .ag-btn--danger.is-hover { box-shadow: inset 0 0 0 1px var(--button-danger-fg); }
-.ag-btn--danger:active, .ag-btn--danger.is-active { transform: translateY(1px); }
+.ag-btn--danger:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"]) { --ag-btn-t: var(--ag-btn-t-press); transform: translate(var(--ag-btn-sink), var(--ag-btn-sink)); }
 
 .ag-btn--inverse { background: transparent; color: var(--masthead-fg); border-color: var(--masthead-fg); }
 .ag-btn--inverse:hover, .ag-btn--inverse.is-hover { background: var(--masthead-fg); color: var(--masthead-bg); }
-.ag-btn--inverse:active, .ag-btn--inverse.is-active { transform: translateY(1px); }
+.ag-btn--inverse:is(:active, .is-active, [data-pressed="true"]):not(:disabled, [aria-disabled="true"]) { --ag-btn-t: var(--ag-btn-t-press); transform: translate(var(--ag-btn-sink), var(--ag-btn-sink)); }
 .ag-btn--inverse:focus-visible, .ag-btn--inverse.is-focus { box-shadow: var(--focus-ring-inverse); }
 
 .ag-btn:focus-visible, .ag-btn.is-focus { box-shadow: var(--focus-ring); }
-.ag-btn--primary:active:focus-visible { box-shadow: var(--focus-ring); }
+.ag-btn--primary:active:focus-visible, .ag-btn--primary[data-pressed="true"]:focus-visible { box-shadow: var(--focus-ring); }
 .ag-btn:disabled, .ag-btn[aria-disabled="true"] { background: var(--button-disabled-bg); color: var(--button-disabled-fg); border-color: var(--button-disabled-bg); box-shadow: none; transform: none; cursor: not-allowed; }
+
+/* Reduced motion: sin duración ni desplazamiento; el pulsado conserva el cambio de sombra y de fondo. */
+@media (prefers-reduced-motion: reduce) { .ag-btn { --ag-btn-t: 0ms; --ag-btn-t-press: 0ms; --ag-btn-lift: 0px; --ag-btn-sink: 0px; --ag-btn-grow: 0; } }
+[data-reduced-motion] .ag-btn { --ag-btn-t: 0ms; --ag-btn-t-press: 0ms; --ag-btn-lift: 0px; --ag-btn-sink: 0px; --ag-btn-grow: 0; }
