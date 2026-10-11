@@ -111,6 +111,11 @@ describe('ConfirmacionPlan', () => {
     expect(global).not.toHaveBeenCalled();
   });
 
+  it('el pie permite envolver los botones para que Cancelar no salga recortado en paneles estrechos', () => {
+    montar();
+    expect(screen.getByRole('button', { name: 'Cancelar' }).parentElement?.className).toContain('flex-wrap');
+  });
+
   it('con todo desmarcado no se puede confirmar, ni con Enter', async () => {
     const { onConfirmar } = montar();
     for (const c of screen.getAllByRole('checkbox')) await userEvent.click(c);

@@ -102,6 +102,11 @@ describe('DialogoDespacho', () => {
     expect(global).not.toHaveBeenCalled();
   });
 
+  it('el pie permite envolver los botones para que Cancelar no salga recortado en paneles estrechos', () => {
+    montar();
+    expect(screen.getByRole('button', { name: 'Cancelar' }).parentElement?.className).toContain('flex-wrap');
+  });
+
   it('Enter sobre el botón Cancelar cancela en vez de despachar', async () => {
     const { props } = montar();
     screen.getByRole('button', { name: 'Cancelar' }).focus();

@@ -84,6 +84,15 @@ describe('FormularioLlamada · apertura', () => {
   });
 });
 
+describe('FormularioLlamada · pie', () => {
+  it('permite envolver los botones para que CANCELAR no salga recortado por la izquierda en paneles estrechos', () => {
+    montar();
+    const pie = screen.getByRole('button', { name: /^Cancelar/ }).parentElement;
+    expect(pie?.className).toContain('flex-wrap');
+    expect(pie?.className).toContain('justify-end');
+  });
+});
+
 describe('FormularioLlamada · atajos', () => {
   it('Esc cierra, también con el foco dentro de un campo', async () => {
     const { props } = montar();

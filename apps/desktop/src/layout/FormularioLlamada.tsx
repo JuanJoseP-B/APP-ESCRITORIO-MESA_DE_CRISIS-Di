@@ -227,7 +227,7 @@ export function FormularioLlamada({
         </div>
         <TextAreaField label={t('llamada.narrativa')} name="narrativa" rows={4} value={borrador.narrativa} onChange={(e) => cambiar('narrativa', e.target.value)} />
       </form>
-      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
         <Button variant="ghost" aria-keyshortcuts="Escape" onClick={onCerrar}>
           {t('llamada.cancelar')} <Kbd>Esc</Kbd>
         </Button>

@@ -114,7 +114,7 @@ export function ConfirmacionPlan({ snapshot, recomendacion, onConfirmar, onCance
         </ul>
       </fieldset>
 
-      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
         <Button variant="ghost" aria-keyshortcuts="Escape" onClick={onCancelar}>
           {t('plan.cancelar')} <Kbd>Esc</Kbd>
         </Button>

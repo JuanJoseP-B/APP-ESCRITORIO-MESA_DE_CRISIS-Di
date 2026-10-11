@@ -96,7 +96,7 @@ export function DialogoDespacho({ incidente, recursos, onConfirmar, onCancelar }
         </fieldset>
       )}
 
-      <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border-strong px-4 py-3">
         <Button variant="ghost" aria-keyshortcuts="Escape" onClick={onCancelar}>
           {t('despacho.cancelar')} <Kbd>Esc</Kbd>
         </Button>
