@@ -14,6 +14,9 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+// Cada caso monta la App completa y encadena varias interacciones: con la suite entera en paralelo 5 s se queda corto.
+vi.setConfig({ testTimeout: 20_000 });
+
 const REGION = { name: 'Asesor táctico · motor de reglas' };
 
 async function abrirConsola() {
