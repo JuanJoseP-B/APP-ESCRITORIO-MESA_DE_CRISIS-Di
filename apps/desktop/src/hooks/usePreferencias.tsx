@@ -7,6 +7,7 @@ import {
   type Preferencias,
 } from '../domain/preferencias';
 import { useTexto } from '../i18n/IdiomaProvider';
+import { reproductor } from '../services/reproductorSonidos';
 import { consultaSistemaOscuro, resolverTema, sistemaPrefiereOscuro, type Tema } from '../tema';
 
 interface ValorPreferencias {
@@ -19,7 +20,14 @@ interface ValorPreferencias {
 type PreferenciasSinIdioma = Omit<Preferencias, 'idioma'>;
 
 function sinIdioma(p: Preferencias): PreferenciasSinIdioma {
-  return { tema: p.tema, reducirMovimiento: p.reducirMovimiento, textoGrande: p.textoGrande, mostrarArranque: p.mostrarArranque };
+  return {
+    tema: p.tema,
+    reducirMovimiento: p.reducirMovimiento,
+    textoGrande: p.textoGrande,
+    mostrarArranque: p.mostrarArranque,
+    sonido: p.sonido,
+    volumen: p.volumen,
+  };
 }
 
 /** Sin proveedor (pruebas de un componente suelto) rigen los valores por defecto, sin secuencia de arranque. */
@@ -31,7 +39,8 @@ const ContextoPreferencias = createContext<ValorPreferencias>({
 
 /**
  * Tema, movimiento y tamaño de texto: los aplica a `<html>`, los recuerda y, con tema «sistema»,
- * reacciona a los cambios de `prefers-color-scheme`. El idioma lo gobierna `IdiomaProvider`.
+ * reacciona a los cambios de `prefers-color-scheme`. El idioma lo gobierna `IdiomaProvider` y el
+ * sonido (silencio y volumen) se pasa al reproductor de la consola.
  */
 export function PreferenciasProvider({ children }: { readonly children: ReactNode }) {
   const { idioma, fijarIdioma } = useTexto();
@@ -51,6 +60,8 @@ export function PreferenciasProvider({ children }: { readonly children: ReactNod
     aplicarPreferencias(preferencias, sistemaOscuro);
     guardarPreferencias(preferencias);
   }, [preferencias, sistemaOscuro]);
+  const { sonido, volumen } = guardadas;
+  useEffect(() => reproductor.configurar({ volumen, silenciado: !sonido }), [sonido, volumen]);
 
   const fijar = useCallback(
     (cambios: Partial<Preferencias>) => {

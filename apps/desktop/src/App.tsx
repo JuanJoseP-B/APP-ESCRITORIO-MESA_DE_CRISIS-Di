@@ -106,8 +106,9 @@ function Mesa({
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
-  const { temaEfectivo, preferencias } = usePreferencias();
-  const { reducirMovimiento } = preferencias;
+  const { temaEfectivo, preferencias, fijar: fijarPreferencias } = usePreferencias();
+  const { reducirMovimiento, sonido } = preferencias;
+  const alternarSonido = useCallback(() => fijarPreferencias({ sonido: !sonido }), [fijarPreferencias, sonido]);
   const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
   const [despachoAbierto, setDespachoAbierto] = useState(false);
   const [planAbierto, setPlanAbierto] = useState(false);
@@ -502,6 +503,8 @@ function Mesa({
             }
             onCerrarSesion={onCerrarSesion}
             onAbrirAjustes={abrirAjustes}
+            sonidoActivo={sonido}
+            onAlternarSonido={alternarSonido}
           />
         }
         cola={

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Volume2, VolumeX } from 'lucide-react';
 import { Button, ContadorRodante, Glyph, SegmentedControl, duracion, type FormaGlifo } from '@argos/ui';
 import type { EstadoEnlace } from '../domain/conexion';
 import { IDS_ESCENARIO, type IdEscenario } from '../domain/escenario';
@@ -43,6 +43,9 @@ export interface BarraEstadoProps {
   simulacion?: SimulacionBarra;
   onCerrarSesion?: () => void;
   onAbrirAjustes?: () => void;
+  /** Silencio rápido: el altavoz solo se ofrece si se pasa `onAlternarSonido`. */
+  sonidoActivo?: boolean;
+  onAlternarSonido?: () => void;
 }
 
 const ENLACE_UI: Record<EstadoEnlace, { shape: FormaGlifo; clase: string }> = {
@@ -66,6 +69,8 @@ export function BarraEstado({
   simulacion,
   onCerrarSesion,
   onAbrirAjustes,
+  sonidoActivo = true,
+  onAlternarSonido,
 }: BarraEstadoProps) {
   const { t, idioma } = useTexto();
   const estadoEnlace = ENLACE_UI[enlace];
@@ -188,6 +193,19 @@ export function BarraEstado({
         </div>
       )}
       <span className="ml-auto flex items-center gap-2">
+        {onAlternarSonido && (
+          <Button
+            size="sm"
+            variant="ghost"
+            square
+            aria-pressed={!sonidoActivo}
+            aria-label={t('barra.sonido.silenciar')}
+            title={sonidoActivo ? t('barra.sonido.silenciar') : t('barra.sonido.activar')}
+            onClick={onAlternarSonido}
+          >
+            {sonidoActivo ? <Volume2 aria-hidden="true" size={16} /> : <VolumeX aria-hidden="true" size={16} />}
+          </Button>
+        )}
         {onAbrirAjustes && (
           <Button
             size="sm"

@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import { Button, Kbd, SectionHeader, SegmentedControl, Switch } from '@argos/ui';
 import { useDialogoModal } from '../hooks/useDialogoModal';
 import { usePreferencias } from '../hooks/usePreferencias';
+import { normalizarVolumen } from '../domain/sonidos';
 import { IDIOMAS, type Idioma } from '../i18n/idioma';
 import { useTexto } from '../i18n/IdiomaProvider';
+import { reproductor } from '../services/reproductorSonidos';
 import { TEMAS, type Tema } from '../tema';
 import { useTutorial } from './TutorialProvider';
 
@@ -15,7 +17,7 @@ export interface PanelAjustesProps {
 }
 
 /**
- * Drawer de ajustes (apariencia, idioma, accesibilidad y ayuda). Los cambios se aplican al instante.
+ * Drawer de ajustes (apariencia, idioma, accesibilidad, ayuda y sonido). Los cambios se aplican al instante.
  * El foco queda atrapado dentro, Esc lo cierra y al cerrar vuelve a quien lo abrió. Sin telón
  * translúcido: un capturador invisible cierra al hacer clic fuera.
  */
@@ -125,6 +127,49 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
                   {t('ajustes.tutorial')}
                 </Button>
               )}
+            </div>
+          </section>
+
+          <section aria-label={t('ajustes.sonido')}>
+            <SectionHeader index="05" title={t('ajustes.sonido')} />
+            <div className="flex flex-col gap-4 px-4 pb-4">
+              <Switch
+                label={t('ajustes.sonido.activo')}
+                hint={t('ajustes.sonido.activo.ayuda')}
+                onLabel={t('ajustes.activado')}
+                offLabel={t('ajustes.desactivado')}
+                checked={preferencias.sonido}
+                onChange={(sonido) => fijar({ sonido })}
+              />
+              <label className="flex flex-col gap-2">
+                <span className="flex items-baseline justify-between font-ui text-body-md text-text-primary">
+                  {t('ajustes.sonido.volumen')}
+                  <span className="font-mono text-data-sm tabular text-text-secondary">{preferencias.volumen}</span>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={preferencias.volumen}
+                  disabled={!preferencias.sonido}
+                  onChange={(e) => fijar({ volumen: normalizarVolumen(e.target.valueAsNumber) })}
+                  className="h-control-sm w-full accent-action-secondary focus-visible:shadow-focus focus-visible:outline-none"
+                />
+              </label>
+              <div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!preferencias.sonido || preferencias.volumen === 0}
+                  onClick={() => {
+                    reproductor.activar();
+                    reproductor.reproducir('llamadaP2');
+                  }}
+                >
+                  {t('ajustes.sonido.probar')}
+                </Button>
+              </div>
             </div>
           </section>
         </div>

@@ -8,7 +8,7 @@ import {
   type Preferencias,
 } from './preferencias';
 
-const TODAS: Preferencias = { tema: 'sistema', idioma: 'en', reducirMovimiento: true, textoGrande: true, mostrarArranque: true };
+const TODAS: Preferencias = { tema: 'sistema', idioma: 'en', reducirMovimiento: true, textoGrande: true, mostrarArranque: true, sonido: false, volumen: 35 };
 
 afterEach(() => {
   localStorage.clear();
@@ -21,7 +21,7 @@ afterEach(() => {
 describe('leer y guardar', () => {
   it('sin nada guardado devuelve los valores por defecto', () => {
     expect(leerPreferencias()).toEqual(PREFERENCIAS_POR_DEFECTO);
-    expect(PREFERENCIAS_POR_DEFECTO).toEqual({ tema: 'crema', idioma: 'es', reducirMovimiento: false, textoGrande: false, mostrarArranque: true });
+    expect(PREFERENCIAS_POR_DEFECTO).toEqual({ tema: 'crema', idioma: 'es', reducirMovimiento: false, textoGrande: false, mostrarArranque: true, sonido: true, volumen: 60 });
   });
 
   it('lo guardado se lee igual', () => {
@@ -35,7 +35,18 @@ describe('leer y guardar', () => {
     localStorage.setItem('argos.idioma', 'fr');
     localStorage.setItem('argos.reducirMovimiento', 'quizá');
     localStorage.setItem('argos.mostrarArranque', 'quizá');
+    localStorage.setItem('argos.sonido', 'quizá');
+    localStorage.setItem('argos.volumen', 'alto');
     expect(leerPreferencias()).toEqual({ ...PREFERENCIAS_POR_DEFECTO, textoGrande: true });
+  });
+
+  it('el volumen se guarda entero y acotado a 0–100', () => {
+    guardarPreferencias({ ...TODAS, volumen: 250 });
+    expect(leerPreferencias().volumen).toBe(100);
+    guardarPreferencias({ ...TODAS, volumen: 0 });
+    expect(leerPreferencias().volumen).toBe(0);
+    localStorage.setItem('argos.volumen', '');
+    expect(leerPreferencias().volumen).toBe(60);
   });
 
   it('un almacenamiento que falla no lanza y devuelve los valores por defecto', () => {

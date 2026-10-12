@@ -46,11 +46,11 @@ afterEach(() => {
 });
 
 describe('PanelAjustes', () => {
-  it('abre como diálogo con las cuatro secciones', async () => {
+  it('abre como diálogo con las cinco secciones', async () => {
     montar();
     const panel = await abrir();
     expect(panel.getAttribute('aria-modal')).toBe('true');
-    for (const nombre of ['Apariencia', 'Idioma', 'Accesibilidad', 'Ayuda']) {
+    for (const nombre of ['Apariencia', 'Idioma', 'Accesibilidad', 'Ayuda', 'Sonido']) {
       expect(within(panel).getByRole('region', { name: nombre })).toBeTruthy();
     }
   });
