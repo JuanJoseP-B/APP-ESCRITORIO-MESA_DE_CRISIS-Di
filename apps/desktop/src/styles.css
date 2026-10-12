@@ -71,6 +71,17 @@ kbd[data-destello='true'] {
   pointer-events: none;
 }
 
+/* Sin animación la franja no barre: se quedaría quieta encima del texto de la fila. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-fila-entrante[data-nueva='true']::after {
+    display: none;
+  }
+}
+
+:root[data-reduced-motion] .ag-fila-entrante[data-nueva='true']::after {
+  display: none;
+}
+
 @keyframes ag-contador-golpe {
   0% { transform: scale(1); }
   35% { transform: scale(1.25); }

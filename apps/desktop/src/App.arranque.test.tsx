@@ -10,6 +10,9 @@ import { crearEntornoSemilla } from './testing/entornoSemilla';
 // MapLibre necesita WebGL, que jsdom no tiene: el mapa se sustituye por un hueco.
 vi.mock('./layout/MapaTactico', () => ({ MapaTactico: () => null }));
 
+// Cada caso monta la App completa: con la suite entera en paralelo los 5 s por defecto se quedan cortos.
+vi.setConfig({ testTimeout: 20_000 });
+
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
@@ -26,7 +29,7 @@ async function abrirConsola() {
       </PreferenciasProvider>
     </IdiomaProvider>,
   );
-  await screen.findByRole('button', { name: /Fuga de gas en sector/ });
+  await screen.findByRole('button', { name: /Fuga de gas en sector/ }, { timeout: 10_000 });
 }
 
 const arranque = () => screen.queryByRole('dialog', { name: 'Iniciando ARGOS' });

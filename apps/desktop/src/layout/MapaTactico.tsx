@@ -289,7 +289,7 @@ export function MapaTactico({
         id: 'incidentes-resalte-punto',
         type: 'circle',
         source: FUENTE,
-        filter: ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        filter: ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], '']],
         paint: {
           'circle-radius': 16,
           'circle-opacity': 0,
@@ -301,7 +301,7 @@ export function MapaTactico({
         id: 'incidentes-resalte-borde',
         type: 'line',
         source: FUENTE,
-        filter: ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], '']],
+        filter: ['all', ['==', ['geometry-type'], 'Polygon'], ['==', ['get', 'id'], '']],
         paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
       });
       // Zona pública señalada desde el análisis: anillo sobre el punto o trazo grueso sobre el polígono o la línea.
@@ -309,7 +309,7 @@ export function MapaTactico({
         id: 'zonas-resalte-punto',
         type: 'circle',
         source: FUENTE_ZONAS,
-        filter: ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        filter: ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], '']],
         paint: {
           'circle-radius': 14,
           'circle-opacity': 0,
@@ -321,7 +321,7 @@ export function MapaTactico({
         id: 'zonas-resalte-linea',
         type: 'line',
         source: FUENTE_ZONAS,
-        filter: ['all', ['!=', '$type', 'Point'], ['==', ['get', 'id'], '']],
+        filter: ['all', ['!=', ['geometry-type'], 'Point'], ['==', ['get', 'id'], '']],
         paint: { 'line-color': leerToken('action-secondary'), 'line-width': 6 },
       });
       m.addSource(FUENTE_RUTAS, { type: 'geojson', data: VACIO as never });
@@ -600,16 +600,16 @@ export function MapaTactico({
   useEffect(() => {
     if (!mapa || !listo) return;
     const id = resaltado?.tipo === 'zona' ? resaltado.id : '';
-    mapa.setFilter('zonas-resalte-punto', ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], id]]);
-    mapa.setFilter('zonas-resalte-linea', ['all', ['!=', '$type', 'Point'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('zonas-resalte-punto', ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('zonas-resalte-linea', ['all', ['!=', ['geometry-type'], 'Point'], ['==', ['get', 'id'], id]]);
   }, [mapa, listo, resaltado]);
 
   // Resalta el incidente candidato a duplicado.
   useEffect(() => {
     if (!mapa || !listo) return;
     const id = resaltadoIncidenteId ?? '';
-    mapa.setFilter('incidentes-resalte-punto', ['all', ['==', '$type', 'Point'], ['==', ['get', 'id'], id]]);
-    mapa.setFilter('incidentes-resalte-borde', ['all', ['==', '$type', 'Polygon'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('incidentes-resalte-punto', ['all', ['==', ['geometry-type'], 'Point'], ['==', ['get', 'id'], id]]);
+    mapa.setFilter('incidentes-resalte-borde', ['all', ['==', ['geometry-type'], 'Polygon'], ['==', ['get', 'id'], id]]);
   }, [mapa, listo, resaltadoIncidenteId]);
 
   // Mira de la ubicación de la llamada en curso.
