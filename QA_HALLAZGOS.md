@@ -12,17 +12,17 @@ Rama `feat/cad-fase2-logica`. Se recorrieron los escenarios A, B y C; el paso 1 
 | H01 | 3, 4 | La leyenda del mapa arrancaba desplegada y tapaba el centro, donde se centra la llamada o el incidente. | El foco del mapa a la vista. | Alta | Corregido `70d0cd8` (arranca plegada) |
 | H02 | previa | El selector de escenario desbordaba la barra: texto en varias líneas a 1366 y SALIR fuera de pantalla (46 px a 1366, 130 px a 1280). Regresión propia. | Barra en una línea, SALIR visible. | Alta | Corregido `4743f92`, `614cb9f`, `907b73c` |
 | H03 | 9 | El panel de un incidente RESUELTO seguía ofreciendo DESPACHAR; la unidad quedaba ligada a un incidente cerrado, con SLA corriendo. | Un incidente resuelto no admite despachos ni cuenta SLA. | Alta | Corregido `17f5c7e` (regresión en `PanelDetalle.test.tsx` y `sla.test.ts`) |
-| H04 | 3 | El botón CANCELAR del formulario de llamada sale recortado por la izquierda («ANCELAR») a 1366. | Botón completo. | Media | Abierto |
+| H04 | 3 | El botón CANCELAR del formulario de llamada sale recortado por la izquierda («ANCELAR») a 1366. | Botón completo. | Media | Corregido `4ca7de8` |
 | H05 | 5 | Despachar (ASIGNADO) y pasar a EN RUTA no dejan línea en la bitácora; solo la llegada (Sistema), la vinculación y el asesor. | Cada cambio de estado de una unidad en la bitácora del incidente. | Media | Abierto |
 | H06 | 9 | Al marcar Resuelto las unidades siguen EN ESCENA asignadas y hay que liberarlas a mano; «Abierto hace N min» no se congela. | Avisar o liberar al resolver; duración congelada. | Media | Abierto |
 | H07 | 8 | En el análisis del perímetro un refugio al 93 % de aforo sale APTO (solo mide geometría), y «Colegio Central · Zona de evacuación · APTO» contradice la advertencia del asesor. | APTO que considere el cupo y un criterio único con el asesor. | Media | Abierto |
-| H08 | 2 | Con más de 3 llamadas la lista de entrantes muestra barra de scroll horizontal (scrollWidth 311 / clientWidth 304) y los botones DESCARTAR quedan desalineados. | Sin scroll horizontal. | Media | Abierto |
+| H08 | 2 | Con más de 3 llamadas la lista de entrantes muestra barra de scroll horizontal (scrollWidth 311 / clientWidth 304) y los botones DESCARTAR quedan desalineados. | Sin scroll horizontal. | Media | Corregido `d48509f` |
 | H09 | 11 | Con la semilla limpia el tutorial recorre cola, detalle y asesor sin incidentes: el ancla `asesor` no existe y el paso sale centrado, sin recorte. | Cada paso apunta a algo real. | Media | Abierto |
-| H10 | 8 | Con 5 o más SLA vencidos a la vez salen 5 avisos apilados (≈270 px) sobre el centro del mapa durante 8 s. | Un aviso agrupado. | Media | Abierto |
+| H10 | 8 | Con 5 o más SLA vencidos a la vez salen 5 avisos apilados (≈270 px) sobre el centro del mapa durante 8 s. | Un aviso agrupado. | Media | Corregido `41c9336` |
 | H11 | 4 | Código de incidente de longitud variable (`#OI4`, `#I10`) derivado del id. | Código legible y estable. | Baja | Abierto |
-| H12 | 11 | La tarjeta del asesor no se recalcula al cambiar de idioma: queda en el idioma anterior hasta cerrarla y abrirla. | Texto en el idioma activo. | Baja | Abierto |
-| H13 | 11 | Texto grande + inglés: «OVERDUE» toca el borde de la ficha de unidad del tablero. | Texto dentro de la ficha. | Baja | Abierto |
-| H14 | 6 | Observado una vez: tras Esc en la confirmación del plan del asesor la tarjeta también desapareció. No se investigó. | Esc cierra solo la confirmación. | Baja | Abierto |
+| H12 | 11 | La tarjeta del asesor no se recalcula al cambiar de idioma: queda en el idioma anterior hasta cerrarla y abrirla. | Texto en el idioma activo. | Baja | Corregido `cd951a2` |
+| H13 | 11 | Texto grande + inglés: «OVERDUE» toca el borde de la ficha de unidad del tablero. | Texto dentro de la ficha. | Baja | Corregido `a915c88` |
+| H14 | 6 | Observado una vez: tras Esc en la confirmación del plan del asesor la tarjeta también desapareció. No se investigó. | Esc cierra solo la confirmación. | Baja | Corregido `e5ab1ed` |
 
 ### Comprobado sin hallazgos
 - Entrantes con resaltado «NUEVA» y contador; abrir con Enter y crear con Ctrl+Enter; aviso de duplicado con candidato; VINCULAR (☎ N y bitácora) y CREAR INCIDENTE ignorando el aviso.
