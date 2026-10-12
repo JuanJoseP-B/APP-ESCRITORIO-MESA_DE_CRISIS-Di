@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from '../cx';
+import { useCambio } from '../useCambio';
 import { Button } from './Button';
 import { StatusIndicator, type EstadoRecursoUI } from './StatusIndicator';
 import './DispatchRow.css';
@@ -69,8 +70,10 @@ export function DispatchRow({ kind, code, status, detail, timer, statusLabel, ac
       </Button>
     ),
   };
+  // Al cambiar de estado la fila se resalta un instante con el fondo de selección.
+  const cambiando = useCambio(status, 'slow');
   return (
-    <div className={cx('ag-row', `ag-row--${status}`, className)} role="group" aria-label={`${kind} ${code}`}>
+    <div className={cx('ag-row', `ag-row--${status}`, className)} role="group" aria-label={`${kind} ${code}`} data-cambio={cambiando || undefined}>
       <StatusIndicator status={status} label={statusLabel} glyphOnly className="ag-row__glyph" />
       <div className="ag-row__id">
         <span className="ag-row__name">

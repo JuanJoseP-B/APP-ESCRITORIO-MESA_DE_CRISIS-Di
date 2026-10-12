@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from '../cx';
+import { useCambio } from '../useCambio';
 import { Glyph, type FormaGlifo } from './Glyph';
 import './Badge.css';
 
@@ -52,8 +53,10 @@ export function Badge({ severity, status, tone, emphasis, glyph, className, chil
   const t = tone ?? preset?.tone ?? 'neutral';
   const e = emphasis ?? preset?.emphasis ?? 'tint';
   const forma = glyph === false ? null : (glyph ?? preset?.shape ?? FORMA_POR_TONO[t]);
+  // Un valor nuevo (otro tono, otro glifo u otra palabra) entra con un fundido breve.
+  const cambiando = useCambio(`${t}|${e}|${forma ?? ''}|${typeof children === 'string' ? children : (preset?.label ?? '')}`);
   return (
-    <span className={cx('ag-badge', `ag-badge--${t}`, `ag-badge--${e}`, className)}>
+    <span className={cx('ag-badge', `ag-badge--${t}`, `ag-badge--${e}`, className)} data-cambio={cambiando || undefined}>
       {forma ? <Glyph shape={forma} /> : null}
       {children ?? preset?.label}
     </span>

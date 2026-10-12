@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
 import { cx } from '../cx';
 import { ESTADOS_RECURSO_UI, type EstadoRecursoUI } from './StatusIndicator';
 import { Glyph } from './Glyph';
 import { CronometroSla, PALABRAS_CRONOMETRO, type NivelCronometro, type PalabrasCronometro } from './CronometroSla';
-import { duracion } from '../movimiento';
+import { useCambio } from '../useCambio';
 import './UnitChip.css';
 
 /** Palabra corta del estado: cabe en el chip de ancho fijo sin truncar el indicativo. */
@@ -44,20 +43,8 @@ export function UnitChip({ callsign, status, kind, statusLabel, statusShort, tim
     .filter(Boolean)
     .join(', ');
 
-  const [volteando, setVolteando] = useState(false);
-  const prevStatusRef = useRef(status);
-
-  useEffect(() => {
-    if (prevStatusRef.current !== status) {
-      prevStatusRef.current = status;
-      if (!reduceMotion) {
-        setVolteando(true);
-        const dur = duracion('base') || 240;
-        const timerId = setTimeout(() => setVolteando(false), dur);
-        return () => clearTimeout(timerId);
-      }
-    }
-  }, [status, reduceMotion]);
+  // Al cambiar de estado, la línea del estado entra con un fundido y un paso corto hacia arriba (sin giro).
+  const cambiando = useCambio(status, 'base', !reduceMotion);
 
   const contenido = (
     <>
@@ -71,7 +58,7 @@ export function UnitChip({ callsign, status, kind, statusLabel, statusShort, tim
       ) : null}
     </>
   );
-  const clases = cx('ag-unit', `ag-unit--${status}`, volteando && 'ag-unit--volteo', className);
+  const clases = cx('ag-unit', `ag-unit--${status}`, cambiando && 'ag-unit--cambio', className);
   return onSelect ? (
     <button type="button" className={clases} aria-pressed={selected ? 'true' : 'false'} aria-label={nombre} onClick={onSelect}>
       {contenido}

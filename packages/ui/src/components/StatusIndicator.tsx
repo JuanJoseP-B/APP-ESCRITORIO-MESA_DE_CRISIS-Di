@@ -1,4 +1,5 @@
 import { cx } from '../cx';
+import { useCambio } from '../useCambio';
 import { Glyph, type FormaGlifo } from './Glyph';
 import './StatusIndicator.css';
 
@@ -24,8 +25,9 @@ export interface StatusIndicatorProps {
 
 export function StatusIndicator({ status, count, label, glyphOnly, className }: StatusIndicatorProps) {
   const estado = ESTADOS_RECURSO_UI[status];
+  const cambiando = useCambio(status);
   return (
-    <span className={cx('ag-status', `ag-status--${status}`, className)}>
+    <span className={cx('ag-status', `ag-status--${status}`, className)} data-cambio={cambiando || undefined}>
       <Glyph shape={estado.shape} />
       {glyphOnly ? <span className="ag-sr-only">{label ?? estado.label}</span> : (label ?? estado.label)}
       {count != null && !glyphOnly ? <span className="ag-status__count">({count})</span> : null}

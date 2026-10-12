@@ -2,7 +2,7 @@
 .ag-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .ag-field__label { font-family: var(--font-body); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 500; color: var(--input-label); }
 .ag-field__control { position: relative; display: flex; align-items: center; }
-.ag-field__input { box-sizing: border-box; width: 100%; height: var(--control-lg); padding: 0 var(--space-3); background: var(--input-bg); color: var(--input-fg); border: var(--border-hairline) solid var(--input-border); border-radius: var(--radius-xs); font-family: var(--font-body); font-size: calc(16px * var(--escala-texto, 1)); line-height: 24px; transition: border-color 80ms linear, box-shadow 80ms linear; }
+.ag-field__input { box-sizing: border-box; width: 100%; height: var(--control-lg); padding: 0 var(--space-3); background: var(--input-bg); color: var(--input-fg); border: var(--border-hairline) solid var(--input-border); border-radius: var(--radius-xs); font-family: var(--font-body); font-size: calc(16px * var(--escala-texto, 1)); line-height: 24px; transition: border-color var(--dur-instant) var(--ease-salida), box-shadow var(--dur-fast) var(--ease-salida); }
 .ag-field--md .ag-field__input { height: var(--control-md); font-size: calc(14px * var(--escala-texto, 1)); }
 .ag-field--mono .ag-field__input { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .ag-field__input::placeholder { color: var(--input-placeholder); opacity: 1; }

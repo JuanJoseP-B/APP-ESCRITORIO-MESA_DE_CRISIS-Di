@@ -12,3 +12,6 @@
 .ag-badge--warning.ag-badge--solid { background: var(--status-warning); color: var(--on-warning); }
 .ag-badge--success.ag-badge--solid { background: var(--status-success); color: var(--on-success); }
 .ag-badge--info.ag-badge--solid { background: var(--status-info); color: var(--on-info); }
+/* Valor nuevo: fundido breve. */
+@keyframes ag-badge-cambio { from { opacity: 0; } }
+.ag-badge[data-cambio] { animation: ag-badge-cambio var(--dur-base) var(--ease-salida); }
