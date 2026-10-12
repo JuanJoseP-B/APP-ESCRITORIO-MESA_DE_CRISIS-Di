@@ -81,8 +81,18 @@ function FilaIncidente({
       aria-pressed={seleccionado}
       aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades, llamadas })}
       onClick={onSeleccionar}
-      className={`ag-fila grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover ${seleccionado ? 'bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong' : ''}`}
+      className="ag-fila relative isolate grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover"
     >
+      {/* El fondo de selección (con su contorno) es un solo elemento que viaja de una fila a otra. */}
+      {seleccionado && (
+        <motion.span
+          layoutId="cola-seleccion"
+          aria-hidden="true"
+          data-seleccion
+          className="absolute inset-0 -z-10 bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong"
+          transition={{ duration: duracionSegundos('fast'), ease: curva('mecanico') }}
+        />
+      )}
       <span>
         {cerrado ? (
           <Badge tone="neutral" emphasis="outline">

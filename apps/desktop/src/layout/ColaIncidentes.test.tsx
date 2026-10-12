@@ -197,6 +197,20 @@ describe('ColaIncidentes: filtro por SLA', () => {
   });
 });
 
+describe('ColaIncidentes: fondo de selección', () => {
+  it('hay un único fondo de selección y viaja a la fila elegida', () => {
+    const { container, rerender } = render(<ColaIncidentes {...base} seleccionadoId={null} />);
+    expect(container.querySelectorAll('[data-seleccion]')).toHaveLength(0);
+    for (const id of ['critico', 'bajo']) {
+      rerender(<ColaIncidentes {...base} seleccionadoId={id} />);
+      const fondos = container.querySelectorAll('[data-seleccion]');
+      expect(fondos).toHaveLength(1);
+      expect(fondos[0]?.closest('button')?.getAttribute('aria-pressed')).toBe('true');
+      expect(fondos[0]?.className).toContain('bg-surface-selected');
+    }
+  });
+});
+
 describe('ColaIncidentes: scroll al seleccionado', () => {
   it('acerca a la vista la fila elegida (J/K) cada vez que cambia la selección', () => {
     const scroll = vi.fn();
