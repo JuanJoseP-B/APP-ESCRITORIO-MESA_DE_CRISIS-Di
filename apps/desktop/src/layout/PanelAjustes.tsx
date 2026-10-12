@@ -94,6 +94,14 @@ export function PanelAjustes({ onCerrar, onAbrirAtajos }: PanelAjustesProps) {
                 checked={preferencias.textoGrande}
                 onChange={(textoGrande) => fijar({ textoGrande })}
               />
+              <Switch
+                label={t('ajustes.arranque')}
+                hint={t('ajustes.arranque.ayuda')}
+                onLabel={t('ajustes.activado')}
+                offLabel={t('ajustes.desactivado')}
+                checked={preferencias.mostrarArranque}
+                onChange={(mostrarArranque) => fijar({ mostrarArranque })}
+              />
             </div>
           </section>
 

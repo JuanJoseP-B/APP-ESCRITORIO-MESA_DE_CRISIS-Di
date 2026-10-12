@@ -9,6 +9,8 @@ export interface Preferencias {
   readonly reducirMovimiento: boolean;
   /** Escala la tipografía con el token `--escala-texto`. */
   readonly textoGrande: boolean;
+  /** Muestra la secuencia de diagnóstico al iniciar sesión. */
+  readonly mostrarArranque: boolean;
 }
 
 export const PREFERENCIAS_POR_DEFECTO: Preferencias = {
@@ -16,10 +18,12 @@ export const PREFERENCIAS_POR_DEFECTO: Preferencias = {
   idioma: IDIOMA_POR_DEFECTO,
   reducirMovimiento: false,
   textoGrande: false,
+  mostrarArranque: true,
 };
 
 export const CLAVE_REDUCIR_MOVIMIENTO = 'argos.reducirMovimiento';
 export const CLAVE_TEXTO_GRANDE = 'argos.textoGrande';
+export const CLAVE_MOSTRAR_ARRANQUE = 'argos.mostrarArranque';
 
 /** Una clave que falla o trae basura no tumba a las demás. */
 function leer(clave: string): string | null {
@@ -51,6 +55,7 @@ export function leerPreferencias(): Preferencias {
     idioma: esIdioma(idioma) ? idioma : PREFERENCIAS_POR_DEFECTO.idioma,
     reducirMovimiento: leerBooleano(CLAVE_REDUCIR_MOVIMIENTO, PREFERENCIAS_POR_DEFECTO.reducirMovimiento),
     textoGrande: leerBooleano(CLAVE_TEXTO_GRANDE, PREFERENCIAS_POR_DEFECTO.textoGrande),
+    mostrarArranque: leerBooleano(CLAVE_MOSTRAR_ARRANQUE, PREFERENCIAS_POR_DEFECTO.mostrarArranque),
   };
 }
 
@@ -59,6 +64,7 @@ export function guardarPreferencias(p: Preferencias): void {
   escribir(CLAVE_IDIOMA, p.idioma);
   escribir(CLAVE_REDUCIR_MOVIMIENTO, String(p.reducirMovimiento));
   escribir(CLAVE_TEXTO_GRANDE, String(p.textoGrande));
+  escribir(CLAVE_MOSTRAR_ARRANQUE, String(p.mostrarArranque));
 }
 
 /** Pinta en `<html>` lo que no es idioma: tema, `data-reduced-motion` y `data-text-large`. */

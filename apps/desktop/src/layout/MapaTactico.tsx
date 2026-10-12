@@ -12,6 +12,7 @@ import {
 } from '../domain/geojson';
 import { pinturaBasemap } from '../domain/basemap';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
+import type { EstadoMapa } from '../domain/arranque';
 import type { PrevisualizacionAsesor } from '../domain/asesor';
 import { CAPAS_POR_DEFECTO, alternarCapa, zonasVisibles, type CapaMapa } from '../domain/capasMapa';
 import { anillosAFeatureCollection, type AnilloGenerado } from '../domain/perimetro';
@@ -125,6 +126,8 @@ interface Props {
   readonly ahora?: number;
   /** Línea animada entre llamada e incidente al vincular. */
   readonly lineaVinculacion?: { readonly origen: Coordenadas; readonly destino: Coordenadas } | null;
+  /** Avisa cuando el mapa termina de cargar o falla antes de lograrlo (la secuencia de arranque lo muestra). */
+  readonly onEstado?: (estado: EstadoMapa) => void;
 }
 
 export function MapaTactico({
@@ -155,6 +158,7 @@ export function MapaTactico({
   llamadas,
   ahora,
   lineaVinculacion = null,
+  onEstado,
 }: Props) {
   const contenedor = useRef<HTMLDivElement>(null);
   const [mapa, setMapa] = useState<MapLibreMap | null>(null);
@@ -165,6 +169,8 @@ export function MapaTactico({
   trazando.current = dibujando;
   const alUbicar = useRef(onClicUbicacion);
   alUbicar.current = onClicUbicacion;
+  const alEstado = useRef(onEstado);
+  alEstado.current = onEstado;
   // Sube cada vez que cambia el turno (crema/carbón) para repintar con los tokens del tema nuevo.
   const [versionTema, setVersionTema] = useState(0);
   // Capas que el operador enciende o apaga desde la leyenda.
@@ -185,7 +191,15 @@ export function MapaTactico({
       center: CENTRO_INICIAL,
       zoom: 11,
     });
+    // Un fallo de estilo o de teselas antes de `load` deja el mapa sin base: se dice, aunque `load` llegue después.
+    let fallo = false;
+    m.on('error', () => {
+      if (fallo || m.loaded()) return;
+      fallo = true;
+      alEstado.current?.('ERROR');
+    });
     m.on('load', () => {
+      if (!fallo) alEstado.current?.('LISTO');
       // Los anillos van debajo de todo lo demás: zonas, incidentes y unidades quedan legibles encima.
       m.addSource(FUENTE_ANILLOS, { type: 'geojson', data: VACIO as never });
       m.addLayer({

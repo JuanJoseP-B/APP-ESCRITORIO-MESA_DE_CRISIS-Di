@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, duracion } from '@argos/ui';
+import { BootSequence } from './components/BootSequence';
 import { Login } from './components/Login';
 import { MapaTactico } from './layout/MapaTactico';
 import { PanelAjustes } from './layout/PanelAjustes';
@@ -28,7 +29,8 @@ import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/ll
 import { construirSnapshot, previsualizarRecomendacion } from './domain/asesor';
 import { crearMotorReglas } from './domain/motorReglas';
 import { unidadesParaMapa } from './domain/unidadesMapa';
-import { indicativosDe } from './domain/unidades';
+import { indicativosDe, resumirUnidades } from './domain/unidades';
+import type { EstadoMapa, SubsistemasArranque } from './domain/arranque';
 import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
 import { rutasAFeatureCollection } from './domain/geojson';
 import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
@@ -70,6 +72,8 @@ function Mesa({
   onReiniciarSimulacion,
   onElegirEscenario,
   onCerrarSesion,
+  arranquePendiente = false,
+  onArranqueVisto,
 }: {
   readonly servicio: ServicioMesa;
   /** Solo en modo demo. */
@@ -79,6 +83,9 @@ function Mesa({
   readonly onReiniciarSimulacion?: () => void;
   readonly onElegirEscenario?: (id: IdEscenario) => void;
   readonly onCerrarSesion: () => void;
+  /** Primera consola tras el login: muestra la secuencia de arranque (si el operador no la apagó). */
+  readonly arranquePendiente?: boolean;
+  readonly onArranqueVisto?: () => void;
 }) {
   const { t } = useTexto();
   const incidentes = useIncidentesRealtime(servicio);
@@ -103,6 +110,11 @@ function Mesa({
   const [despachoAbierto, setDespachoAbierto] = useState(false);
   const [planAbierto, setPlanAbierto] = useState(false);
   const [atajosAbiertos, setAtajosAbiertos] = useState(false);
+  // Se decide al montar: encender el ajuste a mitad de sesión no lanza la secuencia, y reiniciar el demo tampoco.
+  const [enArranque, setEnArranque] = useState(() => arranquePendiente && preferencias.mostrarArranque);
+  useEffect(() => onArranqueVisto?.(), [onArranqueVisto]);
+  const completarArranque = useCallback(() => setEnArranque(false), []);
+  const [estadoMapa, setEstadoMapa] = useState<EstadoMapa>('CARGANDO');
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
   const abrirAtajos = useCallback(() => setAtajosAbiertos(true), []);
@@ -331,7 +343,7 @@ function Mesa({
       setDibujando(false);
       setUnidadId(null);
     },
-  }, !ajustesAbiertos && !atajosAbiertos);
+  }, !ajustesAbiertos && !atajosAbiertos && !enArranque);
 
   // Lo que el operador está viendo en la tarjeta del asesor; con ello se aplica o se descarta.
   const sugerencia =
@@ -353,6 +365,15 @@ function Mesa({
 
   const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
   const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
+  const subsistemas = useMemo<SubsistemasArranque>(
+    () => ({
+      enlace,
+      unidades: { cargando: recursos.cargando, error: recursos.error, ...resumirUnidades(recursos.datos) },
+      refugios: { cargando: zonas.cargando, error: zonas.error, activos: zonas.datos.filter((z) => z.tipo === 'Refugio').length },
+      mapa: estadoMapa,
+    }),
+    [enlace, recursos, zonas, estadoMapa],
+  );
 
   const mapa = (
     <>
@@ -384,6 +405,7 @@ function Mesa({
         onSeleccionarUnidad={alSeleccionarUnidad}
         previsualizacion={previsualizacion}
         lineaVinculacion={lineaVinculacion}
+        onEstado={setEstadoMapa}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -563,6 +585,7 @@ function Mesa({
       />
       {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} onAbrirAtajos={abrirAtajosDesdeAjustes} />}
       {atajosAbiertos && <HojaAtajos onCerrar={cerrarAtajos} />}
+      {enArranque && <BootSequence subsistemas={subsistemas} reducirMovimiento={reducirMovimiento} onCompletar={completarArranque} />}
     </TutorialProvider>
   );
 }
@@ -589,6 +612,8 @@ export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno
   const reiniciarSimulacion = useCallback(() => elegirEscenario(escenarioActual), [elegirEscenario, escenarioActual]);
   const [sesion, setSesion] = useState<SesionOperador | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [arranquePendiente, setArranquePendiente] = useState(true);
+  const marcarArranqueVisto = useCallback(() => setArranquePendiente(false), []);
 
   useEffect(() => {
     if (!servicio) return;
@@ -622,7 +647,10 @@ export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno
   );
 
   const cerrarSesion = useCallback(() => {
-    void servicio?.cerrarSesion().finally(() => setSesion(null));
+    void servicio?.cerrarSesion().finally(() => {
+      setSesion(null);
+      setArranquePendiente(true);
+    });
   }, [servicio]);
 
   if (!servicio || sesion === undefined) return null;
@@ -637,6 +665,8 @@ export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno
       onReiniciarSimulacion={demo ? reiniciarSimulacion : undefined}
       onElegirEscenario={demo ? elegirEscenario : undefined}
       onCerrarSesion={cerrarSesion}
+      arranquePendiente={arranquePendiente}
+      onArranqueVisto={marcarArranqueVisto}
     />
   );
 }

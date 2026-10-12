@@ -19,12 +19,12 @@ interface ValorPreferencias {
 type PreferenciasSinIdioma = Omit<Preferencias, 'idioma'>;
 
 function sinIdioma(p: Preferencias): PreferenciasSinIdioma {
-  return { tema: p.tema, reducirMovimiento: p.reducirMovimiento, textoGrande: p.textoGrande };
+  return { tema: p.tema, reducirMovimiento: p.reducirMovimiento, textoGrande: p.textoGrande, mostrarArranque: p.mostrarArranque };
 }
 
-/** Sin proveedor (pruebas de un componente suelto) rigen los valores por defecto. */
+/** Sin proveedor (pruebas de un componente suelto) rigen los valores por defecto, sin secuencia de arranque. */
 const ContextoPreferencias = createContext<ValorPreferencias>({
-  preferencias: PREFERENCIAS_POR_DEFECTO,
+  preferencias: { ...PREFERENCIAS_POR_DEFECTO, mostrarArranque: false },
   temaEfectivo: 'crema',
   fijar: () => undefined,
 });

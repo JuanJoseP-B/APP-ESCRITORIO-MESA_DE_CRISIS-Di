@@ -8,7 +8,7 @@ import {
   type Preferencias,
 } from './preferencias';
 
-const TODAS: Preferencias = { tema: 'sistema', idioma: 'en', reducirMovimiento: true, textoGrande: true };
+const TODAS: Preferencias = { tema: 'sistema', idioma: 'en', reducirMovimiento: true, textoGrande: true, mostrarArranque: true };
 
 afterEach(() => {
   localStorage.clear();
@@ -21,7 +21,7 @@ afterEach(() => {
 describe('leer y guardar', () => {
   it('sin nada guardado devuelve los valores por defecto', () => {
     expect(leerPreferencias()).toEqual(PREFERENCIAS_POR_DEFECTO);
-    expect(PREFERENCIAS_POR_DEFECTO).toEqual({ tema: 'crema', idioma: 'es', reducirMovimiento: false, textoGrande: false });
+    expect(PREFERENCIAS_POR_DEFECTO).toEqual({ tema: 'crema', idioma: 'es', reducirMovimiento: false, textoGrande: false, mostrarArranque: true });
   });
 
   it('lo guardado se lee igual', () => {
@@ -34,6 +34,7 @@ describe('leer y guardar', () => {
     localStorage.setItem('argos.tema', 'neon');
     localStorage.setItem('argos.idioma', 'fr');
     localStorage.setItem('argos.reducirMovimiento', 'quizá');
+    localStorage.setItem('argos.mostrarArranque', 'quizá');
     expect(leerPreferencias()).toEqual({ ...PREFERENCIAS_POR_DEFECTO, textoGrande: true });
   });
 
