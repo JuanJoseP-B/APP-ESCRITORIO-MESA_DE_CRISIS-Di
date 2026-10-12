@@ -273,6 +273,26 @@ kbd[data-destello='true'] {
 
 
 
+/* ── Bitácora del detalle ──────────────────────────────────────────────── */
+@keyframes ag-bitacora-entra {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--space-2)));
+  }
+}
+
+@keyframes ag-bitacora-resalte {
+  from {
+    background-color: var(--surface-selected);
+  }
+}
+
+.ag-bitacora-linea[data-nueva] {
+  animation:
+    ag-bitacora-entra var(--dur-base) var(--ease-salida),
+    ag-bitacora-resalte var(--dur-slow) var(--ease-salida);
+}
+
 /* ── Secuencia de arranque ─────────────────────────────────────────────── */
 @keyframes ag-arranque-linea {
   from { opacity: 0; }

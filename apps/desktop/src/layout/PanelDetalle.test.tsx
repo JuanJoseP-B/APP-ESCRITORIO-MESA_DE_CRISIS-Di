@@ -273,3 +273,44 @@ describe('PanelDetalle: asesor táctico', () => {
     expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'ASIGNADO', 'inc-1-a3f');
   });
 });
+
+describe('PanelDetalle: movimiento', () => {
+  const lineas = () => [...document.querySelectorAll('.ag-bitacora-linea')];
+  const nuevas = () => lineas().filter((li) => li.hasAttribute('data-nueva')).map((li) => li.textContent);
+
+  it('las líneas que ya estaban al abrir el incidente no se resaltan; la que llega después, sí', () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    expect(lineas()).toHaveLength(2);
+    expect(nuevas()).toEqual([]);
+
+    const conLlegada: Incidente = {
+      ...incidente,
+      timeline: [...incidente.timeline, { timestamp: '2026-10-07T11:50:00Z', descripcion: 'Unidad U02 llegó a la escena', autor: 'Sistema' }],
+    };
+    rerender(<PanelDetalle {...base({ incidente: conLlegada })} />);
+    expect(nuevas()).toHaveLength(1);
+    expect(nuevas()[0]).toContain('Unidad U02 llegó a la escena');
+  });
+
+  it('con los tokens de movimiento a 0 la línea nueva aparece sin resaltado', () => {
+    document.documentElement.style.setProperty('--dur-slow', '0ms');
+    try {
+      const { rerender } = render(<PanelDetalle {...base()} />);
+      rerender(<PanelDetalle {...base({ incidente: { ...incidente, timeline: [...incidente.timeline, { timestamp: '2026-10-07T11:50:00Z', descripcion: 'Nota' }] } })} />);
+      expect(lineas()).toHaveLength(3);
+      expect(nuevas()).toEqual([]);
+    } finally {
+      document.documentElement.removeAttribute('style');
+    }
+  });
+
+  it('una unidad recién asignada aparece en «asignadas» y la liberada termina saliendo', async () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    const asignadas = () => within(screen.getByRole('region', { name: 'Unidades asignadas' }));
+    rerender(<PanelDetalle {...base({ recursos: recursos.map((r) => (r.id === 'M11' ? unidad('M11', 'ASIGNADO', incidente.id) : r)) })} />);
+    expect(asignadas().getByRole('group', { name: /M11/ })).toBeTruthy();
+
+    rerender(<PanelDetalle {...base({ recursos: recursos.map((r) => (r.id === 'U02' ? unidad('U02', 'DISPONIBLE') : r)) })} />);
+    await vi.waitFor(() => expect(asignadas().queryByRole('group', { name: /U02/ })).toBeNull());
+  });
+});
