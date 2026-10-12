@@ -20,6 +20,7 @@ import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
 import { useAvisosSla } from './hooks/useAvisosSla';
 import { useSla } from './hooks/useSla';
+import { useSonidosConsola } from './hooks/useSonidosConsola';
 import { useSimulacion } from './hooks/useSimulacion';
 import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
 import { dividirCola, estaCerrado, filtrarPorIds, moverSeleccion } from './domain/cola';
@@ -54,6 +55,7 @@ import { TutorialProvider } from './layout/TutorialProvider';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearEntornoDemo, type EntornoDemo } from './services/entornoDemo';
+import { reproductor } from './services/reproductorSonidos';
 
 const SIN_MOVIMIENTOS: readonly MovimientoUnidad[] = [];
 
@@ -113,7 +115,10 @@ function Mesa({
   // Se decide al montar: encender el ajuste a mitad de sesión no lanza la secuencia, y reiniciar el demo tampoco.
   const [enArranque, setEnArranque] = useState(() => arranquePendiente && preferencias.mostrarArranque);
   useEffect(() => onArranqueVisto?.(), [onArranqueVisto]);
-  const completarArranque = useCallback(() => setEnArranque(false), []);
+  const completarArranque = useCallback(() => {
+    setEnArranque(false);
+    reproductor.reproducir('arranque');
+  }, []);
   const [estadoMapa, setEstadoMapa] = useState<EstadoMapa>('CARGANDO');
   const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
   const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
@@ -257,7 +262,15 @@ function Mesa({
     [accionesLlamada, formulario?.llamadaId, incidentes.datos],
   );
   const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
-  const totalEntrantes = useMemo(() => entrantes(llamadas.datos).length, [llamadas.datos]);
+  const llamadasEntrantes = useMemo(() => entrantes(llamadas.datos), [llamadas.datos]);
+  const totalEntrantes = llamadasEntrantes.length;
+  useSonidosConsola({
+    listo: !incidentes.cargando && !llamadas.cargando && !recursos.cargando,
+    entrantes: llamadasEntrantes,
+    unidadesVencidas: sla.resumen.unidadesVencidas,
+    recursos: recursos.datos,
+    incidentes: incidentes.datos,
+  });
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
   useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos, retraso });
@@ -614,6 +627,17 @@ export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno
   const [error, setError] = useState<string | null>(null);
   const [arranquePendiente, setArranquePendiente] = useState(true);
   const marcarArranqueVisto = useCallback(() => setArranquePendiente(false), []);
+
+  // Web Audio solo arranca dentro de un gesto: el primero (el clic del login o del arranque) crea o reanuda el contexto.
+  useEffect(() => {
+    const activar = () => reproductor.activar();
+    document.addEventListener('pointerdown', activar, true);
+    document.addEventListener('keydown', activar, true);
+    return () => {
+      document.removeEventListener('pointerdown', activar, true);
+      document.removeEventListener('keydown', activar, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (!servicio) return;
