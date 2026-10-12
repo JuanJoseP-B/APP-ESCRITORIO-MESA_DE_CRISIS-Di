@@ -56,9 +56,19 @@ describe('App: secuencia de arranque', () => {
     expect(arranque()).toBeNull();
   });
 
-  it('el ajuste se apaga desde Ajustes y queda guardado', async () => {
+  it('no se cierra sola: Enter entra cuando aparece ENTRAR A LA CONSOLA', async () => {
     await abrirConsola();
     await userEvent.keyboard('{Enter}');
+    expect(arranque()).toBeTruthy();
+    const entrar = await screen.findByRole('button', { name: /Entrar a la consola/ }, { timeout: 5_000 });
+    expect(document.activeElement).toBe(entrar);
+    await userEvent.keyboard('{Enter}');
+    expect(arranque()).toBeNull();
+  });
+
+  it('el ajuste se apaga desde Ajustes y queda guardado', async () => {
+    await abrirConsola();
+    await userEvent.click(screen.getByRole('button', { name: 'Saltar' }));
     expect(arranque()).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
     await userEvent.click(screen.getByRole('switch', { name: /Mostrar secuencia de arranque/ }));

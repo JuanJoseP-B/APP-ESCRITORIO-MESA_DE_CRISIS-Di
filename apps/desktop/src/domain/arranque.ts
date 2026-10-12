@@ -24,13 +24,15 @@ export interface LineaArranque {
   readonly params?: ParamsTexto;
 }
 
-/** Ritmo de la secuencia: cada línea aparece en un tic par y muestra su resultado en el impar siguiente. */
-export const TIC_ARRANQUE_MS = 225;
-/** Duración total; deja ver la última línea resuelta antes de entrar a la consola. */
-export const DURACION_ARRANQUE_MS = 2500;
-/** Con movimiento reducido la secuencia sale completa y estática este tiempo. */
-export const DURACION_ARRANQUE_ESTATICA_MS = 600;
+/**
+ * Ritmo de la secuencia: cada línea aparece en un tic par y muestra su resultado en el impar siguiente,
+ * así que entra una línea cada 350 ms. La secuencia no se cierra sola: espera al operador.
+ */
+export const TIC_ARRANQUE_MS = 175;
 export const TICS_ARRANQUE = LINEAS_ARRANQUE.length * 2;
+
+/** `true` cuando la última línea ya mostró su resultado: es el momento de ofrecer la entrada a la consola. */
+export const arranqueCompleto = (tic: number): boolean => tic >= TICS_ARRANQUE - 1;
 
 export type FaseLinea = 'oculta' | 'comprobando' | 'resuelta';
 

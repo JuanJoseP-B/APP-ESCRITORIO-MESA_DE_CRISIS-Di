@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DURACION_ARRANQUE_MS,
   LINEAS_ARRANQUE,
   TICS_ARRANQUE,
   TIC_ARRANQUE_MS,
+  arranqueCompleto,
   faseLinea,
   lineasArranque,
   type SubsistemasArranque,
@@ -58,7 +58,11 @@ describe('ritmo de la secuencia', () => {
     expect(faseLinea(4, TICS_ARRANQUE)).toBe('resuelta');
   });
 
-  it('todas las líneas se resuelven antes de que termine la secuencia', () => {
-    expect((TICS_ARRANQUE - 1) * TIC_ARRANQUE_MS).toBeLessThan(DURACION_ARRANQUE_MS);
+  it('entra una línea cada 350 ms y la secuencia queda completa al resolverse la última', () => {
+    expect(TIC_ARRANQUE_MS * 2).toBe(350);
+    expect(arranqueCompleto(TICS_ARRANQUE - 2)).toBe(false);
+    expect(faseLinea(4, TICS_ARRANQUE - 2)).toBe('comprobando');
+    expect(arranqueCompleto(TICS_ARRANQUE - 1)).toBe(true);
+    expect(faseLinea(4, TICS_ARRANQUE - 1)).toBe('resuelta');
   });
 });
