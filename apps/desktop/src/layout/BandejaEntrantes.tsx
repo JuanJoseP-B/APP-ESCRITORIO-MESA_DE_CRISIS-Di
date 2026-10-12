@@ -53,7 +53,7 @@ export function BandejaEntrantes({ llamadas, ahora, abiertaId = null, onAbrir, o
                     aria-label={t(nueva ? 'entrantes.abrir.nueva' : 'entrantes.abrir', { canal: l.canal, tipo, prioridad: l.prioridad })}
                     aria-current={l.id === abiertaId}
                     onClick={() => onAbrir(l)}
-                    className="grid min-h-row min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2 text-left hover:bg-surface-hover"
+                    className="ag-fila grid min-h-row min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2 text-left hover:bg-surface-hover"
                   >
                     <Badge tone={prioridad.tone} emphasis={prioridad.emphasis}>
                       {l.prioridad}

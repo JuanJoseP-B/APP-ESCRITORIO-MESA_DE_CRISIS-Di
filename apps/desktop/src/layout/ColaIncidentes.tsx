@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
-import { Badge, Button, duracion, duracionSegundos } from '@argos/ui';
+import { Badge, Button, curva, duracion, duracionSegundos } from '@argos/ui';
 import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
 import { llamadasPorIncidente } from '../domain/entrantes';
 import { textoEstadoIncidente } from '../i18n/etiquetas';
@@ -81,7 +81,7 @@ function FilaIncidente({
       aria-pressed={seleccionado}
       aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades, llamadas })}
       onClick={onSeleccionar}
-      className={`grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover ${seleccionado ? 'bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong' : ''}`}
+      className={`ag-fila grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover ${seleccionado ? 'bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong' : ''}`}
     >
       <span>
         {cerrado ? (
@@ -174,8 +174,17 @@ export function ColaIncidentes({
             aria-selected={pestana === id}
             aria-controls="lista-incidentes"
             onClick={() => setPestana(id)}
-            className={`flex-1 px-4 py-2 font-mono text-overline uppercase ${pestana === id ? 'bg-surface-selected text-text-primary' : 'text-text-secondary hover:bg-surface-hover'}`}
+            className={`ag-pestana relative isolate flex-1 px-4 py-2 font-mono text-overline uppercase ${pestana === id ? 'text-text-primary' : 'text-text-secondary hover:bg-surface-hover'}`}
           >
+            {/* El fondo de la pestaña activa es un solo elemento que se desliza de una a otra. */}
+            {pestana === id && (
+              <motion.span
+                layoutId="cola-pestana-activa"
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 bg-surface-selected"
+                transition={{ duration: duracionSegundos('fast'), ease: curva('mecanico') }}
+              />
+            )}
             {nombre} <span className="tabular">({cuenta})</span>
           </button>
         ))}
@@ -197,7 +206,7 @@ export function ColaIncidentes({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                  transition={{ duration: duracionSegundos('base'), ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: duracionSegundos('base'), ease: curva('salida') }}
                 >
                   <FilaIncidente
                     incidente={i}

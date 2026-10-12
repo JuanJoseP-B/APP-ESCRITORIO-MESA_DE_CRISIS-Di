@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
-import { NOMBRES_DURACION, duracion, duracionSegundos, milisegundos, movimientoReducido } from './movimiento';
+import { NOMBRES_DURACION, curva, duracion, duracionSegundos, milisegundos, movimientoReducido } from './movimiento';
 import css from './tokens.css?raw';
 
 afterEach(() => {
@@ -62,5 +62,16 @@ describe('movimientoReducido()', () => {
     expect(movimientoReducido()).toBe(false);
     document.documentElement.dataset['reducedMotion'] = 'true';
     expect(movimientoReducido()).toBe(true);
+  });
+});
+
+describe('curva', () => {
+  it('lee los cuatro puntos del token y, si falta o no es una cubic-bezier, usa los de tokens.css', () => {
+    expect(curva('mecanico')).toEqual([0.2, 0, 0, 1]);
+    expect(curva('salida')).toEqual([0, 0, 0.2, 1]);
+    document.documentElement.style.setProperty('--ease-salida', 'cubic-bezier(0.1, 0.2, 0.3, 0.4)');
+    expect(curva('salida')).toEqual([0.1, 0.2, 0.3, 0.4]);
+    document.documentElement.style.setProperty('--ease-salida', 'ease-out');
+    expect(curva('salida')).toEqual([0, 0, 0.2, 1]);
   });
 });

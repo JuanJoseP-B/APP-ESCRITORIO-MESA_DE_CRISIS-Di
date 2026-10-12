@@ -31,6 +31,51 @@ kbd[data-destello='true'] {
   animation: ag-kbd-destello var(--dur-fast, 150ms) var(--ease-salida, ease-out);
 }
 
+/* ── Filas y pestañas de la cola ───────────────────────────────────────── */
+/* Hover: fondo (clase de la fila) y un paso corto a la derecha. Pulsado: se hunde 1px. El foco no cambia. */
+.ag-fila {
+  --ag-fila-paso: 2px;
+  --ag-fila-hundido: 1px;
+  transition:
+    background-color var(--dur-instant) var(--ease-salida),
+    transform var(--dur-instant) var(--ease-mecanico);
+}
+
+.ag-fila:hover {
+  transform: translateX(var(--ag-fila-paso));
+}
+
+.ag-fila:active {
+  transform: translate(var(--ag-fila-paso), var(--ag-fila-hundido));
+}
+
+.ag-pestana {
+  --ag-fila-hundido: 1px;
+  transition:
+    background-color var(--dur-instant) var(--ease-salida),
+    color var(--dur-fast) var(--ease-salida),
+    transform var(--dur-instant) var(--ease-mecanico);
+}
+
+.ag-pestana:active {
+  transform: translateY(var(--ag-fila-hundido));
+}
+
+/* Sin movimiento no hay desplazamiento: quedan el cambio de fondo y de color, al instante. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-fila,
+  .ag-pestana {
+    --ag-fila-paso: 0px;
+    --ag-fila-hundido: 0px;
+  }
+}
+
+:root[data-reduced-motion] .ag-fila,
+:root[data-reduced-motion] .ag-pestana {
+  --ag-fila-paso: 0px;
+  --ag-fila-hundido: 0px;
+}
+
 /* ── Coreografía de llegada de llamada ─────────────────────────────────── */
 @keyframes ag-deslizar-abajo {
   from {

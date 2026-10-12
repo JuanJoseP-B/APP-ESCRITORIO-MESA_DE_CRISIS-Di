@@ -33,3 +33,19 @@ export function movimientoReducido(raiz: HTMLElement = document.documentElement)
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 }
+
+export const NOMBRES_CURVA = ['mecanico', 'salida'] as const;
+export type NombreCurva = (typeof NOMBRES_CURVA)[number];
+export type CurvaBezier = [number, number, number, number];
+
+/** Respaldo si el token no existe: las mismas curvas de `tokens.css`. */
+const RESPALDO_CURVA: Readonly<Record<NombreCurva, CurvaBezier>> = { mecanico: [0.2, 0, 0, 1], salida: [0, 0, 0.2, 1] };
+
+/** Curva del token `--ease-<nombre>` como los cuatro puntos que pide Motion (`transition.ease`). */
+export function curva(nombre: NombreCurva, raiz: Element = document.documentElement): CurvaBezier {
+  const m = /^cubic-bezier\(([^)]+)\)$/.exec(getComputedStyle(raiz).getPropertyValue(`--ease-${nombre}`).trim());
+  const puntos = m?.[1]?.split(',').map((p) => Number(p.trim())) ?? [];
+  const [a, b, c, d] = puntos;
+  if (puntos.length !== 4 || a === undefined || b === undefined || c === undefined || d === undefined || puntos.some(Number.isNaN)) return [...RESPALDO_CURVA[nombre]];
+  return [a, b, c, d];
+}
