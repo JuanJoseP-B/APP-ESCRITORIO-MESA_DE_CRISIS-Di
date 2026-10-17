@@ -1,5 +1,6 @@
 import { cx } from '../cx';
 import { Button } from './Button';
+import { ContadorRodante } from './ContadorRodante';
 import { Glyph, type FormaGlifo } from './Glyph';
 import './ShelterGauge.css';
 
@@ -40,8 +41,12 @@ export function ShelterGauge({ name, current, capacity, step = 5, onDecrement, o
       <div className="ag-gauge__head">
         <span className="ag-gauge__name">{name}</span>
         <span className="ag-gauge__read">
-          <span className="ag-gauge__value">{`${String(cur).padStart(ancho, '0')}/${cap}`}</span>
-          <span className="ag-gauge__cap">{pct}%</span>
+          <span className="ag-gauge__value">
+            <ContadorRodante valor={`${String(cur).padStart(ancho, '0')}/${cap}`} />
+          </span>
+          <span className="ag-gauge__cap">
+            <ContadorRodante valor={`${pct}%`} />
+          </span>
         </span>
       </div>
       <div className="ag-gauge__ctrl">

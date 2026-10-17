@@ -30,7 +30,7 @@ describe('reportes', () => {
   it('crea un incidente punto [lng, lat] con evento inicial', () => {
     const i = incidenteDesdeReporte(reporte, ahora);
     expect(i.geometria).toEqual({ type: 'Point', coordinates: [-77.3, 1.2] });
-    expect(i).toMatchObject({ estado: 'Abierto', nivel_criticidad: 'Medio' });
+    expect(i).toMatchObject({ estado: 'Abierto', nivel_criticidad: 'Medio', prioridad: 'P2', tipo: 'INCENDIO' });
     expect(i.titulo).toContain('Incendio');
     expect(i.timeline).toHaveLength(1);
   });

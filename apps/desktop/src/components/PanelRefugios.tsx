@@ -1,5 +1,6 @@
 import type { ZonaPublica } from '@argos/shared';
 import { SectionHeader, ShelterGauge } from '@argos/ui';
+import { useTexto } from '../i18n/IdiomaProvider';
 
 interface Props {
   readonly zonas: readonly ZonaPublica[];
@@ -12,12 +13,13 @@ interface Props {
 const PASO = 5;
 
 export function PanelRefugios({ zonas, onCambiarOcupacion, indice = '05' }: Props) {
+  const { t } = useTexto();
   const refugios = zonas.filter((z) => z.tipo === 'Refugio');
   if (refugios.length === 0) return null;
 
   return (
-    <section aria-label="Refugios" className="shrink-0">
-      <SectionHeader index={indice} title="Refugios" count={refugios.length} />
+    <section aria-label={t('refugios.titulo')} className="shrink-0">
+      <SectionHeader index={indice} title={t('refugios.titulo')} count={refugios.length} />
       <ul>
         {refugios.map((z) => (
           <li key={z.id}>
@@ -26,8 +28,8 @@ export function PanelRefugios({ zonas, onCambiarOcupacion, indice = '05' }: Prop
               current={z.capacidad_actual}
               capacity={z.capacidad_maxima}
               step={PASO}
-              decrementLabel={`Reducir ocupación de ${z.nombre}`}
-              incrementLabel={`Aumentar ocupación de ${z.nombre}`}
+              decrementLabel={t('refugios.reducir', { nombre: z.nombre })}
+              incrementLabel={t('refugios.aumentar', { nombre: z.nombre })}
               onDecrement={() => onCambiarOcupacion(z, -PASO)}
               onIncrement={() => onCambiarOcupacion(z, PASO)}
             />

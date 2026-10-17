@@ -9,3 +9,296 @@
 body {
   margin: 0;
 }
+
+@keyframes ag-kbd-destello {
+  0% {
+    background-color: var(--action-primary);
+    color: var(--text-on-accent);
+    border-color: var(--action-primary);
+    transform: scale(1.15);
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+    border-color: currentColor;
+    transform: scale(1);
+  }
+}
+
+.ag-kbd--destello,
+.ag-kbd[data-destello='true'],
+kbd[data-destello='true'] {
+  animation: ag-kbd-destello var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}
+
+/* ── Filas y pestañas de la cola ───────────────────────────────────────── */
+/* Hover: fondo (clase de la fila) y un paso corto a la derecha. Pulsado: se hunde 1px. El foco no cambia. */
+.ag-fila {
+  --ag-fila-paso: 2px;
+  --ag-fila-hundido: 1px;
+  transition:
+    background-color var(--dur-instant) var(--ease-salida),
+    transform var(--dur-instant) var(--ease-mecanico);
+}
+
+.ag-fila:hover {
+  transform: translateX(var(--ag-fila-paso));
+}
+
+.ag-fila:active {
+  transform: translate(var(--ag-fila-paso), var(--ag-fila-hundido));
+}
+
+.ag-pestana {
+  --ag-fila-hundido: 1px;
+  transition:
+    background-color var(--dur-instant) var(--ease-salida),
+    color var(--dur-fast) var(--ease-salida),
+    transform var(--dur-instant) var(--ease-mecanico);
+}
+
+.ag-pestana:active {
+  transform: translateY(var(--ag-fila-hundido));
+}
+
+/* Sin movimiento no hay desplazamiento: quedan el cambio de fondo y de color, al instante. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-fila,
+  .ag-pestana {
+    --ag-fila-paso: 0px;
+    --ag-fila-hundido: 0px;
+  }
+}
+
+:root[data-reduced-motion] .ag-fila,
+:root[data-reduced-motion] .ag-pestana {
+  --ag-fila-paso: 0px;
+  --ag-fila-hundido: 0px;
+}
+
+/* ── Coreografía de llegada de llamada ─────────────────────────────────── */
+@keyframes ag-deslizar-abajo {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* La franja es una línea sólida que cruza la fila una vez. En reposo es invisible: al terminar no queda nada encima del texto. */
+@keyframes ag-barrido-franja {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.ag-fila-entrante[data-nueva='true'] {
+  position: relative;
+  overflow: hidden;
+  animation: ag-deslizar-abajo var(--dur-base, 240ms) var(--ease-salida, ease-out);
+}
+
+.ag-fila-entrante[data-nueva='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset var(--space-1) 0 0 var(--status-warning);
+  opacity: 0;
+  animation: ag-barrido-franja var(--dur-slow, 400ms) var(--ease-salida, ease-out) var(--dur-base, 240ms);
+  pointer-events: none;
+}
+
+/* Sin animación la franja no barre: se quedaría quieta encima del texto de la fila. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-fila-entrante[data-nueva='true']::after {
+    display: none;
+  }
+}
+
+:root[data-reduced-motion] .ag-fila-entrante[data-nueva='true']::after {
+  display: none;
+}
+
+@keyframes ag-contador-golpe {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.ag-contador-golpe {
+  display: inline-flex;
+  animation: ag-contador-golpe var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}
+
+@keyframes ag-radar-onda {
+  0% {
+    width: 6px;
+    height: 6px;
+    opacity: 0.9;
+    border-width: 2px;
+  }
+  100% {
+    width: 64px;
+    height: 64px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+.ag-radar-contenedor {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.ag-radar-onda {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border-style: solid;
+  transform: translate(-50%, -50%);
+  animation: ag-radar-onda 1400ms var(--ease-salida, ease-out) infinite;
+}
+
+/* ── Coreografía de creación y vinculación ─────────────────────────────── */
+@keyframes ag-badge-salto {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35) translateY(-2px); }
+  100% { transform: scale(1); }
+}
+
+.ag-badge-salto {
+  display: inline-block;
+  animation: ag-badge-salto var(--dur-base, 240ms) var(--ease-salida, ease-out);
+}
+
+@keyframes ag-marcador-caida {
+  0% {
+    transform: translate(-50%, -40px) scale(1.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.ag-marcador-caida {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--action-primary);
+  background: var(--status-warning-bg);
+  transform: translate(-50%, -50%);
+  animation: ag-marcador-caida var(--dur-base, 240ms) var(--ease-salida, ease-out) forwards;
+  pointer-events: none;
+}
+
+/* ── Coreografía de resolución, SLA y drawers ──────────────────────────── */
+@keyframes ag-marcador-resuelto {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  35% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+}
+
+.ag-marcador-resuelto {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--status-success);
+  color: var(--surface-canvas);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 0 6px var(--status-success);
+  animation: ag-marcador-resuelto var(--dur-slow, 400ms) var(--ease-salida, ease-out) forwards;
+  pointer-events: none;
+}
+
+@keyframes ag-pulso-sla {
+  0% { box-shadow: inset 0 0 0 0 transparent; }
+  30% { box-shadow: inset 0 0 0 3px var(--status-critical); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+.ag-pulso-sla {
+  animation: ag-pulso-sla var(--dur-slow, 400ms) var(--ease-salida, ease-out);
+}
+
+@keyframes ag-drawer-deslizar-derecha {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.ag-drawer-derecha {
+  animation: ag-drawer-deslizar-derecha var(--dur-base, 240ms) var(--ease-salida, cubic-bezier(0, 0, 0.2, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-badge-salto,
+  .ag-marcador-caida,
+  .ag-marcador-resuelto,
+  .ag-pulso-sla,
+  .ag-drawer-derecha {
+    animation: none !important;
+  }
+}
+
+:root[data-reduced-motion] .ag-badge-salto,
+:root[data-reduced-motion] .ag-marcador-caida,
+:root[data-reduced-motion] .ag-marcador-resuelto,
+:root[data-reduced-motion] .ag-pulso-sla,
+:root[data-reduced-motion] .ag-drawer-derecha {
+  animation: none !important;
+}
+
+
+
+/* ── Bitácora del detalle ──────────────────────────────────────────────── */
+@keyframes ag-bitacora-entra {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--space-2)));
+  }
+}
+
+@keyframes ag-bitacora-resalte {
+  from {
+    background-color: var(--surface-selected);
+  }
+}
+
+.ag-bitacora-linea[data-nueva] {
+  animation:
+    ag-bitacora-entra var(--dur-base) var(--ease-salida),
+    ag-bitacora-resalte var(--dur-slow) var(--ease-salida);
+}
+
+/* ── Secuencia de arranque ─────────────────────────────────────────────── */
+@keyframes ag-arranque-linea {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ag-arranque-linea {
+  animation: ag-arranque-linea var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}

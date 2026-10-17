@@ -2,6 +2,8 @@ export { cx } from './cx';
 export { Glyph, FORMAS_GLIFO, type FormaGlifo } from './components/Glyph';
 export { Button, type ButtonProps, type VarianteBoton, type TamanoControl } from './components/Button';
 export { TextField, type TextFieldProps } from './components/TextField';
+export { SelectField, type SelectFieldProps, type OpcionSelect } from './components/SelectField';
+export { TextAreaField, type TextAreaFieldProps } from './components/TextAreaField';
 export { Badge, SEVERIDADES, type BadgeProps, type SeveridadBadge, type EstadoIncidenteBadge, type TonoBadge, type EnfasisBadge } from './components/Badge';
 export { StatusIndicator, ESTADOS_RECURSO_UI, type StatusIndicatorProps, type EstadoRecursoUI } from './components/StatusIndicator';
 export { SectionHeader, type SectionHeaderProps } from './components/SectionHeader';
@@ -9,6 +11,25 @@ export { IncidentCard, type IncidentCardProps } from './components/IncidentCard'
 export { DispatchRow, type DispatchRowProps } from './components/DispatchRow';
 export { ShelterGauge, type ShelterGaugeProps } from './components/ShelterGauge';
 export { Masthead, type MastheadProps } from './components/Masthead';
-export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps, type NivelCronometro } from './components/UnitChip';
+export { UnitChip, ABREVIATURA_ESTADO_UNIDAD, type UnitChipProps } from './components/UnitChip';
+export { CronometroSla, PALABRAS_CRONOMETRO, type CronometroSlaProps, type NivelCronometro, type PalabrasCronometro } from './components/CronometroSla';
+export { SegmentedControl, type SegmentedControlProps, type OpcionSegmento } from './components/SegmentedControl';
+export { Switch, type SwitchProps } from './components/Switch';
+export { ContadorRodante, type ContadorRodanteProps } from './components/ContadorRodante';
+export { Kbd, type KbdProps } from './components/Kbd';
 export { RailColapsable, type RailColapsableProps } from './components/RailColapsable';
+export { Coachmark, posicionarPopover, type CoachmarkProps, type EtiquetasCoachmark, type ColocacionCoachmark, type RectCoachmark, type PosicionCoachmark } from './components/Coachmark';
 export { leerToken, observarTema, opacidadZona } from './mapaTema';
+export { useCambio } from './useCambio';
+export {
+  curva,
+  duracion,
+  duracionSegundos,
+  milisegundos,
+  movimientoReducido,
+  NOMBRES_CURVA,
+  NOMBRES_DURACION,
+  type CurvaBezier,
+  type NombreCurva,
+  type NombreDuracion,
+} from './movimiento';

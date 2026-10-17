@@ -2,7 +2,10 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Incidente, Recurso, ZonaPublica } from '@argos/shared';
+import type { EstadoSla, Incidente, Recurso, ZonaPublica } from '@argos/shared';
+import { RADIOS_POR_DEFECTO } from '@argos/shared';
+import { analizarPerimetro } from '../domain/analisisEspacial';
+import { generarAnillos } from '../domain/perimetro';
 import { PanelDetalle, type PanelDetalleProps } from './PanelDetalle';
 
 afterEach(cleanup);
@@ -11,6 +14,8 @@ const incidente: Incidente = {
   id: 'inc-1-a3f',
   titulo: 'Fuga de gas en sector',
   nivel_criticidad: 'Crítico',
+  prioridad: 'P1',
+  tipo: 'FUGA_GAS',
   estado: 'Abierto',
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: [
@@ -28,11 +33,11 @@ const unidad = (id: string, estado: Recurso['estado_actual'], incidenteId: strin
 });
 
 const recursos: readonly Recurso[] = [
-  unidad('U01', 'Disponible'),
-  unidad('M11', 'Disponible'),
-  unidad('U02', 'Despachado', incidente.id),
-  unidad('P01', 'En Escena', 'otro-incidente'),
-  unidad('M10', 'Inoperativo'),
+  unidad('U01', 'DISPONIBLE'),
+  unidad('M11', 'DISPONIBLE'),
+  unidad('U02', 'ASIGNADO', incidente.id),
+  unidad('P01', 'EN_ESCENA', 'otro-incidente'),
+  unidad('M10', 'INOPERATIVO'),
 ];
 
 const refugio: ZonaPublica = {
@@ -64,6 +69,13 @@ describe('PanelDetalle: despacho contextual', () => {
     expect(screen.getByText(/Selecciona un incidente/)).toBeTruthy();
   });
 
+  it('un incidente resuelto no ofrece despachar: sin lista de disponibles ni botones DESPACHAR (regresión)', () => {
+    render(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' } })} />);
+    expect(screen.queryByRole('region', { name: 'Unidades disponibles' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Despachar/i })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Unidades asignadas' })).toBeTruthy();
+  });
+
   it('con incidente, cada unidad disponible tiene DESPACHAR y llama a la mutación con su incidenteId', async () => {
     const mutar = vi.fn();
     render(<PanelDetalle {...base({ onCambiarEstadoRecurso: mutar })} />);
@@ -72,7 +84,7 @@ describe('PanelDetalle: despacho contextual', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Despachar M11' }));
     expect(mutar).toHaveBeenCalledTimes(1);
-    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'Despachado', 'inc-1-a3f');
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'ASIGNADO', 'inc-1-a3f');
   });
 
   it('las unidades asignadas ofrecen solo transiciones válidas y conservan el incidente', async () => {
@@ -83,8 +95,18 @@ describe('PanelDetalle: despacho contextual', () => {
     expect(within(asignadas).queryByText('P01')).toBeNull();
     expect(within(asignadas).queryByText('DESPACHAR')).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'En escena U02' }));
-    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'U02' }), 'En Escena', 'inc-1-a3f');
+    await userEvent.click(screen.getByRole('button', { name: 'En ruta U02' }));
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'U02' }), 'EN_RUTA', 'inc-1-a3f');
+    expect(screen.queryByRole('button', { name: 'En escena U02' })).toBeNull();
+  });
+
+  it('una unidad en ruta ofrece En escena y la liberación cancela el despacho', async () => {
+    const mutar = vi.fn();
+    render(<PanelDetalle {...base({ recursos: [unidad('U03', 'EN_RUTA', 'inc-1-a3f')], onCambiarEstadoRecurso: mutar })} />);
+    await userEvent.click(screen.getByRole('button', { name: 'En escena U03' }));
+    expect(mutar).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'U03' }), 'EN_ESCENA', 'inc-1-a3f');
+    await userEvent.click(screen.getByRole('button', { name: 'Liberar U03' }));
+    expect(mutar).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'U03' }), 'DISPONIBLE', 'inc-1-a3f');
   });
 
   it('una unidad inoperativa solo puede habilitarse, nunca despacharse', () => {
@@ -94,7 +116,7 @@ describe('PanelDetalle: despacho contextual', () => {
   });
 
   it('sin unidades disponibles lo indica', () => {
-    render(<PanelDetalle {...base({ recursos: [unidad('M10', 'Inoperativo')] })} />);
+    render(<PanelDetalle {...base({ recursos: [unidad('M10', 'INOPERATIVO')] })} />);
     expect(screen.getByText('No hay unidades disponibles')).toBeTruthy();
     expect(screen.getByText('Sin unidades asignadas')).toBeTruthy();
   });
@@ -140,5 +162,155 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
     rerender(<PanelDetalle {...base({ incidente: null, onCambiarOcupacion: ajustar })} />);
     await userEvent.click(screen.getByRole('button', { name: 'Reducir ocupación de Coliseo Municipal' }));
     expect(ajustar).toHaveBeenCalledWith(refugio, -5);
+  });
+});
+
+describe('PanelDetalle: despacho con teclado', () => {
+  it('el botón «Despachar unidad» muestra su tecla D en un <kbd>, anuncia el atajo y abre el despacho', async () => {
+    const abrir = vi.fn();
+    render(<PanelDetalle {...base({ onAbrirDespacho: abrir })} />);
+    const boton = screen.getByRole('button', { name: 'Despachar unidad' });
+    expect(boton.querySelector('kbd')?.textContent).toBe('D');
+    expect(boton.getAttribute('aria-keyshortcuts')).toBe('D');
+    await userEvent.click(boton);
+    expect(abrir).toHaveBeenCalledTimes(1);
+  });
+
+  it('no aparece sin la acción o con el incidente resuelto', () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('button', { name: 'Despachar unidad' })).toBeNull();
+    rerender(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' }, onAbrirDespacho: vi.fn() })} />);
+    expect(screen.queryByRole('button', { name: 'Despachar unidad' })).toBeNull();
+  });
+});
+
+describe('PanelDetalle: cronómetros SLA', () => {
+  const sla = (recursoId: string, nivel: EstadoSla['nivel'], transcurridoSeg: number): EstadoSla => ({ recursoId, hito: 'EN_RUTA', transcurridoSeg, limiteSeg: 120, nivel });
+
+  it('las unidades asignadas muestran su cronómetro con nivel en glifo y palabra', () => {
+    render(<PanelDetalle {...base({ sla: new Map([['U02', sla('U02', 'ALERTA', 100)]]) })} />);
+    const asignadas = screen.getByRole('region', { name: 'Unidades asignadas' });
+    const cronometro = within(asignadas).getByRole('timer', { name: '01:40, alerta' });
+    expect(cronometro.getAttribute('data-nivel')).toBe('alerta');
+    expect(cronometro.querySelector('.ag-glyph--triangle')).not.toBeNull();
+  });
+
+  it('sin SLA, o en unidades libres, no hay cronómetro', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('timer')).toBeNull();
+  });
+});
+
+describe('PanelDetalle: análisis del perímetro', () => {
+  const anillos = generarAnillos({ lat: 0, lng: 0 }, RADIOS_POR_DEFECTO);
+
+  it('sin perímetro no hay sección de análisis', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('region', { name: 'Análisis del perímetro' })).toBeNull();
+  });
+
+  it('con perímetro muestra el análisis justo después de la ficha y pasa el resaltado al mapa', async () => {
+    const onResaltar = vi.fn();
+    const analisis = analizarPerimetro(anillos, [refugio], []);
+    render(<PanelDetalle {...base({ perimetro: { anillos, analisis }, onResaltar })} />);
+    const secciones = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(secciones.slice(0, 2)).toEqual(['Ficha del incidente', 'Análisis del perímetro']);
+    await userEvent.hover(screen.getByText(/^Coliseo Municipal · /));
+    expect(onResaltar).toHaveBeenLastCalledWith({ tipo: 'zona', id: 'z1' });
+  });
+});
+
+describe('PanelDetalle: asesor táctico', () => {
+  const asesorBase = (extra: Partial<NonNullable<PanelDetalleProps['asesor']>> = {}): NonNullable<PanelDetalleProps['asesor']> => ({
+    estado: { fase: 'inactivo' },
+    onAlternar: vi.fn(),
+    onAplicar: vi.fn(),
+    onDescartar: vi.fn(),
+    onCerrar: vi.fn(),
+    ...extra,
+  });
+
+  it('sin asesor no hay botón ni tarjeta', () => {
+    render(<PanelDetalle {...base()} />);
+    expect(screen.queryByRole('button', { name: /asesor/i })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('el botón [ASESOR] lleva el atajo A y alterna la tarjeta', async () => {
+    const onAlternar = vi.fn();
+    render(<PanelDetalle {...base({ asesor: asesorBase({ onAlternar }) })} />);
+    const boton = screen.getByRole('button', { name: 'Pedir una recomendación al asesor táctico' });
+    expect(boton.getAttribute('aria-keyshortcuts')).toBe('A');
+    expect(boton.getAttribute('aria-pressed')).toBe('false');
+    expect(boton.textContent).toContain('ASESOR');
+    await userEvent.click(boton);
+    expect(onAlternar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('con la tarjeta abierta el botón queda pulsado y la tarjeta va justo después de la ficha', () => {
+    render(<PanelDetalle {...base({ asesor: asesorBase({ estado: { fase: 'analizando' } }) })} />);
+    expect(screen.getByRole('button', { name: 'Pedir una recomendación al asesor táctico' }).getAttribute('aria-pressed')).toBe('true');
+    const secciones = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
+    expect(secciones.slice(0, 2)).toEqual(['Ficha del incidente', 'Asesor táctico · motor de reglas']);
+  });
+
+  it('un incidente resuelto no ofrece el asesor', () => {
+    render(<PanelDetalle {...base({ incidente: { ...incidente, estado: 'Resuelto' }, asesor: asesorBase({ estado: { fase: 'analizando' } }) })} />);
+    expect(screen.queryByRole('button', { name: 'Pedir una recomendación al asesor táctico' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();
+  });
+
+  it('si el asesor falla, el despacho manual sigue disponible', async () => {
+    const mutar = vi.fn();
+    render(
+      <PanelDetalle
+        {...base({ onCambiarEstadoRecurso: mutar, asesor: asesorBase({ estado: { fase: 'error', error: 'SIN_RECOMENDACION', detalle: '' } }) })}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('No hay una recomendación posible');
+    await userEvent.click(screen.getByRole('button', { name: 'Despachar M11' }));
+    expect(mutar).toHaveBeenCalledWith(expect.objectContaining({ id: 'M11' }), 'ASIGNADO', 'inc-1-a3f');
+  });
+});
+
+describe('PanelDetalle: movimiento', () => {
+  const lineas = () => [...document.querySelectorAll('.ag-bitacora-linea')];
+  const nuevas = () => lineas().filter((li) => li.hasAttribute('data-nueva')).map((li) => li.textContent);
+
+  it('las líneas que ya estaban al abrir el incidente no se resaltan; la que llega después, sí', () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    expect(lineas()).toHaveLength(2);
+    expect(nuevas()).toEqual([]);
+
+    const conLlegada: Incidente = {
+      ...incidente,
+      timeline: [...incidente.timeline, { timestamp: '2026-10-07T11:50:00Z', descripcion: 'Unidad U02 llegó a la escena', autor: 'Sistema' }],
+    };
+    rerender(<PanelDetalle {...base({ incidente: conLlegada })} />);
+    expect(nuevas()).toHaveLength(1);
+    expect(nuevas()[0]).toContain('Unidad U02 llegó a la escena');
+  });
+
+  it('con los tokens de movimiento a 0 la línea nueva aparece sin resaltado', () => {
+    document.documentElement.style.setProperty('--dur-slow', '0ms');
+    try {
+      const { rerender } = render(<PanelDetalle {...base()} />);
+      rerender(<PanelDetalle {...base({ incidente: { ...incidente, timeline: [...incidente.timeline, { timestamp: '2026-10-07T11:50:00Z', descripcion: 'Nota' }] } })} />);
+      expect(lineas()).toHaveLength(3);
+      expect(nuevas()).toEqual([]);
+    } finally {
+      document.documentElement.removeAttribute('style');
+    }
+  });
+
+  it('una unidad recién asignada aparece en «asignadas» y la liberada termina saliendo', async () => {
+    const { rerender } = render(<PanelDetalle {...base()} />);
+    const asignadas = () => within(screen.getByRole('region', { name: 'Unidades asignadas' }));
+    rerender(<PanelDetalle {...base({ recursos: recursos.map((r) => (r.id === 'M11' ? unidad('M11', 'ASIGNADO', incidente.id) : r)) })} />);
+    expect(asignadas().getByRole('group', { name: /M11/ })).toBeTruthy();
+
+    rerender(<PanelDetalle {...base({ recursos: recursos.map((r) => (r.id === 'U02' ? unidad('U02', 'DISPONIBLE') : r)) })} />);
+    await vi.waitFor(() => expect(asignadas().queryByRole('group', { name: /U02/ })).toBeNull());
   });
 });

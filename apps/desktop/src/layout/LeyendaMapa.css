@@ -1,0 +1,16 @@
+/* ── LeyendaMapa ────────────────────────────────────────────────────────── */
+/* Panel plegable: la cabecera es un botón; el cuerpo se oculta con `hidden`. */
+.ag-leyenda { box-sizing: border-box; max-width: min(520px, calc(100vw - 32px)); }
+.ag-leyenda__cabecera { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); width: 100%; min-height: var(--control-md); padding: 0 var(--space-3); background: transparent; border: 0; color: var(--text-secondary); cursor: pointer; }
+.ag-leyenda__cabecera:hover { background: var(--surface-hover); }
+.ag-leyenda__cabecera:focus { outline: none; }
+.ag-leyenda__cabecera:focus-visible { box-shadow: var(--focus-ring); }
+.ag-leyenda__cuerpo { padding: 0 var(--space-3) var(--space-2); max-height: 60dvh; overflow-y: auto; }
+.ag-leyenda__cuerpo[hidden] { display: none; }
+.ag-leyenda__columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); }
+.ag-leyenda__capas { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); padding-top: var(--space-2); border-top: var(--border-rule, 2px) solid var(--border-strong); }
+/* Muestras de trazo: la distinción entre anillos no depende solo del color. */
+.ag-leyenda__trazo { display: inline-block; flex: none; width: 24px; height: 0; border-top: 2px solid var(--status-critical); }
+.ag-leyenda__trazo--TIBIA { border-top-style: dashed; }
+.ag-leyenda__trazo--EVACUACION { border-top-style: dotted; }
+.ag-leyenda__trazo--ruta { border-top: 3px dashed var(--status-warning); }

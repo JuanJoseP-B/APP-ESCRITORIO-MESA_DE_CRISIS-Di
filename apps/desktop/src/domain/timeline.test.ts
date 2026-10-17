@@ -61,6 +61,23 @@ describe('eventosVisibles', () => {
     ]);
   });
 
+  it('ordena y muestra por creado_en del servidor; timestamp solo es respaldo', () => {
+    const visibles = eventosVisibles(
+      [
+        { timestamp: '2026-10-07T08:00:00Z', creado_en: '2026-10-07T11:00:00Z', descripcion: 'servidor' },
+        { timestamp: '2026-10-07T10:00:00Z', descripcion: 'fila antigua' },
+        { timestamp: '2026-10-07T12:00:00Z', creado_en: 'no es fecha', descripcion: 'creado_en roto' },
+      ],
+      'UTC',
+    );
+    expect(visibles.map((e) => `${e.hora} ${e.descripcion}`)).toEqual([
+      '10:00 fila antigua',
+      '11:00 servidor',
+      '12:00 creado_en roto',
+    ]);
+    expect(visibles[1]?.iso).toBe('2026-10-07T11:00:00Z');
+  });
+
   it('los eventos sin fecha van antes que los fechados y los empates conservan el orden', () => {
     const descripciones = eventosVisibles(
       [
@@ -114,6 +131,13 @@ describe('bitacora', () => {
     const [separador] = bitacora([{ timestamp: '2026-10-07T12:00:00Z', descripcion: 'x' }], 'UTC');
     expect(separador).toMatchObject({ tipo: 'fecha', clave: '2026-10-07' });
     expect(separador?.tipo === 'fecha' && separador.etiqueta).toMatch(/^0?7 oct 2026$|^07 oct 2026$/);
+  });
+
+  it('la fecha y la hora siguen el idioma activo', () => {
+    const [separador, evento] = bitacora([{ timestamp: '2026-10-07T12:00:00Z', descripcion: 'x' }], 'UTC', 'en');
+    expect(separador?.tipo === 'fecha' && separador.etiqueta).toBe('Oct 07, 2026');
+    expect(evento?.tipo === 'evento' && evento.hora).toBe('12:00');
+    expect(eventosVisibles([{ timestamp: '2026-10-07T12:00:00Z' }], 'UTC', 'en')[0]?.descripcion).toBe('Event without description');
   });
 
   it('un mismo día lleva un solo separador y cada evento conserva su autor', () => {

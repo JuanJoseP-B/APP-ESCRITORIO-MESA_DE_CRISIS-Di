@@ -43,6 +43,7 @@ Tablas principales: `incidentes` (criticidad, estado, `geometria` GeoJSON, `time
 - **Tipos compartidos:** `packages/shared/types` exporta `Incidente`, `Recurso` y `Reporte`; la app y los paquetes los consumen (evita contratos duplicados).
 - **Acceso a Supabase aislado:** todas las llamadas pasan por un servicio unificado (p. ej. `services/supabaseClient.ts`); nunca consultar desde componentes de UI.
 - **Prohibido `any`** en cualquier archivo TypeScript (tipado estricto).
+- **Textos con `t()`:** todo texto visible nuevo en `apps/desktop` se escribe con `useTexto()` → `t('clave', { params })`. La clave se añade a `src/i18n/es.ts` (fuente) y a `src/i18n/en.ts` (tipado contra `es`: si falta una clave, `typecheck` falla). Sin librerías de i18n.
 - **Fuera de alcance (Fase 1):** pasarelas de pago, OAuth/redes sociales (solo email/password y roles internos), gráficos 3D o motores de mapas distintos a Mapbox GL JS / MapLibre.
 
 ## Verificación y flujo de trabajo
@@ -78,6 +79,12 @@ Tema: `document.documentElement.dataset.theme = "crema" | "carbon"` (en desktop,
 - Foco: `focus-visible:shadow-focus` (Pizarra). Error de input: `border-input-border-error shadow-error` (ya lo trae `TextField`) + mensaje con ■ y `role="alert"`.
 - Secciones del panel: filete `border-t-rule border-border-strong` (ya lo trae `SectionHeader`) + overline numerado ("01 INCIDENTES").
 - Espaciado solo en la escala 4px (`1,2,3,4,5,6,8,10,12,16`); alturas `h-control-sm|md|lg`, filas `min-h-row`, panel `w-panel`.
+
+### Movimiento
+- Cada animación comunica un cambio de estado, un origen o un destino; estética mecánica y seca, sin rebotes elásticos ni giros.
+- Duraciones y curvas **solo** de tokens (`tokens.css`): `--dur-instant` 80 ms, `--dur-fast` 150 ms, `--dur-base` 240 ms, `--dur-slow` 400 ms, `--ease-mecanico` y `--ease-salida`. En Tailwind: `dur-fast`, `ease-mecanico`… En JS y en el mapa: `duracion('base')` (ms) o `duracionSegundos('base')` de `@argos/ui`; nunca números sueltos.
+- Con `prefers-reduced-motion` o `data-reduced-motion="true"` en `<html>` todos los tokens valen 0 ms y `theme.css` apaga transiciones y animaciones: el estado final tiene que ser el mismo sin animación (no dependas de `animation-fill-mode`).
+- `motion` (Motion para React, dependencia de `apps/desktop`): `import { motion, AnimatePresence } from 'motion/react'`. Úsalo para layout compartido (`layout`, `layoutId`), entrada y salida de elementos. Pasa `duration` con `duracionSegundos(...)` y `ease` con la curva del token; con `movimientoReducido()` verdadero, `duration: 0`.
 
 ### Prohibido (AI slop)
 - ❌ Hex, `rgb()` o clases arbitrarias de color (`bg-[#...]`, `text-[...]`). Usa solo clases semánticas.

@@ -1,18 +1,37 @@
 /* ── UnitChip ───────────────────────────────────────────────────────────── */
-/* Tres líneas (indicativo, estado, cronómetro) en 80 px: caben 12 en la fila del tablero a 1280 px. */
-.ag-unit { box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: flex-start; flex: none; width: 80px; padding: var(--space-1) var(--space-2); background: var(--card-bg); border: var(--border-hairline) solid var(--card-border); border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); text-align: left; }
-button.ag-unit { cursor: pointer; transition: background-color 80ms linear, border-color 80ms linear; }
+/* Tres líneas (indicativo, estado, cronómetro) en 80 px (crecen con su contenido si hace falta): caben 12 en la fila del tablero a 1280 px. */
+.ag-unit { box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: flex-start; flex: none; min-width: 80px; width: max-content; padding: var(--space-1) var(--space-2); background: var(--card-bg); border: var(--border-hairline) solid var(--card-border); border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); text-align: left; }
+button.ag-unit { cursor: pointer; transition: background-color var(--dur-instant) var(--ease-salida), border-color var(--dur-instant) var(--ease-salida), transform var(--dur-instant) var(--ease-mecanico); }
 button.ag-unit:hover { background: var(--card-bg-hover); border-color: var(--card-border-hover); }
 .ag-unit:focus { outline: none; }
 .ag-unit:focus-visible { box-shadow: var(--focus-ring); }
 .ag-unit[aria-pressed="true"], .ag-unit[data-selected="true"] { background: var(--card-bg-selected); border-color: var(--card-border-selected); box-shadow: inset 0 0 0 1px var(--card-border-selected); }
 .ag-unit[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--card-border-selected), var(--focus-ring); }
-.ag-unit__callsign { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; line-height: 20px; font-weight: 600; white-space: nowrap; }
-.ag-unit__state { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .08em; }
+.ag-unit__callsign { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; white-space: nowrap; }
+.ag-unit__state { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; }
 .ag-unit--disponible .ag-unit__state { color: var(--status-success); }
 .ag-unit--despachado .ag-unit__state { color: var(--status-warning); }
+.ag-unit--enruta .ag-unit__state { color: var(--status-warning); }
 .ag-unit--escena .ag-unit__state { color: var(--status-info); }
 .ag-unit--inoperativo .ag-unit__state { color: var(--status-offline); }
-.ag-unit__timer { display: inline-flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: .02em; color: var(--text-secondary); }
-.ag-unit__timer[data-nivel="alerta"] { color: var(--status-warning); }
-.ag-unit__timer[data-nivel="vencido"] { color: var(--status-critical); }
+/* El cronómetro (CronometroSla) trae sus propios colores y el parpadeo de VENCIDO. */
+.ag-unit__timer { align-self: stretch; }
+
+/* Cambio de estado: el estado nuevo entra con un fundido y un paso corto hacia arriba (sin giro). */
+@keyframes ag-unit-cambio {
+  from { opacity: 0; transform: translateY(var(--space-1)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ag-unit--cambio .ag-unit__state {
+  animation: ag-unit-cambio var(--dur-base, 240ms) var(--ease-salida, cubic-bezier(0, 0, 0.2, 1));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-unit--cambio .ag-unit__state {
+    animation: none;
+  }
+}
+:root[data-reduced-motion] .ag-unit--cambio .ag-unit__state {
+  animation: none;
+}

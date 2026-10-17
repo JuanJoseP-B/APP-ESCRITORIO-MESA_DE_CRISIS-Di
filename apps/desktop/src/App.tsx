@@ -1,54 +1,135 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@argos/ui';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, duracion } from '@argos/ui';
+import { BootSequence } from './components/BootSequence';
 import { Login } from './components/Login';
 import { MapaTactico } from './layout/MapaTactico';
+import { PanelAjustes } from './layout/PanelAjustes';
 import { useAccionesOperador } from './hooks/useAccionesOperador';
 import {
+  useEventosRecursoRealtime,
   useIncidentesRealtime,
+  useLlamadasRealtime,
   useRecursosRealtime,
-  useReportesRealtime,
   useZonasPublicasRealtime,
 } from './hooks/useListaRealtime';
+import { useAccionesLlamada } from './hooks/useAccionesLlamada';
+import { useAsesor } from './hooks/useAsesor';
 import { useAtajos } from './hooks/useAtajos';
+import { usePreferencias } from './hooks/usePreferencias';
 import { usePanelColapsable } from './hooks/usePanelColapsable';
 import { useReloj } from './hooks/useReloj';
-import type { Coordenadas, Reporte } from '@argos/shared';
-import { dividirCola, moverSeleccion } from './domain/cola';
+import { useAvisosSla } from './hooks/useAvisosSla';
+import { useSla } from './hooks/useSla';
+import { useSonidosConsola } from './hooks/useSonidosConsola';
+import { useSimulacion } from './hooks/useSimulacion';
+import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
+import { dividirCola, estaCerrado, filtrarPorIds, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
+import { entrantes, reporteDeLlamada } from './domain/entrantes';
+import { BORRADOR_VACIO, borradorDesdeLlamada, type Borrador } from './domain/llamadas';
+import { construirSnapshot, previsualizarRecomendacion } from './domain/asesor';
+import { crearMotorReglas } from './domain/motorReglas';
+import { unidadesParaMapa } from './domain/unidadesMapa';
+import { indicativosDe, resumirUnidades } from './domain/unidades';
+import type { EstadoMapa, SubsistemasArranque } from './domain/arranque';
+import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
+import { rutasAFeatureCollection } from './domain/geojson';
+import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
+import { perimetroDeIncidente } from './domain/perimetro';
+import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
+import type { RelojSimulado } from './domain/relojSimulado';
+import { ESCENARIO_INICIAL, type Escenario, type IdEscenario } from './domain/escenario';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
+import { AvisosSla } from './layout/AvisosSla';
+import { ConfirmacionPlan } from './layout/ConfirmacionPlan';
+import { DialogoDespacho } from './layout/DialogoDespacho';
 import { BarraEstado } from './layout/BarraEstado';
 import { ColaIncidentes } from './layout/ColaIncidentes';
+import { FormularioLlamada } from './layout/FormularioLlamada';
 import { GrillaTactica } from './layout/GrillaTactica';
+import { HojaAtajos } from './layout/HojaAtajos';
 import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
+import { InvitacionTutorial } from './layout/InvitacionTutorial';
+import { TutorialProvider } from './layout/TutorialProvider';
+import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
-import { servicioDemo } from './services/servicioDemo';
-import { aplicarTema, temaGuardado, type Tema } from './tema';
+import { crearEntornoDemo, type EntornoDemo } from './services/entornoDemo';
+import { reproductor } from './services/reproductorSonidos';
 
-const ETIQUETA_MODO: Record<ModoTrazado, string> = { poligono: 'Polígono', linea: 'Línea' };
+const SIN_MOVIMIENTOS: readonly MovimientoUnidad[] = [];
+
+/** Formulario de llamada abierto: vacío (F2) o precargado desde una entrante. `clave` lo remonta al cambiar de llamada. */
+interface FormularioAbierto {
+  readonly clave: number;
+  readonly inicial: Borrador;
+  readonly llamadaId: string | null;
+}
 
 function Mesa({
   servicio,
+  reloj,
+  escenario,
   operador,
+  onReiniciarSimulacion,
+  onElegirEscenario,
   onCerrarSesion,
+  arranquePendiente = false,
+  onArranqueVisto,
 }: {
   readonly servicio: ServicioMesa;
+  /** Solo en modo demo. */
+  readonly reloj?: RelojSimulado;
+  readonly escenario?: Escenario;
   readonly operador: string;
+  readonly onReiniciarSimulacion?: () => void;
+  readonly onElegirEscenario?: (id: IdEscenario) => void;
   readonly onCerrarSesion: () => void;
+  /** Primera consola tras el login: muestra la secuencia de arranque (si el operador no la apagó). */
+  readonly arranquePendiente?: boolean;
+  readonly onArranqueVisto?: () => void;
 }) {
+  const { t } = useTexto();
   const incidentes = useIncidentesRealtime(servicio);
-  const reportes = useReportesRealtime(servicio);
+  const llamadas = useLlamadasRealtime(servicio);
   const recursos = useRecursosRealtime(servicio);
+  const eventosRecurso = useEventosRecursoRealtime(servicio);
   const zonas = useZonasPublicasRealtime(servicio);
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
-  const [reporteSeleccionadoId, setReporteSeleccionadoId] = useState<string | null>(null);
+  const [unidadId, setUnidadId] = useState<string | null>(null);
+  const [resaltado, setResaltado] = useState<ObjetivoResaltado | null>(null);
+  const [formulario, setFormulario] = useState<FormularioAbierto | null>(null);
+  const [ubicacionLlamada, setUbicacionLlamada] = useState<Coordenadas | null>(null);
+  const [resaltadoId, setResaltadoId] = useState<string | null>(null);
+  const llamadaAbiertaId = formulario?.llamadaId ?? null;
   const [foco, setFoco] = useState<Coordenadas | null>(null);
   const [dibujando, setDibujando] = useState(false);
   const [modoTrazado, setModoTrazado] = useState<ModoTrazado>('poligono');
   const [aviso, setAviso] = useState<string | null>(null);
-  const [tema, setTema] = useState<Tema>(temaGuardado);
-  useEffect(() => aplicarTema(tema), [tema]);
-  const alternarTema = useCallback(() => setTema((actual) => (actual === 'crema' ? 'carbon' : 'crema')), []);
+  const { temaEfectivo, preferencias, fijar: fijarPreferencias } = usePreferencias();
+  const { reducirMovimiento, sonido } = preferencias;
+  const alternarSonido = useCallback(() => fijarPreferencias({ sonido: !sonido }), [fijarPreferencias, sonido]);
+  const [ajustesAbiertos, setAjustesAbiertos] = useState(false);
+  const [despachoAbierto, setDespachoAbierto] = useState(false);
+  const [planAbierto, setPlanAbierto] = useState(false);
+  const [atajosAbiertos, setAtajosAbiertos] = useState(false);
+  // Se decide al montar: encender el ajuste a mitad de sesión no lanza la secuencia, y reiniciar el demo tampoco.
+  const [enArranque, setEnArranque] = useState(() => arranquePendiente && preferencias.mostrarArranque);
+  useEffect(() => onArranqueVisto?.(), [onArranqueVisto]);
+  const completarArranque = useCallback(() => {
+    setEnArranque(false);
+    reproductor.reproducir('arranque');
+  }, []);
+  const [estadoMapa, setEstadoMapa] = useState<EstadoMapa>('CARGANDO');
+  const abrirAjustes = useCallback(() => setAjustesAbiertos(true), []);
+  const cerrarAjustes = useCallback(() => setAjustesAbiertos(false), []);
+  const abrirAtajos = useCallback(() => setAtajosAbiertos(true), []);
+  const cerrarAtajos = useCallback(() => setAtajosAbiertos(false), []);
+  // Desde Ajustes → Ayuda: los ajustes se cierran y la hoja ocupa su lugar.
+  const abrirAtajosDesdeAjustes = useCallback(() => {
+    setAjustesAbiertos(false);
+    setAtajosAbiertos(true);
+  }, []);
 
   const [desfaseMs, setDesfaseMs] = useState(0);
   useEffect(() => {
@@ -61,15 +142,50 @@ function Mesa({
       activo = false;
     };
   }, [servicio]);
-  const ahora = useReloj(desfaseMs);
+  // En el demo la hora corre acelerada y las unidades se desplazan: se refresca varias veces por segundo.
+  const ahora = useReloj(desfaseMs, reloj ? 250 : 1000, reloj?.ahora);
+  const simulacion = useSimulacion(servicio, reloj, escenario);
+  const retraso = escenario?.retraso ?? null;
+  // Cronómetros SLA de las unidades despachadas: se recalculan a 1 Hz sobre la hora de la consola.
+  const sla = useSla(recursos.datos, eventosRecurso.datos, incidentes.datos, desfaseMs, reloj?.ahora);
+  const slaEnRiesgo = sla.resumen.alertas + sla.resumen.vencidos;
+  // El filtro de la cola por SLA se retira solo cuando ya no queda ninguna unidad en riesgo.
+  const [filtroSla, setFiltroSla] = useState(false);
+  const [lineaVinculacion, setLineaVinculacion] = useState<{ origen: Coordenadas; destino: Coordenadas } | null>(null);
+  useEffect(() => {
+    if (slaEnRiesgo === 0) setFiltroSla(false);
+  }, [slaEnRiesgo]);
+  const idsFiltroSla = filtroSla ? sla.resumen.incidentesEnRiesgo : null;
+  const quitarFiltroSla = useCallback(() => setFiltroSla(false), []);
+  const alternarFiltroSla = useCallback(() => setFiltroSla((activo) => !activo), []);
+  const avisosSla = useAvisosSla(sla.resumen.unidadesVencidas);
+  const indicativos = useMemo(() => indicativosDe(recursos.datos), [recursos.datos]);
+
+  // Un SLA vencido dispara un único pulso sutil en el borde de la ventana
+  const [pulsoSla, setPulsoSla] = useState(false);
+  const prevVencidasRef = useRef<readonly string[]>([]);
+  useEffect(() => {
+    const actuales = sla.resumen.unidadesVencidas;
+    const nuevas = actuales.filter((id) => !prevVencidasRef.current.includes(id));
+    if (nuevas.length > 0 && !reducirMovimiento) {
+      setPulsoSla(true);
+      const timer = setTimeout(() => setPulsoSla(false), duracion('slow') || 400);
+      prevVencidasRef.current = actuales;
+      return () => clearTimeout(timer);
+    }
+    prevVencidasRef.current = actuales;
+  }, [sla.resumen.unidadesVencidas, reducirMovimiento]);
 
   const panelCola = usePanelColapsable('cola');
   const panelDetalle = usePanelColapsable('detalle');
   const { expandir: expandirDetalle } = panelDetalle;
+  const { expandir: expandirCola } = panelCola;
   // Elegir un incidente abre el detalle: ahí vive el despacho.
   useEffect(() => {
     if (seleccionadoId) expandirDetalle();
   }, [seleccionadoId, expandirDetalle]);
+  // El despacho es del incidente que lo abrió: si el operador cambia de incidente, se cierra.
+  useEffect(() => setDespachoAbierto(false), [seleccionadoId]);
 
   const acciones = useAccionesOperador({
     servicio,
@@ -88,38 +204,222 @@ function Mesa({
     },
     [guardarTrazado],
   );
-  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita el mismo reporte.
-  const alSeleccionarReporte = useCallback((r: Reporte) => {
-    setReporteSeleccionadoId(r.id);
-    setFoco({ lat: r.lat, lng: r.lng });
+  const accionesLlamada = useAccionesLlamada({
+    servicio,
+    incidentes: incidentes.datos,
+    alSeleccionar: setSeleccionadoId,
+    alAvisar: setAviso,
+    operador,
+    ahora: reloj?.ahora,
+  });
+  const abrirFormulario = useCallback(
+    (inicial: Borrador, llamadaId: string | null, ubicacion: Coordenadas | null) => {
+      setFormulario((actual) => ({ clave: (actual?.clave ?? 0) + 1, inicial, llamadaId }));
+      setUbicacionLlamada(ubicacion);
+      expandirDetalle();
+    },
+    [expandirDetalle],
+  );
+  const cerrarFormulario = useCallback(() => {
+    setFormulario(null);
+    setUbicacionLlamada(null);
+    setResaltadoId(null);
   }, []);
+  // El recorrido guiado deja la consola lista para cada paso: con el primer incidente activo a la vista si hace falta.
+  const primerIncidenteId = useMemo(() => dividirCola(incidentes.datos).activos[0]?.id ?? null, [incidentes.datos]);
+  const seleccionarPrimero = useCallback(() => setSeleccionadoId((actual) => actual ?? primerIncidenteId), [primerIncidenteId]);
+  const abrirLlamadaManual = useCallback(() => abrirFormulario(BORRADOR_VACIO, null, null), [abrirFormulario]);
+  // Objeto nuevo en cada clic: el mapa vuelve a centrar aunque se repita la misma llamada.
+  const alAbrirLlamada = useCallback(
+    (l: Llamada) => {
+      abrirFormulario(borradorDesdeLlamada(l), l.id, l.ubicacion);
+      setFoco({ lat: l.ubicacion.lat, lng: l.ubicacion.lng });
+    },
+    [abrirFormulario],
+  );
+  const { descartarReporte } = acciones;
+  const alDescartarLlamada = useCallback(
+    (l: Llamada) => {
+      setFormulario((actual) => (actual?.llamadaId === l.id ? null : actual));
+      descartarReporte(reporteDeLlamada(l));
+    },
+    [descartarReporte],
+  );
+  const alCrearIncidenteDesdeLlamada = useCallback(
+    (datos: NuevaLlamada, descartados: readonly CandidatoDuplicado[]) =>
+      accionesLlamada.crearIncidente(datos, formulario?.llamadaId ?? null, descartados),
+    [accionesLlamada, formulario?.llamadaId],
+  );
+  const alVincularLlamada = useCallback(
+    (datos: NuevaLlamada, candidato: CandidatoDuplicado) => {
+      const inc = incidentes.datos.find((i) => i.id === candidato.incidenteId);
+      if (inc?.geometria?.type === 'Point') {
+        const [lng, lat] = inc.geometria.coordinates;
+        setLineaVinculacion({ origen: datos.ubicacion, destino: { lng, lat } });
+        setTimeout(() => setLineaVinculacion(null), (duracion('slow') || 400) * 2);
+      }
+      return accionesLlamada.vincular(datos, formulario?.llamadaId ?? null, candidato.incidenteId);
+    },
+    [accionesLlamada, formulario?.llamadaId, incidentes.datos],
+  );
+  const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
+  const llamadasEntrantes = useMemo(() => entrantes(llamadas.datos), [llamadas.datos]);
+  const totalEntrantes = llamadasEntrantes.length;
+  useSonidosConsola({
+    listo: !incidentes.cargando && !llamadas.cargando && !recursos.cargando,
+    entrantes: llamadasEntrantes,
+    unidadesVencidas: sla.resumen.unidadesVencidas,
+    recursos: recursos.datos,
+    incidentes: incidentes.datos,
+  });
   const incidenteSeleccionado = incidentes.datos.find((i) => i.id === seleccionadoId) ?? null;
   const alErrorDibujo = useCallback((mensaje: string) => setAviso(mensaje), []);
+  useLlegadaUnidades({ servicio, reloj, recursos: recursos.datos, eventos: eventosRecurso.datos, incidentes: incidentes.datos, retraso });
+  // Las unidades EN_RUTA se interpolan según el reloj; con «reducir movimiento» saltan por tramos en vez de deslizarse.
+  const movimientos = useMemo(() => {
+    const m = reloj
+      ? movimientosEnRuta(recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento ? PASOS_SIN_ANIMACION : undefined, retraso)
+      : SIN_MOVIMIENTOS;
+    // Sin unidades en ruta se devuelve siempre el mismo arreglo: el mapa no se repinta cada cuarto de segundo.
+    return m.length === 0 ? SIN_MOVIMIENTOS : m;
+  }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento, retraso]);
+  const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
+  // Los anillos se generan al crear o seleccionar un incidente; solo cambian si cambia su tipo, su lugar o su perímetro.
+  // Un incidente resuelto ya no tiene perímetro de riesgo: no se dibuja ni se analiza.
+  const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado && !estaCerrado(incidenteSeleccionado) ? incidenteSeleccionado : {};
+  const anillos = useMemo(
+    () => (tipoSel !== undefined && geometriaSel ? perimetroDeIncidente({ tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel }).anillos : []),
+    [tipoSel, geometriaSel, perimetroSel],
+  );
+  // Refugios por anillo, unidades en zona caliente y bloqueos afectados; se recalcula cuando una unidad se mueve.
+  const perimetro = useMemo(
+    () => (anillos.length > 0 ? { anillos, analisis: analizarPerimetro(anillos, zonas.datos, unidadesMapa, seleccionadoId) } : null),
+    [anillos, zonas.datos, unidadesMapa, seleccionadoId],
+  );
+  // Copiloto táctico: motor de reglas local. Solo recomienda; nada cambia hasta que el operador confirma.
+  const motorAsesor = useMemo(() => crearMotorReglas({ t }), [t]);
+  const incidenteAsesorId = incidenteSeleccionado && incidenteSeleccionado.estado !== 'Resuelto' ? incidenteSeleccionado.id : null;
+  const construirAsesor = useCallback(
+    () =>
+      incidenteSeleccionado
+        ? construirSnapshot({ incidente: incidenteSeleccionado, llamadas: llamadas.datos, unidades: unidadesMapa, zonas: zonas.datos, sla: sla.porRecurso, ahoraMs: ahora })
+        : null,
+    [incidenteSeleccionado, llamadas.datos, unidadesMapa, zonas.datos, sla.porRecurso, ahora],
+  );
+  const asesor = useAsesor({ motor: motorAsesor, incidenteId: incidenteAsesorId, construir: construirAsesor });
+  const estadoAsesor = asesor.estado;
+  const previsualizacion = useMemo(
+    () => (estadoAsesor.fase === 'listo' ? previsualizarRecomendacion(estadoAsesor.snapshot, estadoAsesor.recomendacion) : null),
+    [estadoAsesor],
+  );
+  // La confirmación pertenece a la recomendación que la abrió: si la tarjeta se cierra o se rehace, también se cierra.
+  const faseAsesor = estadoAsesor.fase;
+  useEffect(() => {
+    if (faseAsesor !== 'listo') setPlanAbierto(false);
+  }, [faseAsesor]);
+  const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
+  const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
+  // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
+  const alSeleccionarUnidad = useCallback(
+    (id: string) => {
+      setUnidadId((actual) => (actual === id ? null : id));
+      const asignado = recursos.datos.find((r) => r.id === id)?.incidente_asignado_id;
+      if (asignado) setSeleccionadoId(asignado);
+    },
+    [recursos.datos],
+  );
 
-  const ordenCola = useMemo(() => dividirCola(incidentes.datos).activos.map((i) => i.id), [incidentes.datos]);
+  const ordenCola = useMemo(() => filtrarPorIds(dividirCola(incidentes.datos).activos, idsFiltroSla).map((i) => i.id), [incidentes.datos, idsFiltroSla]);
   useAtajos({
     j: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, 1)),
     k: () => setSeleccionadoId((actual) => moverSeleccion(ordenCola, actual, -1)),
-    Escape: () => setDibujando(false),
-  });
+    F1: abrirAtajos,
+    '?': abrirAtajos,
+    F2: () => {
+      if (!formulario && !despachoAbierto) abrirLlamadaManual();
+    },
+    d: () => {
+      if (!incidenteSeleccionado || incidenteSeleccionado.estado === 'Resuelto' || formulario || planAbierto) return;
+      expandirDetalle();
+      setDespachoAbierto(true);
+    },
+    a: () => {
+      if (!incidenteAsesorId || formulario || despachoAbierto || planAbierto) return;
+      expandirDetalle();
+      asesor.alternar();
+    },
+    Escape: () => {
+      if (despachoAbierto || planAbierto) return; // el propio diálogo (despacho o confirmación del asesor) se cierra con Esc
+      if (estadoAsesor.fase !== 'inactivo' && !dibujando) {
+        asesor.cerrar();
+        return;
+      }
+      setDibujando(false);
+      setUnidadId(null);
+    },
+  }, !ajustesAbiertos && !atajosAbiertos && !enArranque);
 
-  const enlace = estadoEnlace([incidentes, reportes, recursos, zonas]);
-  const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? reportes.error;
+  // Lo que el operador está viendo en la tarjeta del asesor; con ello se aplica o se descarta.
+  const sugerencia =
+    estadoAsesor.fase === 'listo' && incidenteSeleccionado
+      ? { incidente: incidenteSeleccionado, snapshot: estadoAsesor.snapshot, recomendacion: estadoAsesor.recomendacion }
+      : null;
+  const abrirPlan = useCallback(() => setPlanAbierto(true), []);
+  const descartarSugerencia = () => {
+    if (!sugerencia) return;
+    acciones.descartarSugerenciaAsesor(sugerencia);
+    asesor.cerrar();
+  };
+  const confirmarPlan = (marcadas: ReadonlySet<string>) => {
+    if (!sugerencia) return;
+    acciones.aplicarSugerenciaAsesor({ ...sugerencia, marcadas, recursos: recursos.datos });
+    setPlanAbierto(false);
+    asesor.cerrar();
+  };
+
+  const enlace = estadoEnlace([incidentes, llamadas, recursos, zonas]);
+  const mensaje = aviso ?? incidentes.error ?? recursos.error ?? zonas.error ?? llamadas.error;
+  const subsistemas = useMemo<SubsistemasArranque>(
+    () => ({
+      enlace,
+      unidades: { cargando: recursos.cargando, error: recursos.error, ...resumirUnidades(recursos.datos) },
+      refugios: { cargando: zonas.cargando, error: zonas.error, activos: zonas.datos.filter((z) => z.tipo === 'Refugio').length },
+      mapa: estadoMapa,
+    }),
+    [enlace, recursos, zonas, estadoMapa],
+  );
 
   const mapa = (
     <>
       <MapaTactico
         incidentes={incidentes.datos}
         zonas={zonas.datos}
-        reportes={reportes.datos}
+        reportes={reportes}
+        llamadas={llamadas.datos}
+        ahora={ahora}
         seleccionadoId={seleccionadoId}
-        reporteSeleccionadoId={reporteSeleccionadoId}
+        reporteSeleccionadoId={llamadaAbiertaId}
         onSeleccionar={setSeleccionadoId}
         foco={foco}
         dibujando={dibujando}
         modoTrazado={modoTrazado}
         onFigura={alFigura}
         onErrorDibujo={alErrorDibujo}
+        ubicacionLlamada={formulario ? ubicacionLlamada : null}
+        onClicUbicacion={formulario ? setUbicacionLlamada : undefined}
+        resaltadoIncidenteId={resaltadoId}
+        unidades={unidadesMapa}
+        rutas={rutasMapa}
+        anillos={anillos}
+        unidadesEnAlerta={unidadesEnAlerta}
+        resaltado={resaltado}
+        sla={sla.porRecurso}
+        reducirMovimiento={reducirMovimiento}
+        unidadSeleccionadaId={unidadId}
+        onSeleccionarUnidad={alSeleccionarUnidad}
+        previsualizacion={previsualizacion}
+        lineaVinculacion={lineaVinculacion}
+        onEstado={setEstadoMapa}
       />
       <div className="absolute left-4 top-4 z-toolbar flex flex-col gap-2">
         <Button
@@ -132,27 +432,35 @@ function Mesa({
             setDibujando((d) => !d);
           }}
         >
-          {dibujando ? 'Cancelar trazado' : 'Trazar zona'}
+          {dibujando ? t('trazado.cancelar') : t('trazado.iniciar')}
         </Button>
         {dibujando && (
           <div className="border border-border-strong bg-surface-panel p-3 shadow-overlay">
-            <p className="font-mono text-overline uppercase text-text-primary">Trazar figura</p>
-            <div role="group" aria-label="Figura a trazar" className="mt-2 flex gap-1">
+            <p className="font-mono text-overline uppercase text-text-primary">{t('trazado.titulo')}</p>
+            <div role="group" aria-label={t('trazado.figura')} className="mt-2 flex gap-1">
               {MODOS_TRAZADO.map((m) => (
                 <Button key={m} size="sm" variant={m === modoTrazado ? 'secondary' : 'ghost'} aria-pressed={m === modoTrazado} onClick={() => setModoTrazado(m)}>
-                  {ETIQUETA_MODO[m]}
+                  {m === 'poligono' ? t('trazado.poligono') : t('trazado.linea')}
                 </Button>
               ))}
             </div>
             <p className="mt-2 max-w-64 font-ui text-body-sm text-text-secondary">
               {modoTrazado === 'poligono' && incidenteSeleccionado
-                ? `Destino: zona de riesgo de "${incidenteSeleccionado.titulo}".`
-                : 'Destino: zonas públicas (Bloqueo de Vía).'}{' '}
-              Clic para añadir vértices; doble clic o Enter para terminar.
+                ? t('trazado.destino.riesgo', { titulo: incidenteSeleccionado.titulo })
+                : t('trazado.destino.publica')}{' '}
+              {t('trazado.ayuda')}
             </p>
           </div>
         )}
       </div>
+      <InvitacionTutorial />
+      <AvisosSla
+        avisos={avisosSla.avisos}
+        agrupado={avisosSla.agrupado}
+        indicativos={indicativos}
+        onDescartar={avisosSla.descartar}
+        onDescartarTodos={avisosSla.descartarTodos}
+      />
       {mensaje && (
         <p role="status" className="absolute bottom-4 left-4 z-toolbar border border-border-strong bg-surface-panel px-3 py-2 font-mono text-data-sm text-text-primary shadow-overlay">
           <span aria-hidden="true" className="mr-2 text-status-info">◆</span>
@@ -163,65 +471,179 @@ function Mesa({
   );
 
   return (
-    <GrillaTactica
-      panelCola={panelCola}
-      panelDetalle={panelDetalle}
-      barra={
-        <BarraEstado
-          hora={ahora}
-          turno={tema}
-          onAlternarTurno={alternarTema}
-          operador={operador}
-          enlace={enlace}
-          onCerrarSesion={onCerrarSesion}
-        />
-      }
-      cola={
-        <ColaIncidentes
-          incidentes={incidentes.datos}
-          recursos={recursos.datos}
-          reportes={reportes.datos}
-          ahora={ahora}
-          seleccionadoId={seleccionadoId}
-          onSeleccionar={setSeleccionadoId}
-          reporteSeleccionadoId={reporteSeleccionadoId}
-          onSeleccionarReporte={alSeleccionarReporte}
-          onConfirmarReporte={acciones.confirmarReporte}
-          onDescartarReporte={acciones.descartarReporte}
-        />
-      }
-      mapa={mapa}
-      detalle={
-        <PanelDetalle
-          incidente={incidenteSeleccionado}
-          recursos={recursos.datos}
-          zonas={zonas.datos}
-          ahora={ahora}
-          onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
-          onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
-          onCambiarOcupacion={acciones.cambiarOcupacion}
-        />
-      }
-      tablero={
-        <TableroUnidades
-          recursos={recursos.datos}
-          incidenteSeleccionadoId={seleccionadoId}
-          onSeleccionarUnidad={(unidad) => {
-            if (unidad.incidente_asignado_id) setSeleccionadoId(unidad.incidente_asignado_id);
-          }}
-        />
-      }
-    />
+    <TutorialProvider preparacion={{ expandirCola, expandirDetalle, seleccionarPrimero, cerrarFormulario }} simulacion={simulacion} reducirMovimiento={reducirMovimiento}>
+      <GrillaTactica
+        className={pulsoSla ? 'ag-pulso-sla' : undefined}
+        panelCola={panelCola}
+        panelDetalle={panelDetalle}
+        barra={
+          <BarraEstado
+            hora={ahora}
+            turno={temaEfectivo}
+            operador={operador}
+            enlace={enlace}
+            entrantes={totalEntrantes}
+            slaEnRiesgo={slaEnRiesgo}
+            slaNivel={sla.resumen.nivel === 'VENCIDO' ? 'VENCIDO' : 'ALERTA'}
+            filtroSlaActivo={filtroSla}
+            onFiltrarSla={alternarFiltroSla}
+            simulacion={
+              simulacion && onReiniciarSimulacion
+                ? {
+                    reproduciendo: simulacion.reproduciendo,
+                    velocidad: simulacion.velocidad,
+                    tSeg: simulacion.tSeg,
+                    duracionSeg: simulacion.duracionSeg,
+                    onAlternar: simulacion.alternar,
+                    onVelocidad: simulacion.fijarVelocidad,
+                    onReiniciar: onReiniciarSimulacion,
+                    escenario: escenario && onElegirEscenario ? { actual: escenario.id, onElegir: onElegirEscenario } : undefined,
+                  }
+                : undefined
+            }
+            onCerrarSesion={onCerrarSesion}
+            onAbrirAjustes={abrirAjustes}
+            sonidoActivo={sonido}
+            onAlternarSonido={alternarSonido}
+          />
+        }
+        cola={
+          <ColaIncidentes
+            incidentes={incidentes.datos}
+            recursos={recursos.datos}
+            llamadas={llamadas.datos}
+            ahora={ahora}
+            seleccionadoId={seleccionadoId}
+            onSeleccionar={setSeleccionadoId}
+            llamadaAbiertaId={llamadaAbiertaId}
+            onAbrirLlamada={alAbrirLlamada}
+            onDescartarLlamada={alDescartarLlamada}
+            filtroSla={idsFiltroSla ? { incidentes: idsFiltroSla, onQuitar: quitarFiltroSla } : null}
+          />
+        }
+        mapa={mapa}
+        detalle={
+          <div className="relative min-h-0 flex-1">
+            <PanelDetalle
+              incidente={incidenteSeleccionado}
+              recursos={recursos.datos}
+              zonas={zonas.datos}
+              ahora={ahora}
+              onCambiarEstadoIncidente={acciones.cambiarEstadoIncidente}
+              onCambiarEstadoRecurso={acciones.cambiarEstadoRecurso}
+              onCambiarOcupacion={acciones.cambiarOcupacion}
+              perimetro={perimetro}
+              onResaltar={setResaltado}
+              onAbrirDespacho={() => setDespachoAbierto(true)}
+              asesor={{
+                estado: estadoAsesor,
+                onAlternar: asesor.alternar,
+                onAplicar: abrirPlan,
+                onDescartar: descartarSugerencia,
+                onCerrar: asesor.cerrar,
+              }}
+              sla={sla.porRecurso}
+              reducirMovimiento={reducirMovimiento}
+            />
+            {despachoAbierto && incidenteSeleccionado && !formulario && (
+              <div className="absolute inset-0 z-panel">
+                <DialogoDespacho
+                  incidente={incidenteSeleccionado}
+                  recursos={recursos.datos}
+                  onConfirmar={(recurso) => {
+                    acciones.cambiarEstadoRecurso(recurso, 'ASIGNADO', incidenteSeleccionado.id);
+                    setDespachoAbierto(false);
+                  }}
+                  onCancelar={() => setDespachoAbierto(false)}
+                />
+              </div>
+            )}
+            {planAbierto && sugerencia && !formulario && (
+              <div className="absolute inset-0 z-panel">
+                <ConfirmacionPlan
+                  key={sugerencia.recomendacion.idRecomendacion}
+                  snapshot={sugerencia.snapshot}
+                  recomendacion={sugerencia.recomendacion}
+                  onConfirmar={confirmarPlan}
+                  onCancelar={() => setPlanAbierto(false)}
+                />
+              </div>
+            )}
+            {formulario && (
+              <div className="absolute inset-0 z-panel">
+                <FormularioLlamada
+                  key={formulario.clave}
+                  inicial={formulario.inicial}
+                  entrante={formulario.llamadaId !== null}
+                  ubicacion={ubicacionLlamada}
+                  onUbicacionCambia={setUbicacionLlamada}
+                  incidentes={incidentes.datos}
+                  ahora={ahora}
+                  onCerrar={cerrarFormulario}
+                  onCrearIncidente={alCrearIncidenteDesdeLlamada}
+                  onVincular={alVincularLlamada}
+                  onResaltarIncidente={setResaltadoId}
+                />
+              </div>
+            )}
+          </div>
+        }
+        tablero={
+          <TableroUnidades
+            recursos={recursos.datos}
+            incidenteSeleccionadoId={seleccionadoId}
+            unidadSeleccionadaId={unidadId}
+            onSeleccionarUnidad={(unidad) => alSeleccionarUnidad(unidad.id)}
+            sla={sla.porRecurso}
+            reducirMovimiento={reducirMovimiento}
+          />
+        }
+      />
+      {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} onAbrirAtajos={abrirAtajosDesdeAjustes} />}
+      {atajosAbiertos && <HojaAtajos onCerrar={cerrarAtajos} />}
+      {enArranque && <BootSequence subsistemas={subsistemas} reducirMovimiento={reducirMovimiento} onCompletar={completarArranque} />}
+    </TutorialProvider>
   );
 }
 
-/** Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador. */
-export function App() {
-  const servicio = useMemo(() => crearServicioDesdeEntorno() ?? servicioDemo, []);
+/**
+ * Sin credenciales de Supabase se usa un servicio local de ejemplo; con ellas se exige login de operador.
+ * `crearEntorno` fabrica el demo de un escenario (las pruebas inyectan otro).
+ */
+export function App({ crearEntorno = crearEntornoDemo }: { readonly crearEntorno?: (id: IdEscenario) => EntornoDemo } = {}) {
+  const { t } = useTexto();
+  const real = useMemo(() => crearServicioDesdeEntorno(), []);
+  const [demo, setDemo] = useState(() => (real ? null : crearEntorno(ESCENARIO_INICIAL)));
+  const servicio = real ?? demo?.servicio;
+  const [corrida, setCorrida] = useState(0);
+  // Reiniciar o cambiar de escenario descarta el servicio y el reloj del demo y monta la consola de nuevo, con los datos de partida.
+  const escenarioActual = demo?.escenario.id ?? ESCENARIO_INICIAL;
+  const elegirEscenario = useCallback(
+    (id: IdEscenario) => {
+      setDemo(crearEntorno(id));
+      setCorrida((n) => n + 1);
+    },
+    [crearEntorno],
+  );
+  const reiniciarSimulacion = useCallback(() => elegirEscenario(escenarioActual), [elegirEscenario, escenarioActual]);
   const [sesion, setSesion] = useState<SesionOperador | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  const [arranquePendiente, setArranquePendiente] = useState(true);
+  const marcarArranqueVisto = useCallback(() => setArranquePendiente(false), []);
+
+  // Web Audio solo arranca dentro de un gesto: el primero (el clic del login o del arranque) crea o reanuda el contexto.
+  useEffect(() => {
+    const activar = () => reproductor.activar();
+    document.addEventListener('pointerdown', activar, true);
+    document.addEventListener('keydown', activar, true);
+    return () => {
+      document.removeEventListener('pointerdown', activar, true);
+      document.removeEventListener('keydown', activar, true);
+    };
+  }, []);
 
   useEffect(() => {
+    if (!servicio) return;
     let activo = true;
     servicio.sesionActual().then(
       (s) => activo && setSesion(s),
@@ -234,27 +656,44 @@ export function App() {
 
   const iniciarSesion = useCallback(
     async (email: string, password: string) => {
+      if (!servicio) return;
       setError(null);
       try {
         const s = await servicio.iniciarSesion(email, password);
         if (!s.esOperador) {
           await servicio.cerrarSesion();
-          setError('Esta cuenta no tiene rol de operador');
+          setError(t('login.error.rol'));
           return;
         }
         setSesion(s);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
+        setError(err instanceof Error ? err.message : t('login.error.desconocido'));
       }
     },
-    [servicio],
+    [servicio, t],
   );
 
   const cerrarSesion = useCallback(() => {
-    void servicio.cerrarSesion().finally(() => setSesion(null));
+    void servicio?.cerrarSesion().finally(() => {
+      setSesion(null);
+      setArranquePendiente(true);
+    });
   }, [servicio]);
 
-  if (sesion === undefined) return null;
+  if (!servicio || sesion === undefined) return null;
   if (!sesion?.esOperador) return <Login onIniciarSesion={iniciarSesion} error={error} />;
-  return <Mesa servicio={servicio} operador={sesion.email} onCerrarSesion={cerrarSesion} />;
+  return (
+    <Mesa
+      key={corrida}
+      servicio={servicio}
+      reloj={demo?.reloj}
+      escenario={demo?.escenario}
+      operador={sesion.email}
+      onReiniciarSimulacion={demo ? reiniciarSimulacion : undefined}
+      onElegirEscenario={demo ? elegirEscenario : undefined}
+      onCerrarSesion={cerrarSesion}
+      arranquePendiente={arranquePendiente}
+      onArranqueVisto={marcarArranqueVisto}
+    />
+  );
 }

@@ -30,6 +30,13 @@ function Prueba() {
 const area = (container: HTMLElement, nombre: string) => container.querySelector(`[data-area="${nombre}"]`);
 
 describe('GrillaTactica', () => {
+  it('cada área lleva su ancla data-tutorial para el recorrido guiado', () => {
+    const { container } = render(<Prueba />);
+    for (const nombre of ['barra', 'cola', 'mapa', 'detalle', 'tablero']) {
+      expect(container.querySelector(`[data-tutorial="${nombre}"]`), nombre).toBe(area(container, nombre));
+    }
+  });
+
   it('renderiza las 5 áreas con su contenido', () => {
     const { container } = render(<Prueba />);
     for (const nombre of ['barra', 'cola', 'mapa', 'detalle', 'tablero']) {

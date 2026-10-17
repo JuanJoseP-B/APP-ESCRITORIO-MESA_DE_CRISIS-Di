@@ -18,12 +18,20 @@ describe('UnitChip', () => {
   it.each([
     ['disponible', 'DISP', 'circle'],
     ['despachado', 'ASIG', 'triangle'],
+    ['enruta', 'RUTA', 'arrow'],
     ['escena', 'ESC', 'diamond'],
     ['inoperativo', 'INOP', 'ring'],
   ] as const)('%s = palabra %s + glifo %s', (status, palabra, forma) => {
     const { container } = render(<UnitChip callsign="B-01" status={status} />);
     expect(container.querySelector('.ag-unit__state')?.textContent).toBe(palabra);
     expect(container.querySelector(`.ag-glyph--${forma}`)).not.toBeNull();
+  });
+
+  it('en ruta se distingue de despachado por forma y palabra, no solo por color', () => {
+    const { container } = render(<UnitChip callsign="M-12" status="enruta" kind="Ambulancia" timer="06:12" />);
+    expect(container.querySelector('.ag-glyph--triangle')).toBeNull();
+    expect(container.querySelector('.ag-glyph--arrow')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'M-12, Ambulancia, En ruta, 06:12' })).toBeTruthy();
   });
 
   it('el cronómetro es opcional y, si hay nivel, añade glifo y palabra al nombre accesible', () => {
@@ -40,6 +48,14 @@ describe('UnitChip', () => {
     expect(screen.getByRole('group', { name: 'M-12, Ambulancia, Despachado, 06:12, vencido' })).toBeTruthy();
   });
 
+  it('el cronómetro con nivel muestra glifo, tiempo y palabra en el chip, con las palabras que se le pasen', () => {
+    const { container } = render(
+      <UnitChip callsign="M-12" status="enruta" timer="08:10" timerLevel="alerta" timerWords={{ alerta: 'warning', vencido: 'overdue' }} />,
+    );
+    expect(container.querySelector('.ag-unit__timer .ag-sla__palabra')?.textContent).toBe('warning');
+    expect(screen.getByRole('group', { name: 'M-12, En ruta, 08:10, warning' })).toBeTruthy();
+  });
+
   it('sin onSelect es informativo; con onSelect es un botón con aria-pressed', async () => {
     const alElegir = vi.fn();
     const { rerender } = render(<UnitChip callsign="P-01" status="escena" />);
@@ -50,6 +66,21 @@ describe('UnitChip', () => {
     expect(boton.getAttribute('aria-pressed')).toBe('true');
     await userEvent.click(boton);
     expect(alElegir).toHaveBeenCalledTimes(1);
+  });
+
+  it('statusLabel y statusShort sustituyen la palabra y la abreviatura del estado', () => {
+    const { container } = render(
+      <UnitChip callsign="M-01" status="enruta" kind="Ambulance" statusLabel="En route" statusShort="RTE" />,
+    );
+    expect(screen.getByRole('group', { name: 'M-01, Ambulance, En route' })).toBeTruthy();
+    expect(container.querySelector('.ag-unit__state')?.textContent).toBe('RTE');
+  });
+
+  it('la ficha crece con su contenido (mínimo 80 px) para que palabras largas como OVERDUE no toquen el borde', () => {
+    const regla = css.match(/\.ag-unit\s*\{[^}]*\}/)?.[0] ?? '';
+    expect(regla).toMatch(/min-width:\s*80px/);
+    expect(regla).toMatch(/width:\s*max-content/);
+    expect(regla).not.toMatch(/(^|[;{\s])width:\s*80px/);
   });
 
   it('no usa colores sueltos en su hoja de estilos', () => {

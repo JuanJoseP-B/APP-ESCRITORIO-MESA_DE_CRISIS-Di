@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from '../cx';
+import { useCambio } from '../useCambio';
 import { Button } from './Button';
 import { StatusIndicator, type EstadoRecursoUI } from './StatusIndicator';
 import './DispatchRow.css';
@@ -11,17 +12,22 @@ export interface DispatchRowProps {
   code: string;
   status: EstadoRecursoUI;
   detail?: string;
+  /** Cronómetro SLA (`CronometroSla`) bajo el nombre; se omite si no aplica. */
+  timer?: ReactNode;
+  /** Palabra del estado para lectores de pantalla; por defecto la del catálogo en español. */
+  statusLabel?: string;
   /** Sustituye las acciones por defecto del estado. */
   actions?: ReactNode;
   onDispatch?: () => void;
   onToggleOperative?: () => void;
+  onEnRoute?: () => void;
   onArrive?: () => void;
   onCancel?: () => void;
   onRelease?: () => void;
   className?: string;
 }
 
-export function DispatchRow({ kind, code, status, detail, actions, onDispatch, onToggleOperative, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
+export function DispatchRow({ kind, code, status, detail, timer, statusLabel, actions, onDispatch, onToggleOperative, onEnRoute, onArrive, onCancel, onRelease, className }: DispatchRowProps) {
   const porDefecto: Record<EstadoRecursoUI, ReactNode> = {
     disponible: (
       <>
@@ -34,6 +40,16 @@ export function DispatchRow({ kind, code, status, detail, actions, onDispatch, o
       </>
     ),
     despachado: (
+      <>
+        <Button variant="secondary" size="sm" onClick={onEnRoute}>
+          En ruta
+        </Button>
+        <Button size="sm" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </>
+    ),
+    enruta: (
       <>
         <Button variant="secondary" size="sm" onClick={onArrive}>
           En escena
@@ -54,14 +70,17 @@ export function DispatchRow({ kind, code, status, detail, actions, onDispatch, o
       </Button>
     ),
   };
+  // Al cambiar de estado la fila se resalta un instante con el fondo de selección.
+  const cambiando = useCambio(status, 'slow');
   return (
-    <div className={cx('ag-row', `ag-row--${status}`, className)} role="group" aria-label={`${kind} ${code}`}>
-      <StatusIndicator status={status} glyphOnly className="ag-row__glyph" />
+    <div className={cx('ag-row', `ag-row--${status}`, className)} role="group" aria-label={`${kind} ${code}`} data-cambio={cambiando || undefined}>
+      <StatusIndicator status={status} label={statusLabel} glyphOnly className="ag-row__glyph" />
       <div className="ag-row__id">
         <span className="ag-row__name">
           {kind}
           <span className="ag-row__code">{code}</span>
         </span>
+        {timer ? <span className="ag-row__timer">{timer}</span> : null}
         {detail ? <span className="ag-row__detail">{detail}</span> : null}
       </div>
       <div className="ag-row__actions">{actions ?? porDefecto[status]}</div>

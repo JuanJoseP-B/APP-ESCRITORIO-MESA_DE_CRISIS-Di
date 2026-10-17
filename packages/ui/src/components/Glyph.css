@@ -4,4 +4,5 @@
 .ag-glyph--triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); width: 10px; }
 .ag-glyph--circle { border-radius: 50%; }
 .ag-glyph--diamond { transform: rotate(45deg) scale(.85); }
+.ag-glyph--arrow { clip-path: polygon(0 0, 100% 50%, 0 100%); width: 10px; }
 .ag-glyph--ring { border-radius: 50%; background: transparent; box-shadow: inset 0 0 0 2px currentColor; }

@@ -1,0 +1,13 @@
+/* ── TarjetaAsesor ──────────────────────────────────────────────────────── */
+/* Esqueleto del estado «analizando»: barras sólidas que alternan entre dos tokens (sin degradados ni transparencias). */
+.ag-esqueleto { box-sizing: border-box; height: var(--space-3); background: var(--surface-selected); border: var(--border-hairline) solid var(--border-subtle); animation: ag-esqueleto-pulso 1.2s steps(2, jump-none) infinite; }
+.ag-esqueleto--largo { width: 100%; }
+.ag-esqueleto--medio { width: 66%; }
+.ag-esqueleto--corto { width: 40%; }
+@keyframes ag-esqueleto-pulso { 50% { background: var(--surface-hover); } }
+/* Sin animación cuando se reduce el movimiento (ajuste de la consola o preferencia del sistema). */
+.ag-esqueleto--quieto { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ag-esqueleto { animation: none; }
+}
+:root[data-reduced-motion='true'] .ag-esqueleto { animation: none; }

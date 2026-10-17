@@ -1,3 +1,5 @@
+import type { Idioma } from '../i18n/idioma';
+
 /**
  * Desfase (ms) entre el reloj del servidor y el local: positivo si el servidor va adelantado.
  * Se asume que la respuesta se generó a mitad del viaje, así que el reloj local se compara con el
@@ -7,16 +9,9 @@ export function calcularDesfaseMs(horaServidorMs: number, envioMs: number, recep
   return Math.round(horaServidorMs - (envioMs + recepcionMs) / 2);
 }
 
-/** Milisegundos epoch de una cabecera HTTP `Date`; `null` si falta o no es una fecha válida. */
-export function leerCabeceraDate(valor: string | null | undefined): number | null {
-  if (!valor) return null;
-  const ms = Date.parse(valor);
-  return Number.isNaN(ms) ? null : ms;
-}
-
 /** "HH:mm:ss" en 24 h; `zona` es un identificador IANA (por defecto, la del sistema). */
-export function formatearHoraConSegundos(ms: number, zona?: string): string {
-  return new Intl.DateTimeFormat('es', {
+export function formatearHoraConSegundos(ms: number, zona?: string, idioma: Idioma = 'es'): string {
+  return new Intl.DateTimeFormat(idioma, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -31,4 +26,11 @@ export function etiquetaZonaHoraria(ms: number, zona?: string): string {
   const nombre = partes.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
   const etiqueta = nombre.replace('GMT', 'UTC');
   return etiqueta === 'UTC+0' ? 'UTC' : etiqueta;
+}
+
+/** "mm:ss" para una duración en segundos (se trunca; lo negativo cuenta como 0). */
+export function formatearMinSeg(segundos: number): string {
+  const total = Math.max(0, Math.floor(segundos));
+  const dos = (n: number): string => String(n).padStart(2, '0');
+  return `${dos(Math.floor(total / 60))}:${dos(total % 60)}`;
 }

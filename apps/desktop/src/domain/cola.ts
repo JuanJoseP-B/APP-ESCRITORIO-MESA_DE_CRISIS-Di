@@ -1,7 +1,4 @@
-import type { Incidente, NivelCriticidad, Recurso } from '@argos/shared';
-
-// TODO(F2-01): migrar a Prioridad P1–P4 (hoy el orden usa `nivel_criticidad`: Crítico, Medio, Bajo).
-const RANGO_CRITICIDAD: Readonly<Record<NivelCriticidad, number>> = { Crítico: 0, Medio: 1, Bajo: 2 };
+import { rangoPrioridad, type Incidente, type Recurso } from '@argos/shared';
 
 const aMs = (valor: unknown): number | null => {
   if (typeof valor !== 'string') return null;
@@ -9,23 +6,27 @@ const aMs = (valor: unknown): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
+/** Instante de cada evento: `creado_en` (hora del servidor) y, si falta, `timestamp` (filas antiguas). */
 const marcasDeTiempo = (i: Pick<Incidente, 'timeline'>): number[] =>
   (Array.isArray(i.timeline) ? i.timeline : []).flatMap((e) => {
-    const ms = aMs((e as { timestamp?: unknown } | null)?.timestamp);
+    const evento = e as { creado_en?: unknown; timestamp?: unknown } | null;
+    const ms = aMs(evento?.creado_en) ?? aMs(evento?.timestamp);
     return ms === null ? [] : [ms];
   });
 
 /**
- * Cuándo se abrió el incidente (ms epoch): su evento más antiguo. `incidentes` no tiene `creado_en`
- * (llega con la migración 0006), así que se deriva de la línea de tiempo; `null` si no hay fechas.
+ * Cuándo se abrió el incidente (ms epoch): su `creado_en` (hora del servidor, migración 0006) y, si falta,
+ * el evento más antiguo de la línea de tiempo; `null` si no hay fechas.
  */
-export function aperturaDeIncidente(i: Pick<Incidente, 'timeline'>): number | null {
+export function aperturaDeIncidente(i: Pick<Incidente, 'timeline' | 'creado_en'>): number | null {
+  const creado = aMs(i.creado_en);
+  if (creado !== null) return creado;
   const marcas = marcasDeTiempo(i);
   return marcas.length === 0 ? null : Math.min(...marcas);
 }
 
 /** Minutos enteros que lleva abierto; `null` si no se conoce la apertura. Nunca negativo. */
-export function minutosAbierto(i: Pick<Incidente, 'timeline'>, ahoraMs: number): number | null {
+export function minutosAbierto(i: Pick<Incidente, 'timeline' | 'creado_en'>, ahoraMs: number): number | null {
   const apertura = aperturaDeIncidente(i);
   return apertura === null ? null : Math.max(0, Math.floor((ahoraMs - apertura) / 60_000));
 }
@@ -36,12 +37,12 @@ export const estaCerrado = (i: Pick<Incidente, 'estado'>): boolean => i.estado =
 export const incidentesActivos = (incidentes: readonly Incidente[]): readonly Incidente[] =>
   incidentes.filter((i) => !estaCerrado(i));
 
-/** Más crítico primero; a igual criticidad, el más antiguo primero (sin fecha, al final); luego por id. */
+/** P1 primero; a igual prioridad, el más antiguo primero (sin fecha, al final); luego por id. */
 export function ordenarCola(incidentes: readonly Incidente[]): readonly Incidente[] {
   const apertura = (i: Incidente) => aperturaDeIncidente(i) ?? Number.POSITIVE_INFINITY;
   return [...incidentes].sort((a, b) => {
-    const criticidad = RANGO_CRITICIDAD[a.nivel_criticidad] - RANGO_CRITICIDAD[b.nivel_criticidad];
-    if (criticidad !== 0) return criticidad;
+    const prioridad = rangoPrioridad(a.prioridad) - rangoPrioridad(b.prioridad);
+    if (prioridad !== 0) return prioridad;
     const antiguedad = apertura(a) - apertura(b);
     if (antiguedad !== 0 && !Number.isNaN(antiguedad)) return antiguedad;
     return a.id.localeCompare(b.id);
@@ -91,4 +92,9 @@ export function moverSeleccion(orden: readonly string[], actualId: string | null
   const actual = actualId === null ? -1 : orden.indexOf(actualId);
   if (actual === -1) return orden[delta === 1 ? 0 : orden.length - 1] ?? null;
   return orden[Math.min(orden.length - 1, Math.max(0, actual + delta))] ?? null;
+}
+
+/** Deja solo los elementos cuyo id está en `ids`; con `ids` en `null` no filtra. */
+export function filtrarPorIds<T extends { readonly id: string }>(items: readonly T[], ids: ReadonlySet<string> | null): readonly T[] {
+  return ids === null ? items : items.filter((i) => ids.has(i.id));
 }

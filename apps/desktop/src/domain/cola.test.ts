@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { EstadoIncidente, Incidente, NivelCriticidad, Recurso } from '@argos/shared';
+import {
+  PRIORIDAD_POR_CRITICIDAD,
+  type EstadoIncidente,
+  type Incidente,
+  type NivelCriticidad,
+  type Prioridad,
+  type Recurso,
+} from '@argos/shared';
 import {
   aperturaDeIncidente,
   codigoIncidente,
   dividirCola,
+  filtrarPorIds,
   incidentesActivos,
   minutosAbierto,
   moverSeleccion,
@@ -17,10 +25,13 @@ const inc = (
   nivel: NivelCriticidad,
   abierto: string | null,
   estado: EstadoIncidente = 'Abierto',
+  prioridad: Prioridad = PRIORIDAD_POR_CRITICIDAD[nivel],
 ): Incidente => ({
   id,
   titulo: `Incidente ${id}`,
   nivel_criticidad: nivel,
+  prioridad,
+  tipo: 'INCENDIO',
   estado,
   geometria: { type: 'Point', coordinates: [0, 0] },
   timeline: abierto ? [{ timestamp: abierto, descripcion: 'Registrado' }] : [],
@@ -29,7 +40,7 @@ const inc = (
 const ids = (l: readonly Incidente[]) => l.map((i) => i.id);
 
 describe('ordenarCola', () => {
-  it('ordena por criticidad (Crítico, Medio, Bajo) y luego por antigüedad', () => {
+  it('ordena por prioridad P1 a P4 y luego por antigüedad', () => {
     const cola = ordenarCola([
       inc('bajo', 'Bajo', '2026-10-07T08:00:00Z'),
       inc('medio-nuevo', 'Medio', '2026-10-07T10:00:00Z'),
@@ -40,7 +51,17 @@ describe('ordenarCola', () => {
     expect(ids(cola)).toEqual(['critico-viejo', 'critico-nuevo', 'medio-viejo', 'medio-nuevo', 'bajo']);
   });
 
-  it('a igual criticidad, el incidente sin fecha va al final y el empate se resuelve por id', () => {
+  it('la prioridad manda sobre la criticidad: un Medio P1 va antes que un Crítico P3', () => {
+    const cola = ordenarCola([
+      inc('critico-p3', 'Crítico', '2026-10-07T06:00:00Z', 'Abierto', 'P3'),
+      inc('medio-p1', 'Medio', '2026-10-07T09:00:00Z', 'Abierto', 'P1'),
+      inc('bajo-p4', 'Bajo', '2026-10-07T05:00:00Z', 'Abierto', 'P4'),
+      inc('medio-p2', 'Medio', '2026-10-07T08:00:00Z', 'Abierto', 'P2'),
+    ]);
+    expect(ids(cola)).toEqual(['medio-p1', 'medio-p2', 'critico-p3', 'bajo-p4']);
+  });
+
+  it('a igual prioridad, el incidente sin fecha va al final y el empate se resuelve por id', () => {
     const cola = ordenarCola([
       inc('b', 'Medio', null),
       inc('c', 'Medio', '2026-10-07T09:00:00Z'),
@@ -95,6 +116,39 @@ describe('apertura y tiempo abierto', () => {
     expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:29:00Z'));
   });
 
+  it('el creado_en del incidente manda sobre su línea de tiempo', () => {
+    const i: Incidente = {
+      ...inc('x', 'Bajo', '2026-10-07T10:00:00Z'),
+      creado_en: '2026-10-07T10:05:00Z',
+    };
+    expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:05:00Z'));
+  });
+
+  it('en la línea de tiempo manda el creado_en del evento y timestamp es el respaldo', () => {
+    const i: Incidente = {
+      ...inc('x', 'Bajo', null),
+      timeline: [
+        // El reloj del equipo iba 1 h atrasado: gana la hora del servidor.
+        { timestamp: '2026-10-07T09:00:00Z', creado_en: '2026-10-07T10:00:00Z', descripcion: 'a' },
+        { timestamp: '2026-10-07T10:30:00Z', descripcion: 'fila antigua' },
+      ],
+    };
+    expect(aperturaDeIncidente(i)).toBe(Date.parse('2026-10-07T10:00:00Z'));
+  });
+
+  it('la cola ordena por creado_en del servidor, no por el reloj del equipo', () => {
+    const conCreado = (id: string, creado: string, timestamp: string): Incidente => ({
+      ...inc(id, 'Medio', null),
+      creado_en: creado,
+      timeline: [{ timestamp, descripcion: 'Registrado' }],
+    });
+    const cola = ordenarCola([
+      conCreado('b', '2026-10-07T10:00:00Z', '2026-10-07T08:00:00Z'),
+      conCreado('a', '2026-10-07T10:10:00Z', '2026-10-07T07:00:00Z'),
+    ]);
+    expect(ids(cola)).toEqual(['b', 'a']);
+  });
+
   it('sin fechas válidas no hay apertura ni minutos', () => {
     expect(aperturaDeIncidente(inc('x', 'Bajo', null))).toBeNull();
     expect(minutosAbierto(inc('x', 'Bajo', null), Date.now())).toBeNull();
@@ -112,7 +166,7 @@ describe('unidadesPorIncidente', () => {
     const r = (id: string, incidenteId: string | null): Recurso => ({
       id,
       tipo: 'Bomberos',
-      estado_actual: incidenteId ? 'Despachado' : 'Disponible',
+      estado_actual: incidenteId ? 'ASIGNADO' : 'DISPONIBLE',
       incidente_asignado_id: incidenteId,
     });
     const mapa = unidadesPorIncidente([r('1', 'a'), r('2', 'a'), r('3', 'b'), r('4', null)]);
@@ -148,5 +202,18 @@ describe('moverSeleccion', () => {
 
   it('con la cola vacía no hay selección', () => {
     expect(moverSeleccion([], 'a', 1)).toBeNull();
+  });
+});
+
+describe('filtrarPorIds', () => {
+  const todos = [inc('a', 'Crítico', null), inc('b', 'Medio', null), inc('c', 'Bajo', null)];
+
+  it('deja solo los ids pedidos, en su orden', () => {
+    expect(ids(filtrarPorIds(todos, new Set(['c', 'a'])))).toEqual(['a', 'c']);
+    expect(filtrarPorIds(todos, new Set())).toEqual([]);
+  });
+
+  it('con null no filtra y devuelve la misma lista', () => {
+    expect(filtrarPorIds(todos, null)).toBe(todos);
   });
 });
