@@ -88,14 +88,15 @@ kbd[data-destello='true'] {
   }
 }
 
+/* La franja es una línea sólida que cruza la fila una vez. En reposo es invisible: al terminar no queda nada encima del texto. */
 @keyframes ag-barrido-franja {
   0% {
-    left: -100%;
-    opacity: 0.8;
+    opacity: 1;
+    transform: translateX(0);
   }
   100% {
-    left: 100%;
     opacity: 0;
+    transform: translateX(100%);
   }
 }
 
@@ -108,11 +109,10 @@ kbd[data-destello='true'] {
 .ag-fila-entrante[data-nueva='true']::after {
   content: '';
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
-  background: linear-gradient(90deg, transparent, var(--status-warning-bg), var(--status-warning), transparent);
-  animation: ag-barrido-franja var(--dur-slow, 400ms) var(--ease-salida, ease-out);
+  inset: 0;
+  box-shadow: inset var(--space-1) 0 0 var(--status-warning);
+  opacity: 0;
+  animation: ag-barrido-franja var(--dur-slow, 400ms) var(--ease-salida, ease-out) var(--dur-base, 240ms);
   pointer-events: none;
 }
 
