@@ -1,5 +1,5 @@
 import type { AnalisisPerimetro, Anillo, Recurso, ZonaPublica } from '@argos/shared';
-import { Glyph, SectionHeader } from '@argos/ui';
+import { Badge, Glyph, SectionHeader } from '@argos/ui';
 import type { ObjetivoResaltado } from '../domain/analisisEspacial';
 import { etiquetaRadio, type AnilloGenerado } from '../domain/perimetro';
 import { textoTipoRecurso } from '../i18n/etiquetas';
@@ -90,16 +90,31 @@ export function SeccionPerimetro({ indice, anillos, analisis, zonas, recursos, i
       {analisis.refugios.length === 0 ? (
         <p className="px-4 pb-2 font-mono text-data-sm text-text-muted">{t('analisis.refugios.vacio')}</p>
       ) : (
-        <ul aria-label={t('analisis.refugios')}>
-          {analisis.refugios.map((r) => (
-            <li key={r.id} className={`${FILA} justify-between font-mono text-data-sm`} {...resaltable({ tipo: 'zona', id: r.id })}>
-              <span className="text-text-primary">{t('analisis.refugio.detalle', { nombre: r.nombre, anillo: nombreAnillo(r.anillo) })}</span>
-              <span className={`flex items-center gap-1 font-bold ${r.apto ? 'text-status-success' : 'text-status-critical'}`}>
-                <Glyph shape={r.apto ? 'circle' : 'square'} />
-                {r.apto ? t('analisis.apto') : t('analisis.noApto')}
-              </span>
-            </li>
-          ))}
+        <ul aria-label={t('analisis.refugios')} className="flex flex-col gap-1 pb-1">
+          {analisis.refugios.map((r) => {
+            const zona = zonas.find((z) => z.id === r.id);
+            const capacidad = zona?.capacidad_maxima ?? 0;
+            const ocupacion = Math.max(0, Math.min(zona?.capacidad_actual ?? 0, capacidad));
+            const pct = capacidad > 0 ? Math.round((ocupacion / capacidad) * 100) : 0;
+            return (
+              <li key={r.id} className="ag-refugio-perimetro" {...resaltable({ tipo: 'zona', id: r.id })}>
+                <span className="flex items-center justify-between gap-2 text-[13px]">
+                  <span className="min-w-0 truncate text-[var(--isla-texto)]">{t('analisis.refugio.detalle', { nombre: r.nombre, anillo: nombreAnillo(r.anillo) })}</span>
+                  {r.apto ? <Badge tone="success">{t('analisis.apto')}</Badge> : <Badge tone="critical">{t('analisis.noApto')}</Badge>}
+                </span>
+                {capacidad > 0 && (
+                  <>
+                    <span className="ag-medidor" role="meter" aria-label={t('analisis.aforo', { nombre: r.nombre })} aria-valuemin={0} aria-valuemax={capacidad} aria-valuenow={ocupacion}>
+                      <span style={{ width: `${pct}%` }} />
+                    </span>
+                    <span className="font-mono text-[11px] tabular text-[var(--isla-texto-2)]">
+                      {String(ocupacion).padStart(String(capacidad).length, '0')}/{capacidad}
+                    </span>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

@@ -66,10 +66,10 @@ describe('SeccionPerimetro', () => {
     ]);
   });
 
-  it('marca cada refugio como apto o no apto, con glifo y palabra', () => {
+  it('marca cada refugio como apto o no apto, con glifo y palabra en un chip', () => {
     montar([]);
     const filas = within(screen.getByRole('list', { name: 'Refugios por anillo' })).getAllByRole('listitem');
-    expect(filas.map((f) => f.textContent)).toEqual([
+    expect(filas.map((f) => f.firstElementChild?.textContent)).toEqual([
       'Coliseo · Zona tibiaNO APTO',
       'Colegio · Zona de evacuaciónAPTO',
       'Estadio · Fuera del perímetroAPTO',

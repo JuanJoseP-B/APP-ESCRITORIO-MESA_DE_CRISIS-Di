@@ -4,6 +4,7 @@ import { App } from './App';
 import { PreferenciasProvider } from './hooks/usePreferencias';
 import { IdiomaProvider } from './i18n/IdiomaProvider';
 import { aplicarPreferencias, leerPreferencias } from './domain/preferencias';
+import { crearEntornoDemoConLogin } from './services/entornoDemo';
 import './mapaWorker';
 import './styles.css';
 import { sistemaPrefiereOscuro } from './tema';
@@ -18,7 +19,7 @@ createRoot(raiz).render(
   <StrictMode>
     <IdiomaProvider>
       <PreferenciasProvider>
-        <App />
+        <App crearEntorno={crearEntornoDemoConLogin} />
       </PreferenciasProvider>
     </IdiomaProvider>
   </StrictMode>,

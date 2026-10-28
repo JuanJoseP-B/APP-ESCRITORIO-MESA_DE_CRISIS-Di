@@ -53,7 +53,6 @@ describe('GrillaTactica', () => {
 
   it('la página no desplaza: raíz de 100dvh con overflow oculto y solo B y D llevan rail con scroll interno', () => {
     expect(css).toMatch(/\.ag-grilla\s*\{[^}]*height:\s*100dvh;[^}]*overflow:\s*hidden;/);
-    expect(css).toMatch(/grid-template-rows:\s*var\(--grilla-barra\)\s+minmax\(0,\s*1fr\)\s+var\(--grilla-tablero\)/);
     // Ninguna regla de la grilla permite desplazar la página: no hay overflow auto ni scroll en la hoja.
     expect(css).not.toMatch(/overflow(-y)?:\s*(auto|scroll)/);
     const { container } = render(<Prueba />);
@@ -61,20 +60,32 @@ describe('GrillaTactica', () => {
     expect(container.querySelectorAll('.ag-grilla').length).toBe(1);
   });
 
-  it('define las medidas del roadmap: barra 40, tablero 96, cola 320, detalle 380, rail 40', () => {
-    expect(css).toMatch(/--grilla-barra:\s*var\(--space-10\)/);
-    expect(css).toMatch(/--grilla-tablero:\s*96px/);
-    expect(css).toMatch(/--grilla-cola:\s*320px/);
-    expect(css).toMatch(/--grilla-detalle:\s*380px/);
-    expect(css).toMatch(/--grilla-rail:\s*var\(--space-10\)/);
+  it('islas flotantes: barra 56, tablero 84, cola 300, detalle 368 y riel 56, a 12 px de los bordes y entre sí', () => {
+    expect(css).toMatch(/--g-hueco:\s*var\(--hueco-isla, 12px\)/);
+    expect(css).toMatch(/--g-barra:\s*56px/);
+    expect(css).toMatch(/--g-tablero:\s*84px/);
+    expect(css).toMatch(/--g-cola:\s*300px/);
+    expect(css).toMatch(/--g-detalle:\s*368px/);
+    expect(css).toMatch(/--g-rail:\s*56px/);
     expect(css).toMatch(/@media \(max-width: 1279px\)/);
   });
 
-  it('por debajo de 1280 px el detalle es un drawer con altura entre la barra y el tablero', () => {
+  it('el mapa es la isla central: los paneles lo enmarcan y al plegarlos crece', () => {
+    expect(css).toMatch(/\.ag-grilla__mapa \{[^}]*left: calc\(var\(--g-hueco\) \* 2 \+ var\(--g-cola-ahora\)\);[^}]*right: calc\(var\(--g-hueco\) \* 2 \+ var\(--g-detalle-ahora\)\);/);
+    expect(css).toMatch(/\[data-cola='colapsada'\] \{ --g-cola-ahora: var\(--g-rail\); \}/);
+    expect(css).toMatch(/\[data-detalle='colapsado'\] \{ --g-detalle-ahora: var\(--g-rail\); \}/);
+  });
+
+  it('por debajo de 1280 px el detalle flota sobre el mapa y el mapa solo le reserva el riel', () => {
     const media = css.slice(css.indexOf('@media (max-width: 1279px)'));
-    expect(media).toMatch(
-      /\.ag-grilla__detalle \{[^}]*position: absolute;[^}]*height: auto;[^}]*top: var\(--grilla-barra\);[^}]*bottom: var\(--grilla-tablero\);/,
-    );
+    expect(media).toMatch(/\.ag-grilla__mapa \{ right: calc\(var\(--g-hueco\) \* 2 \+ var\(--g-rail\)\); \}/);
+  });
+
+  it('cola, detalle y tablero son islas', () => {
+    const { container } = render(<Prueba />);
+    for (const clase of ['.ag-grilla__cola', '.ag-grilla__detalle', '.ag-grilla__tablero']) {
+      expect(container.querySelector(clase)?.classList.contains('ag-isla'), clase).toBe(true);
+    }
   });
 
   it('colapsar B con su botón cambia data-colapsado y deja el rail', async () => {

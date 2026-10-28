@@ -83,15 +83,15 @@ describe('ColaIncidentes', () => {
     expect(screen.queryByText('Incidente cerrado')).toBeNull();
   });
 
-  it('cada fila muestra prioridad (glifo y palabra), código, tiempo abierto y unidades', () => {
+  it('cada fila muestra prioridad (glifo y palabra), código, tiempo abierto y sus unidades en chips', () => {
     const { container } = render(<ColaIncidentes {...base} />);
     const fila = filas()[1] as HTMLElement; // critico: P1, 30 min, 2 unidades
     expect(fila.textContent).toContain('P1');
     expect(fila.textContent).toContain('#ICO');
     expect(fila.textContent).toContain('30 min');
-    expect(fila.textContent).toContain('2 U');
+    expect(fila.textContent).toContain('2 en ruta');
     expect(container.querySelector('.ag-glyph--square')).not.toBeNull();
-    expect(filas()[2]?.textContent).toContain('0 U');
+    expect(filas()[2]?.textContent).toContain('Sin unidades');
   });
 
   it('la prioridad P1–P4 lleva su color semántico: P1 crítico, P2 advertencia, P3 información, P4 neutro', () => {
@@ -198,7 +198,7 @@ describe('ColaIncidentes: filtro por SLA', () => {
 });
 
 describe('ColaIncidentes: fondo de selección', () => {
-  it('hay un único fondo de selección y viaja a la fila elegida', () => {
+  it('hay una única tarjeta oscura de selección y viaja a la fila elegida', () => {
     const { container, rerender } = render(<ColaIncidentes {...base} seleccionadoId={null} />);
     expect(container.querySelectorAll('[data-seleccion]')).toHaveLength(0);
     for (const id of ['critico', 'bajo']) {
@@ -206,7 +206,8 @@ describe('ColaIncidentes: fondo de selección', () => {
       const fondos = container.querySelectorAll('[data-seleccion]');
       expect(fondos).toHaveLength(1);
       expect(fondos[0]?.closest('button')?.getAttribute('aria-pressed')).toBe('true');
-      expect(fondos[0]?.className).toContain('bg-surface-selected');
+      expect(fondos[0]?.className).toContain('ag-incidente__fondo');
+      expect(fondos[0]?.closest('button')?.hasAttribute('data-seleccionado')).toBe(true);
     }
   });
 });

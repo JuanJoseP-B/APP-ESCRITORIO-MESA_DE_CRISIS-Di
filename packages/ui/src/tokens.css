@@ -336,3 +336,158 @@
 [data-text-large="true"] {
   --escala-texto: 1.15;
 }
+
+/* ══ Capa 4 · Islas flotantes (rediseño del panel, Parte 2) ══════════════════════════════════════════════════════
+   Paneles como islas sobre el mapa: radio 14, controles 8–10, chips en píldora, sombra suave y curva de salida
+   larga. Los marcadores del mapa siguen con --radius-xs: estos tokens solo los usan los paneles. */
+:root, [data-theme="crema"] {
+  --radio-isla: 14px;
+  --radio-tarjeta: 12px;
+  --radio-control: 10px;
+  --radio-boton: 9px;
+  --radio-campo: 8px;
+  --radio-chip: 999px;
+  --hueco-isla: 12px;
+  --curva-isla: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-isla: 160ms;
+  --t-isla-lenta: 220ms;
+
+  --isla-bg: rgba(248, 243, 238, 0.96);
+  --isla-borde: rgba(26, 26, 26, 0.12);
+  --isla-sombra: 0 1px 2px rgba(26, 26, 26, 0.06), 0 10px 30px rgba(26, 26, 26, 0.1);
+  --isla-sombra-elevada: 0 1px 2px rgba(26, 26, 26, 0.06), 0 18px 48px rgba(26, 26, 26, 0.18);
+  --isla-fondo-app: #e9dfd3;
+  --isla-texto: #1a1a1a;
+  --isla-texto-2: #5c554e;
+  --isla-texto-3: #8a8178;
+  --isla-filete: rgba(26, 26, 26, 0.14);
+  --isla-hover: rgba(26, 26, 26, 0.04);
+  --isla-pista: rgba(26, 26, 26, 0.07);
+  --isla-pista-barra: rgba(26, 26, 26, 0.1);
+
+  --tarjeta-bg: #fffdfa;
+  --tarjeta-bg-hover: #ffffff;
+  --tarjeta-borde: rgba(26, 26, 26, 0.1);
+  --tarjeta-sombra-hover: 0 10px 24px rgba(26, 26, 26, 0.12);
+  /* Incidente activo: tarjeta oscura sobre la isla clara. */
+  --tarjeta-activa-bg: #1a1a1a;
+  --tarjeta-activa-fg: #f8f3ee;
+  --tarjeta-activa-fg-2: #bdb2a6;
+  --tarjeta-activa-sombra: 0 8px 20px rgba(26, 26, 26, 0.2);
+
+  --boton-ghost-borde: rgba(26, 26, 26, 0.2);
+  --boton-ghost-sombra: 0 4px 12px rgba(26, 26, 26, 0.08);
+  --boton-primario-sombra: 0 6px 16px rgba(243, 112, 33, 0.35);
+  --boton-pizarra-bg: #4b5d7a;
+  --boton-pizarra-bg-hover: #41526d;
+  --boton-pizarra-borde: #33425a;
+  --kbd-bg: rgba(0, 0, 0, 0.18);
+  --sombra-thumb: 0 1px 3px rgba(26, 26, 26, 0.18);
+
+  --chip-critico-bg: #a8261e;
+  --chip-critico-fg: #ffffff;
+  --chip-alto-bg: #f6d9d6;
+  --chip-alto-fg: #8a1f18;
+  --chip-aviso-bg: #fbe7c6;
+  --chip-aviso-fg: #7a4600;
+  --chip-ok-bg: #dcefec;
+  --chip-ok-fg: #1f5c5c;
+  --chip-info-bg: #dde3ee;
+  --chip-info-fg: #33425a;
+  --chip-neutro-bg: rgba(26, 26, 26, 0.07);
+  --chip-neutro-fg: #5c554e;
+  --chip-fuego-bg: #fce3d3;
+  --chip-fuego-fg: #9a3412;
+
+  --acento-naranja: #f37021;
+  --acento-teal: #2e8c83;
+  --acento-vivo: #2e8c83;
+  --acento-pizarra: #4b5d7a;
+  --texto-ahora: #a84a0f;
+  --texto-recomendacion: #7a3410;
+  --texto-aviso: #9a5a00;
+  --texto-critico: #a8261e;
+
+  --unidad-fuego-bg: #fce3d3;
+  --unidad-fuego-fg: #c2410c;
+  --unidad-salud-bg: #dcefec;
+  --unidad-salud-fg: #1f5c5c;
+  --unidad-policia-bg: #dde3ee;
+  --unidad-policia-fg: #33425a;
+  --unidad-borde-ruta: rgba(243, 112, 33, 0.6);
+  --unidad-brillo-fuego: 0 0 0 4px rgba(243, 112, 33, 0.18), 0 0 18px rgba(243, 112, 33, 0.45);
+  --unidad-sirena-roja: #a8261e;
+  --unidad-sirena-azul: #4b5d7a;
+  --unidad-luz-roja: -6px 0 14px rgba(168, 38, 30, 0.55);
+  --unidad-luz-azul: 6px 0 14px rgba(75, 93, 122, 0.75);
+}
+
+/* Carbón: islas #222 con texto crema; los acentos no cambian. */
+[data-theme="carbon"] {
+  --isla-bg: rgba(34, 34, 34, 0.96);
+  --isla-borde: rgba(248, 243, 238, 0.12);
+  --isla-sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+  --isla-sombra-elevada: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 48px rgba(0, 0, 0, 0.5);
+  --isla-fondo-app: #141414;
+  --isla-texto: #f8f3ee;
+  --isla-texto-2: #c9bfb4;
+  --isla-texto-3: #9a9087;
+  --isla-filete: rgba(248, 243, 238, 0.16);
+  --isla-hover: rgba(248, 243, 238, 0.06);
+  --isla-pista: rgba(248, 243, 238, 0.08);
+  --isla-pista-barra: rgba(248, 243, 238, 0.14);
+
+  --tarjeta-bg: #2b2b2b;
+  --tarjeta-bg-hover: #333333;
+  --tarjeta-borde: rgba(248, 243, 238, 0.12);
+  --tarjeta-sombra-hover: 0 10px 24px rgba(0, 0, 0, 0.4);
+  /* En noche el incidente activo se invierte: tarjeta crema con texto carbón. */
+  --tarjeta-activa-bg: #f8f3ee;
+  --tarjeta-activa-fg: #1a1a1a;
+  --tarjeta-activa-fg-2: #5c554e;
+  --tarjeta-activa-sombra: 0 8px 20px rgba(0, 0, 0, 0.45);
+
+  --boton-ghost-borde: rgba(248, 243, 238, 0.24);
+  --boton-ghost-sombra: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --boton-pizarra-bg: #4b5d7a;
+  --boton-pizarra-bg-hover: #5a6c8a;
+  --boton-pizarra-borde: #a9b6ca;
+  --kbd-bg: rgba(0, 0, 0, 0.3);
+  --sombra-thumb: 0 1px 3px rgba(0, 0, 0, 0.5);
+
+  --chip-alto-bg: #4a1f1c;
+  --chip-alto-fg: #ffb4a9;
+  --chip-aviso-bg: #4a3612;
+  --chip-aviso-fg: #f0c674;
+  --chip-ok-bg: #173c3a;
+  --chip-ok-fg: #8fd8cf;
+  --chip-info-bg: #2a3446;
+  --chip-info-fg: #c3cede;
+  --chip-neutro-bg: rgba(248, 243, 238, 0.1);
+  --chip-neutro-fg: #c9bfb4;
+  --chip-fuego-bg: #4a2a17;
+  --chip-fuego-fg: #ffb98a;
+
+  --texto-ahora: #ff9e5e;
+  --texto-recomendacion: #ffb98a;
+  --texto-aviso: #f0c674;
+  --texto-critico: #ff8f80;
+
+  --unidad-fuego-bg: #4a2a17;
+  --unidad-fuego-fg: #ff9e5e;
+  --unidad-salud-bg: #173c3a;
+  --unidad-salud-fg: #8fd8cf;
+  --unidad-policia-bg: #2a3446;
+  --unidad-policia-fg: #c3cede;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-isla: 0ms;
+    --t-isla-lenta: 0ms;
+  }
+}
+:root[data-reduced-motion='true'] {
+  --t-isla: 0ms;
+  --t-isla-lenta: 0ms;
+}

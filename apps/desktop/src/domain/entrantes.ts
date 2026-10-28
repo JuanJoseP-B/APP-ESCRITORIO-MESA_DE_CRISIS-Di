@@ -31,6 +31,18 @@ export const segundosDesde = (llamada: Pick<Llamada, 'creadoEn'>, ahoraMs: numbe
 export const esLlamadaNueva = (llamada: Pick<Llamada, 'creadoEn'>, ahoraMs: number, ventanaMs = VENTANA_NUEVA_MS): boolean =>
   ahoraMs - aMs(llamada.creadoEn) < ventanaMs;
 
+/** Umbrales de espera de una llamada sin atender: desde 2 min avisa y desde 4 min es crítica. */
+export const ESPERA_AVISO_SEG = 120;
+export const ESPERA_CRITICA_SEG = 240;
+export type NivelEspera = 'normal' | 'aviso' | 'critico';
+
+/** Nivel del temporizador de una llamada según los segundos que lleva esperando. */
+export function nivelEspera(segundos: number): NivelEspera {
+  if (segundos >= ESPERA_CRITICA_SEG) return 'critico';
+  if (segundos >= ESPERA_AVISO_SEG) return 'aviso';
+  return 'normal';
+}
+
 /** Vista de una llamada con la forma de `Reporte`, que el mapa aún usa para pintar las pendientes. */
 export const reporteDeLlamada = (l: Llamada): Reporte => ({
   id: l.id,

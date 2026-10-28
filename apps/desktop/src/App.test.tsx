@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { IdiomaProvider } from './i18n/IdiomaProvider';
 import { crearEntornoSemilla } from './testing/entornoSemilla';
+import { SOSTENER_MS } from './layout/BotonSostenido';
 
 // MapLibre necesita WebGL, que jsdom no tiene: el mapa se sustituye por un hueco.
 vi.mock('./layout/MapaTactico', () => ({ MapaTactico: () => null }));
@@ -230,7 +231,11 @@ describe('App: incidente resuelto', () => {
     await abrirConsola();
     await userEvent.keyboard('j');
     expect(await screen.findByText('Análisis del perímetro')).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: /Marcar resuelto/i }));
+    // Cambiar el estado pide mantener pulsado el botón 700 ms.
+    const resolver = screen.getByRole('button', { name: /Marcar resuelto/i });
+    fireEvent.pointerDown(resolver, { button: 0 });
+    await act(() => new Promise((r) => setTimeout(r, SOSTENER_MS + 50)));
+    fireEvent.pointerUp(resolver);
     expect(await screen.findByRole('tab', { name: 'Cerrados (1)' })).toBeTruthy();
     expect(screen.queryByText('Análisis del perímetro')).toBeNull();
   });

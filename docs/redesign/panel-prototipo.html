@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>ARGOS · Mesa de Crisis</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=Lexend:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#A84A0F}a:hover{color:#1A1A1A}
+.dk *{box-sizing:border-box}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.island{background:rgba(248,243,238,.96);border:1px solid rgba(26,26,26,.12);border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.06),0 10px 30px rgba(26,26,26,.10)}
+.dot-live{width:8px;height:8px;border-radius:50%;background:#2E8C83;animation:live 1.6s infinite ease-out}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(46,140,131,.5)}100%{box-shadow:0 0 0 8px rgba(46,140,131,0)}}
+.ibtn{width:36px;height:36px;border-radius:10px;border:1px solid rgba(26,26,26,.14);background:#FFFDFA;color:#1A1A1A;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 160ms cubic-bezier(.22,1,.36,1),background 160ms}
+.ibtn:hover{background:#fff;transform:translateY(-1px)}
+.ibtn:hover .gear{transform:rotate(60deg)}
+.gear{transition:transform 320ms cubic-bezier(.22,1,.36,1)}
+.seg{position:relative;display:flex;padding:3px;border-radius:10px;background:rgba(26,26,26,.07)}
+.seg button{position:relative;z-index:1;border:0;background:transparent;height:30px;padding:0 12px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#5C554E;cursor:pointer}
+.seg button.on{color:#1A1A1A}
+.seg .thumb{position:absolute;top:3px;bottom:3px;border-radius:8px;background:#FFFDFA;box-shadow:0 1px 3px rgba(26,26,26,.18);transition:left 220ms cubic-bezier(.22,1,.36,1)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em}
+.sec{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.1em;color:#1A1A1A}
+.sec .n{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 6px;border-radius:6px;background:#1A1A1A;color:#F37021}
+.sec:after{content:"";flex:1;height:1px;background:rgba(26,26,26,.14)}
+.row{transition:background 160ms}
+.row:hover{background:rgba(26,26,26,.04)}
+.tmr-warn{color:#9A5A00}
+.tmr-crit{color:#A8261E;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.55}}
+.btn{height:36px;padding:0 14px;border-radius:9px;font-family:Lexend,sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform 160ms cubic-bezier(.22,1,.36,1),box-shadow 160ms,background 160ms}
+.btn:active{transform:translateY(1px)}
+.btn-ghost{border:1px solid rgba(26,26,26,.2);background:#FFFDFA;color:#1A1A1A}
+.btn-ghost:hover{background:#fff;box-shadow:0 4px 12px rgba(26,26,26,.08)}
+.btn-pri{border:1px solid #1A1A1A;background:#F37021;color:#1A1A1A;font-weight:600}
+.btn-pri:hover{box-shadow:0 6px 16px rgba(243,112,33,.35);transform:translateY(-1px)}
+.btn-pri .arr{transition:transform 220ms cubic-bezier(.22,1,.36,1)}
+.btn-pri:hover .arr{transform:translateX(5px)}
+.btn-slate{border:1px solid #33425A;background:#4B5D7A;color:#fff}
+.btn-slate:hover{background:#41526D}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.18)}
+.hold{position:relative;overflow:hidden}
+.hold .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(46,140,131,.22)}
+.hold:active .fill{width:100%;transition:width 700ms linear}
+.unit{position:relative;overflow:hidden;flex:1;min-width:150px;height:72px;border-radius:12px;border:1px solid rgba(26,26,26,.12);background:#FFFDFA;padding:10px 12px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:transform 200ms cubic-bezier(.22,1,.36,1),box-shadow 200ms}
+.unit:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(26,26,26,.12)}
+.uic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;position:relative}
+.fire .uic{background:#FCE3D3;color:#C2410C}
+.med .uic{background:#DCEFEC;color:#1F5C5C}
+.pol .uic{background:#DDE3EE;color:#33425A}
+.flame{transform-origin:50% 90%}
+.fire:hover .flame{animation:flick .5s infinite alternate ease-in-out}
+@keyframes flick{0%{transform:scale(1,1) rotate(-3deg)}100%{transform:scale(1.08,1.15) rotate(3deg)}}
+.fire:hover .uic{box-shadow:0 0 0 4px rgba(243,112,33,.18),0 0 18px rgba(243,112,33,.45)}
+.spark{position:absolute;width:4px;height:4px;border-radius:50%;background:#F37021;left:18px;top:8px;opacity:0}
+.fire:hover .spark{animation:spark 900ms infinite ease-out}
+.fire:hover .spark.s2{animation-delay:300ms;left:24px}
+@keyframes spark{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-16px)}}
+.ecg{position:absolute;left:0;right:0;bottom:6px;height:20px;pointer-events:none}
+.ecg path{stroke-dasharray:1;stroke-dashoffset:1}
+.med:hover .ecg path{animation:ecg 1.2s infinite linear}
+@keyframes ecg{0%{stroke-dashoffset:1}70%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.med:hover .cross{animation:beat 1.2s infinite}
+@keyframes beat{0%,40%,100%{transform:scale(1)}10%,30%{transform:scale(1.18)}}
+.pol:hover .uic{animation:siren .5s infinite steps(2)}
+@keyframes siren{0%{box-shadow:-6px 0 14px rgba(168,38,30,.55)}100%{box-shadow:6px 0 14px rgba(75,93,122,.75)}}
+.siren-bar{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#A8261E 50%,#4B5D7A 50%);background-size:200% 100%;opacity:0}
+.pol:hover .siren-bar{opacity:1;animation:sweep .6s infinite linear}
+@keyframes sweep{0%{background-position:0 0}100%{background-position:-200% 0}}
+.eta{position:absolute;left:0;bottom:0;height:3px;background:#F37021;animation:eta 9s infinite linear}
+@keyframes eta{0%{width:12%}100%{width:88%}}
+.flip{display:inline-block;animation:flip 6s infinite}
+@keyframes flip{0%,45%{transform:rotateX(0)}50%{transform:rotateX(90deg)}55%,100%{transform:rotateX(0)}}
+.compass-needle{transform-origin:50px 50px;animation:sway 4s infinite ease-in-out}
+@keyframes sway{0%,100%{transform:rotate(38deg)}50%{transform:rotate(50deg)}}
+.plume{animation:plume 3s infinite linear}
+@keyframes plume{to{stroke-dashoffset:-28}}
+.plume-fill{animation:breathe 4s infinite ease-in-out;transform-origin:648px 340px}
+@keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.8;transform:scale(1.04)}}
+.ring-pulse{transform-origin:648px 340px;animation:rp 2.4s infinite ease-out}
+@keyframes rp{0%{transform:scale(.4);opacity:.7}100%{transform:scale(1.6);opacity:0}}
+.now{animation:live 1.6s infinite ease-out}
+.dash-route{stroke-dasharray:6 6;animation:plume 1.4s infinite linear}
+@media (prefers-reduced-motion: reduce){.dk *{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="dk" style="position: relative; width: 100%; height: 100vh; min-height: 720px; overflow: hidden; background: #E9DFD3; font-family: Lexend, sans-serif; color: #1A1A1A">
+
+<svg viewBox="0 0 1366 768" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%" aria-hidden="true">
+<rect width="1366" height="768" fill="#ECE3D8"/>
+<g fill="#E2D6C8"><rect x="340" y="140" width="120" height="90" rx="4"/><rect x="480" y="120" width="140" height="110" rx="4"/><rect x="700" y="150" width="110" height="80" rx="4"/><rect x="380" y="420" width="130" height="90" rx="4"/><rect x="740" y="430" width="160" height="100" rx="4"/><rect x="560" y="470" width="120" height="80" rx="4"/><rect x="830" y="240" width="140" height="90" rx="4"/></g>
+<path d="M300 560 C420 520 520 600 640 570 C720 550 760 590 900 580" fill="none" stroke="#C9DCE0" stroke-width="10" stroke-linecap="round"/>
+<g fill="none" stroke="#FFFDFA" stroke-width="7" stroke-linecap="round"><path d="M-20 400 L1400 250"/><path d="M420 -20 L560 800"/><path d="M880 -20 L760 800"/></g>
+<g fill="none" stroke="#FFFDFA" stroke-width="3"><path d="M-20 130 L1400 70"/><path d="M-20 300 L1400 180"/><path d="M-20 640 L1400 520"/><path d="M330 -20 L380 800"/><path d="M660 -20 L650 800"/><path d="M1000 -20 L960 800"/><path d="M-20 480 Q600 430 1400 470"/></g>
+<path class="plume-fill" d="M648 340 C700 300 820 230 880 250 C910 262 880 300 820 330 C760 360 690 360 648 340 Z" fill="rgba(243,112,33,.16)"/>
+<path class="plume" d="M648 340 C700 300 820 230 880 250 C910 262 880 300 820 330 C760 360 690 360 648 340 Z" fill="none" stroke="#C2410C" stroke-width="1.5" stroke-dasharray="6 8"/>
+<circle cx="648" cy="340" r="190" fill="rgba(168,38,30,.05)" stroke="#A8261E" stroke-width="1.2" stroke-dasharray="5 6"/>
+<circle cx="648" cy="340" r="110" fill="rgba(168,38,30,.08)" stroke="#A8261E" stroke-width="1.2" stroke-dasharray="5 6"/>
+<circle cx="648" cy="340" r="44" fill="rgba(168,38,30,.16)" stroke="#A8261E" stroke-width="1.5"/>
+<circle class="ring-pulse" cx="648" cy="340" r="30" fill="none" stroke="#A8261E" stroke-width="2"/>
+<path class="dash-route" d="M470 470 L520 430 L560 395 L615 360" fill="none" stroke="#F37021" stroke-width="3" stroke-linecap="round"/>
+<rect x="636" y="328" width="24" height="24" rx="6" fill="#A8261E" stroke="#FFFDFA" stroke-width="2.5"/><rect x="644" y="336" width="8" height="8" fill="#FFFDFA"/>
+<g font-family="JetBrains Mono" font-size="11" font-weight="700">
+<g><circle cx="470" cy="470" r="9" fill="#F37021" stroke="#FFFDFA" stroke-width="2"/><rect x="484" y="461" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="492" y="474" fill="#1A1A1A">U01</text></g>
+<g><circle cx="560" cy="250" r="9" fill="#2E8C83" stroke="#FFFDFA" stroke-width="2"/><rect x="574" y="241" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="582" y="254" fill="#1A1A1A">M11</text></g>
+<g><circle cx="760" cy="200" r="9" fill="#2E8C83" stroke="#FFFDFA" stroke-width="2"/><rect x="774" y="191" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="782" y="204" fill="#1A1A1A">M12</text></g>
+<g><circle cx="800" cy="440" r="9" fill="#2E8C83" stroke="#FFFDFA" stroke-width="2"/><rect x="814" y="431" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="822" y="444" fill="#1A1A1A">M10</text></g>
+<g><circle cx="590" cy="470" r="9" fill="#4B5D7A" stroke="#FFFDFA" stroke-width="2"/><rect x="604" y="461" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="612" y="474" fill="#1A1A1A">P01</text></g>
+<g><circle cx="430" cy="300" r="9" fill="#2E8C83" stroke="#FFFDFA" stroke-width="2"/><rect x="444" y="291" width="40" height="18" rx="9" fill="#FFFDFA"/><text x="452" y="304" fill="#1A1A1A">U02</text></g>
+</g>
+</svg>
+
+<header style="position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap">
+<div class="island" style="display: flex; align-items: center; gap: 16px; padding: 0 18px; height: 56px">
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -.01em"><span style="color: #F37021">■</span> ARGOS</span>
+<span style="width: 1px; height: 24px; background: rgba(26,26,26,.15)"></span>
+<span class="mono" style="font-size: 20px; font-weight: 700">18:25<span style="color: #8A8178">:50</span></span>
+<span style="display: flex; flex-direction: column; line-height: 1.2"><span class="mono" style="font-size: 10px; color: #5C554E; letter-spacing: .08em">TURNO DÍA · UTC-5</span><span style="font-size: 12px; font-weight: 500">demo@local</span></span>
+</div>
+<div class="island" style="flex: 1; min-width: 360px; display: flex; align-items: center; gap: 18px; padding: 0 18px; height: 56px">
+<span class="chip" style="background: #DCEFEC; color: #1F5C5C"><span class="dot-live"></span>EN VIVO</span>
+<span class="chip" style="background: #FBE7C6; color: #7A4600">▲ 2 ENTRANTES</span>
+<span style="flex: 1; display: flex; align-items: center; gap: 10px; min-width: 160px">
+<span class="mono" style="font-size: 11px; color: #5C554E">SIM</span>
+<span style="flex: 1; height: 6px; border-radius: 3px; background: rgba(26,26,26,.1); overflow: hidden"><span style="display: block; width: 44%; height: 100%; background: #4B5D7A; border-radius: 3px"></span></span>
+<span class="mono" style="font-size: 12px; font-weight: 700">03:34 / 08:00</span>
+</span>
+<button class="ibtn" aria-label="Pausar simulación"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+<div class="seg"><span class="thumb" style="left: 87px; width: 44px"></span><button>1×</button><button>5×</button><button class="on">10×</button></div>
+</div>
+<div class="island" style="display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 56px">
+<button class="ibtn" aria-label="Silenciar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+<button class="ibtn" aria-label="Ajustes"><svg class="gear" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+<span style="width: 36px; height: 36px; border-radius: 50%; background: #1A1A1A; color: #F37021; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px">JJ</span>
+</div>
+</header>
+
+<aside class="island" style="position: absolute; left: 12px; top: 80px; bottom: 108px; width: 300px; padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+<div class="sec"><span class="n">01</span>ENTRANTES · 2</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="row" style="border-radius: 10px; border: 1px solid rgba(26,26,26,.1); padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #FFFDFA">
+<div style="display: flex; align-items: center; gap: 8px"><span class="chip" style="background: #A8261E; color: #fff">■ P1</span><span class="mono" style="font-size: 11px; font-weight: 700">PRESENCIAL</span><span class="mono tmr-warn" style="margin-left: auto; font-size: 12px; font-weight: 700">02:12</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 13px">Fuga de gas</span><button class="btn btn-ghost" style="height: 28px; font-size: 12px; padding: 0 10px">Descartar</button></div>
+</div>
+<div class="row" style="border-radius: 10px; border: 1px solid rgba(168,38,30,.35); padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #FFFDFA">
+<div style="display: flex; align-items: center; gap: 8px"><span class="chip" style="background: #A8261E; color: #fff">■ P1</span><span class="mono" style="font-size: 11px; font-weight: 700">LÍNEA 123</span><span class="mono tmr-crit" style="margin-left: auto; font-size: 12px; font-weight: 700">04:12</span></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 13px">Fuga de gas</span><button class="btn btn-ghost" style="height: 28px; font-size: 12px; padding: 0 10px">Descartar</button></div>
+</div>
+</div>
+<div class="seg" style="align-self: stretch"><span class="thumb" style="left: 3px; width: calc(50% - 3px)"></span><button class="on" style="flex: 1">ACTIVOS · 1</button><button style="flex: 1">CERRADOS · 0</button></div>
+<div style="border-radius: 12px; background: #1A1A1A; color: #F8F3EE; padding: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 20px rgba(26,26,26,.2)">
+<div style="display: flex; align-items: center; gap: 8px"><span class="chip" style="background: #A8261E; color: #fff">■ P1</span><span class="mono" style="font-size: 13px; font-weight: 700">INC-0413</span><span class="mono" style="margin-left: auto; font-size: 11px; color: #BDB2A6">hace 1 min</span></div>
+<div style="font-size: 14px; font-weight: 500; line-height: 1.35">Fuga de gas · patrulla reporta olor a gas en la cuadra</div>
+<div style="display: flex; gap: 8px"><span class="chip" style="background: rgba(243,112,33,.18); color: #F7A46B">▲ 1 en ruta</span><span class="chip" style="background: rgba(255,255,255,.08); color: #D9CCBF">☎ 1 llamada</span></div>
+</div>
+<div style="margin-top: auto; font-size: 12px; color: #5C554E; line-height: 1.5">Seleccione un incidente para ver su perímetro, la línea de tiempo y las unidades asignadas.</div>
+</aside>
+
+<div class="island" style="position: absolute; left: 324px; top: 80px; width: 232px; padding: 14px; display: flex; gap: 12px; align-items: center">
+<svg width="76" height="76" viewBox="0 0 100 100" aria-hidden="true" style="flex: none">
+<circle cx="50" cy="50" r="44" fill="#FFFDFA" stroke="rgba(26,26,26,.15)" stroke-width="1.5"/>
+<g font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#5C554E" text-anchor="middle"><text x="50" y="18">N</text><text x="86" y="54">E</text><text x="50" y="90">S</text><text x="14" y="54">O</text></g>
+<g class="compass-needle"><path d="M50 18 L57 52 L50 46 L43 52 Z" fill="#F37021" stroke="#1A1A1A" stroke-width="1"/><path d="M50 82 L57 52 L50 58 L43 52 Z" fill="#CFC3B6"/></g>
+<circle cx="50" cy="50" r="3.5" fill="#1A1A1A"/>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span class="mono" style="font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #5C554E">VIENTO · EN VIVO</span>
+<span class="mono" style="font-size: 22px; font-weight: 700">14 <span style="font-size: 12px">km/h</span></span>
+<span class="mono" style="font-size: 12px; font-weight: 700">SO → NE · 44°</span>
+<span style="font-size: 11px; line-height: 1.35; color: #7A3410">La nube se desplaza al NE. Evacuar ese sector primero.</span>
+</div>
+</div>
+
+<aside class="island" style="position: absolute; right: 12px; top: 80px; bottom: 108px; width: 368px; padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="sec"><span class="n">01</span>INCIDENTE · INC-0413</div>
+<div style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2">Fuga de gas · Calle 18 con Carrera 24</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap"><span class="chip" style="background: #A8261E; color: #fff">■ CRÍTICO</span><span class="chip" style="background: #DDE3EE; color: #33425A">◆ <span class="flip">ABIERTO</span></span><span class="mono" style="font-size: 11px; color: #5C554E; align-self: center">abierto hace 1 min</span></div>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button class="btn btn-pri">Despachar unidad <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="kbd">D</span></button>
+<button class="btn btn-slate">Asesor <span class="kbd">A</span></button>
+<button class="btn btn-ghost hold"><span class="fill"></span><span style="position: relative">Mantener: contenido</span></button>
+</div>
+<div class="sec"><span class="n">02</span>LÍNEA DE TIEMPO</div>
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+<li style="display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start"><span class="mono" style="font-size: 11px; color: #5C554E; padding-top: 1px">18:24</span><span style="display: flex; flex-direction: column; align-items: center; height: 100%"><span style="width: 10px; height: 10px; border-radius: 50%; background: #1A1A1A; margin-top: 3px"></span><span style="flex: 1; width: 2px; min-height: 22px; background: #1A1A1A"></span></span><span style="font-size: 13px; padding-bottom: 10px">Llamada recibida · línea 123</span></li>
+<li style="display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start"><span class="mono" style="font-size: 11px; color: #5C554E; padding-top: 1px">18:24</span><span style="display: flex; flex-direction: column; align-items: center; height: 100%"><span style="width: 10px; height: 10px; border-radius: 50%; background: #1A1A1A; margin-top: 3px"></span><span style="flex: 1; width: 2px; min-height: 22px; background: #1A1A1A"></span></span><span style="font-size: 13px; padding-bottom: 10px">Incidente creado · perímetro 100/300/800 m</span></li>
+<li style="display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start"><span class="mono" style="font-size: 11px; color: #5C554E; padding-top: 1px">18:25</span><span style="display: flex; flex-direction: column; align-items: center; height: 100%"><span style="width: 10px; height: 10px; border-radius: 50%; background: #1A1A1A; margin-top: 3px"></span><span style="flex: 1; width: 2px; min-height: 22px; background: linear-gradient(#F37021, rgba(26,26,26,.15))"></span></span><span style="font-size: 13px; padding-bottom: 10px">U01 despachada · bomberos</span></li>
+<li style="display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start"><span class="mono" style="font-size: 11px; color: #A84A0F; font-weight: 700; padding-top: 1px">AHORA</span><span style="display: flex; flex-direction: column; align-items: center; height: 100%"><span class="now" style="width: 12px; height: 12px; border-radius: 50%; background: #F37021; border: 2px solid #1A1A1A; margin-top: 2px"></span><span style="flex: 1; width: 2px; min-height: 22px; background: rgba(26,26,26,.15)"></span></span><span style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px"><span style="font-size: 13px; font-weight: 600">U01 en ruta · ETA 02:40</span><span style="height: 6px; border-radius: 3px; background: rgba(26,26,26,.1); overflow: hidden"><span class="eta" style="position: static; display: block; height: 100%; border-radius: 3px"></span></span></span></li>
+<li style="display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start; opacity: .5"><span class="mono" style="font-size: 11px; padding-top: 1px">—</span><span style="display: flex; justify-content: center"><span style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #8A8178; margin-top: 3px"></span></span><span style="font-size: 13px">En escena · contenido · resuelto</span></li>
+</ol>
+<div class="sec"><span class="n">03</span>REFUGIOS</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 5px"><div style="display: flex; justify-content: space-between; font-size: 13px"><span>Colegio Central · evacuación</span><span class="chip" style="background: #DCEFEC; color: #1F5C5C">● APTO</span></div><div style="height: 6px; border-radius: 3px; background: rgba(26,26,26,.1)"><div style="width: 23%; height: 100%; border-radius: 3px; background: #2E8C83"></div></div><span class="mono" style="font-size: 11px; color: #5C554E">045/200</span></div>
+<div style="display: flex; flex-direction: column; gap: 5px"><div style="display: flex; justify-content: space-between; font-size: 13px"><span>Coliseo Municipal · zona tibia</span><span class="chip" style="background: #F6D9D6; color: #8A1F18">■ NO APTO</span></div><div style="height: 6px; border-radius: 3px; background: rgba(26,26,26,.1)"><div style="width: 0%; height: 100%"></div></div></div>
+</div>
+</aside>
+
+<footer class="island" style="position: absolute; left: 12px; right: 12px; bottom: 12px; height: 84px; padding: 6px 12px 6px 18px; display: flex; align-items: center; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex: none; padding-right: 6px"><span class="mono" style="font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #5C554E">UNIDADES</span><span class="mono" style="font-size: 20px; font-weight: 700">5<span style="color: #8A8178">/6</span></span><span style="font-size: 11px; color: #5C554E">disponibles</span></div>
+<div style="flex: 1; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px">
+<button class="unit fire" style="text-align: left; font-family: inherit; color: inherit; border-color: rgba(243,112,33,.6)">
+<span class="uic"><span class="spark"></span><span class="spark s2"></span><svg class="flame" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .2 1.8 1 3 2 3.2C11 9 11.5 5.5 12 2z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">U01</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #FCE3D3; color: #9A3412">▲ EN RUTA 02:40</span></span>
+<span class="eta"></span>
+</button>
+<button class="unit fire" style="text-align: left; font-family: inherit; color: inherit">
+<span class="uic"><span class="spark"></span><span class="spark s2"></span><svg class="flame" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .2 1.8 1 3 2 3.2C11 9 11.5 5.5 12 2z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">U02</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #DCEFEC; color: #1F5C5C">● DISP · 1,2 km</span></span>
+</button>
+<button class="unit med" style="text-align: left; font-family: inherit; color: inherit">
+<span class="uic"><svg class="cross" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">M10</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #DCEFEC; color: #1F5C5C">● DISP · 0,9 km</span></span>
+<svg class="ecg" viewBox="0 0 160 20" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 12 H50 L58 12 L64 2 L70 18 L76 8 L80 12 H160" fill="none" stroke="#2E8C83" stroke-width="1.5"/></svg>
+</button>
+<button class="unit med" style="text-align: left; font-family: inherit; color: inherit">
+<span class="uic"><svg class="cross" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">M11</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #DCEFEC; color: #1F5C5C">● DISP · 1,4 km</span></span>
+<svg class="ecg" viewBox="0 0 160 20" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 12 H50 L58 12 L64 2 L70 18 L76 8 L80 12 H160" fill="none" stroke="#2E8C83" stroke-width="1.5"/></svg>
+</button>
+<button class="unit med" style="text-align: left; font-family: inherit; color: inherit">
+<span class="uic"><svg class="cross" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">M12</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #DCEFEC; color: #1F5C5C">● DISP · 1,8 km</span></span>
+<svg class="ecg" viewBox="0 0 160 20" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 12 H50 L58 12 L64 2 L70 18 L76 8 L80 12 H160" fill="none" stroke="#2E8C83" stroke-width="1.5"/></svg>
+</button>
+<button class="unit pol" style="text-align: left; font-family: inherit; color: inherit">
+<span class="siren-bar"></span>
+<span class="uic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z"/></svg></span>
+<span style="display: flex; flex-direction: column; gap: 3px"><span class="mono" style="font-size: 14px; font-weight: 700">P01</span><span class="chip" style="height: 18px; padding: 0 6px; font-size: 10px; background: #DCEFEC; color: #1F5C5C">● DISP · 0,4 km</span></span>
+</button>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1366,"height":768}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

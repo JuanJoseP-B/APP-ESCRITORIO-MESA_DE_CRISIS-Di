@@ -70,7 +70,7 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('radiogroup').hasAttribute('data-indicador')).toBe(false);
   });
 
-  it('el indicador se desliza con los tokens de movimiento', () => {
-    expect(css).toMatch(/\.ag-seg__ind \{[^}]*transition: transform var\(--dur-fast, 150ms\) var\(--ease-mecanico,/);
+  it('el thumb se desliza en 220 ms con la curva de las islas', () => {
+    expect(css).toMatch(/\.ag-seg__ind \{[^}]*transition: transform var\(--t-isla-lenta\) var\(--curva-isla\)/);
   });
 });

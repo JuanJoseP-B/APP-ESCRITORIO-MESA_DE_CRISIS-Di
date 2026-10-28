@@ -1,5 +1,7 @@
-/* ── SectionHeader: filete editorial ───────────────────────────────────── */
-.ag-section { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: var(--control-md); padding: var(--space-3) var(--space-4) var(--space-2); border-top: var(--border-rule) solid var(--border-strong); }
-.ag-section__title { display: flex; align-items: baseline; gap: var(--space-2); margin: 0; font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-primary); }
-.ag-section__index { color: var(--text-accent); }
-.ag-section__count { font-weight: 500; color: var(--text-muted); }
+/* ── SectionHeader: chip numerado + título + filete que ocupa el resto de la línea ─────────────────────────────── */
+/* "[01] ENTRANTES · 2 ─────". El relleno horizontal coincide con el de los paneles (px-4). */
+.ag-section { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; padding: 14px var(--space-4) var(--space-2); }
+.ag-section__title { display: flex; flex: 1 1 auto; align-items: center; gap: var(--space-2); min-width: 0; margin: 0; font-family: var(--font-mono); font-size: calc(11px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--isla-texto); white-space: nowrap; }
+.ag-section__title::after { content: ""; flex: 1 1 auto; min-width: var(--space-4); height: 1px; background: var(--isla-filete); }
+.ag-section__index { display: inline-flex; align-items: center; justify-content: center; flex: none; height: 20px; padding: 0 6px; border-radius: 6px; background: #1a1a1a; color: var(--acento-naranja); letter-spacing: .04em; }
+.ag-section__count { font-weight: 700; color: var(--isla-texto); }

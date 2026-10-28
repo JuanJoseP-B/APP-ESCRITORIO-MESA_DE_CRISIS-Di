@@ -292,3 +292,22 @@ describe('servicioDemo con escenario (arranque limpio)', () => {
     expect((await segundo.listarRecursos()).every((r) => r.estado_actual === 'DISPONIBLE')).toBe(true);
   });
 });
+
+describe('servicioDemo (sesión)', () => {
+  it('sin interruptor arranca con la sesión abierta', async () => {
+    expect(await crearServicioDemo().sesionActual()).toEqual({ email: 'demo@local', esOperador: true });
+  });
+
+  it('con interruptor pide login, y la sesión se comparte entre servicios', async () => {
+    const sesion = { activa: false };
+    const primero = crearServicioDemo({ sesion });
+    expect(await primero.sesionActual()).toBeNull();
+
+    await primero.iniciarSesion('operador@argos.gov', 'cualquiera');
+    // Cambiar de escenario crea otro servicio: no debe volver a pedir login.
+    expect(await crearServicioDemo({ sesion }).sesionActual()).toEqual({ email: 'demo@local', esOperador: true });
+
+    await primero.cerrarSesion();
+    expect(await crearServicioDemo({ sesion }).sesionActual()).toBeNull();
+  });
+});

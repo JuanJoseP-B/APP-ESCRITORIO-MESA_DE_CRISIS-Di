@@ -7,6 +7,7 @@ import {
   VELOCIDAD_MS,
   duracionTrayectoSeg,
   estadoTrayecto,
+  etasDe,
   factorVelocidadDe,
   movimientosEnRuta,
   posicionesDe,
@@ -162,5 +163,24 @@ describe('movimientosEnRuta', () => {
   it('posicionesDe indexa la posición mostrada por recurso', () => {
     const m = movimientosEnRuta([recurso('r1', 'EN_RUTA')], [evento(1, 'r1', 'EN_RUTA', salidaIso)], [incidente('i1')], ahora);
     expect(posicionesDe(m).get('r1')).toEqual(m[0]?.posicion);
+  });
+});
+
+describe('etasDe', () => {
+  it('da el avance y los segundos que faltan a la velocidad del tipo; sin retraso del escenario', () => {
+    const r = recurso('m1', 'EN_RUTA', { etiqueta: 'M1' });
+    const total = duracionTrayectoSeg('Ambulancia', trayecto);
+    const [m] = movimientosEnRuta([r], [evento(1, 'm1', 'EN_RUTA', new Date(SALIDA).toISOString())], [incidente('i1')], SALIDA + (total * 1000) / 4, undefined, null);
+    expect(m).toBeDefined();
+    const eta = etasDe(m ? [m] : [], [r], null).get('m1');
+    expect(eta?.progreso).toBeCloseTo(0.25, 5);
+    expect(eta?.restanteSeg).toBeCloseTo(total * 0.75, 1);
+  });
+
+  it('al llegar no queda tiempo y se ignoran las unidades que no están en la lista', () => {
+    const r = recurso('m1', 'EN_RUTA');
+    const [m] = movimientosEnRuta([r], [evento(1, 'm1', 'EN_RUTA', new Date(SALIDA).toISOString())], [incidente('i1')], SALIDA + 3_600_000, undefined, null);
+    expect(etasDe(m ? [m] : [], [r], null).get('m1')).toEqual({ progreso: 1, restanteSeg: 0 });
+    expect(etasDe(m ? [m] : [], [], null).size).toBe(0);
   });
 });

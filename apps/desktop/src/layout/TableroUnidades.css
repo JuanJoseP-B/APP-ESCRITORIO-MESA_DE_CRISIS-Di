@@ -1,17 +1,80 @@
-/* ── TableroUnidades ────────────────────────────────────────────────────── */
-/* Chips de ancho fijo en una sola fila; el scroll horizontal solo aparece si no caben (más de 12 en 1280 px). */
-.ag-tablero { box-sizing: border-box; display: flex; align-items: stretch; gap: var(--space-4); height: 100%; padding: var(--space-2) var(--space-4); }
-.ag-tablero__resumen { display: flex; flex: none; flex-direction: column; justify-content: center; gap: var(--space-1); min-width: 88px; }
-.ag-tablero__titulo { font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-secondary); }
-.ag-tablero__conteo { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; color: var(--text-primary); }
-.ag-tablero__chips { display: flex; flex: 1 1 auto; align-items: center; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; list-style: none; overflow-x: auto; overflow-y: hidden; }
-.ag-tablero__chips > li { flex: none; }
-.ag-tablero__vacio { align-self: center; margin: 0; font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--text-muted); }
-/* Unidad elegida (en el tablero o en el mapa): anillo de foco además del fondo de selección. */
-.ag-tablero .ag-unit.ag-unit--foco { box-shadow: inset 0 0 0 1px var(--card-border-selected), var(--focus-ring); }
-/* Hover: el chip sube 1px sobre una línea dura (sin sombra difusa); el seleccionado conserva su contorno. */
-.ag-tablero button.ag-unit { --ag-chip-alza: -1px; }
-.ag-tablero button.ag-unit:hover { transform: translateY(var(--ag-chip-alza)); }
-.ag-tablero button.ag-unit:hover:not([aria-pressed="true"]) { box-shadow: 0 1px 0 var(--card-border-hover); }
-@media (prefers-reduced-motion: reduce) { .ag-tablero button.ag-unit { --ag-chip-alza: 0px; } }
-:root[data-reduced-motion] .ag-tablero button.ag-unit { --ag-chip-alza: 0px; }
+/* ── TableroUnidades: resumen a la izquierda y tarjetas en fila (scroll horizontal si no caben) ───────────────── */
+.ag-tablero { box-sizing: border-box; display: flex; align-items: center; gap: 14px; height: 100%; padding: 6px 12px 6px 18px; }
+.ag-tablero__resumen { display: flex; flex: none; flex-direction: column; gap: 2px; padding-right: 6px; }
+.ag-tablero__titulo { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--isla-texto-2); }
+.ag-tablero__conteo { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 20px; line-height: 24px; font-weight: 700; color: var(--isla-texto); }
+.ag-tablero__total { color: var(--isla-texto-3); }
+.ag-tablero__pie { font-size: 11px; color: var(--isla-texto-2); }
+.ag-tablero__chips { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; margin: 0; padding: 4px 2px; list-style: none; overflow-x: auto; overflow-y: hidden; }
+.ag-tablero__chips > li { flex: 1 0 auto; }
+.ag-tablero__vacio { align-self: center; margin: 0; font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; color: var(--isla-texto-2); }
+
+/* ── UnitCard ── */
+.ag-unidad { position: relative; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; min-width: 150px; height: 72px; padding: 10px 12px; overflow: hidden; border: 1px solid var(--tarjeta-borde); border-radius: var(--radio-tarjeta); background: var(--tarjeta-bg); color: var(--isla-texto); font: inherit; text-align: left; cursor: pointer; transition: transform 200ms var(--curva-isla), box-shadow 200ms var(--curva-isla), border-color 200ms var(--curva-isla); }
+.ag-unidad:hover { transform: translateY(-3px); box-shadow: var(--tarjeta-sombra-hover); }
+.ag-unidad:focus { outline: none; }
+.ag-unidad:focus-visible, .ag-unidad[data-foco] { box-shadow: var(--focus-ring); }
+.ag-unidad[aria-pressed='true'] { border-color: var(--acento-pizarra); box-shadow: inset 0 0 0 1px var(--acento-pizarra); }
+.ag-unidad[aria-pressed='true'][data-foco], .ag-unidad[aria-pressed='true']:focus-visible { box-shadow: inset 0 0 0 1px var(--acento-pizarra), var(--focus-ring); }
+.ag-unidad[data-estado='inoperativo'] { opacity: 0.7; }
+
+.ag-unidad__icono { position: relative; display: flex; flex: none; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: var(--radio-control); transition: box-shadow 200ms var(--curva-isla); }
+.ag-unidad--fuego .ag-unidad__icono { background: var(--unidad-fuego-bg); color: var(--unidad-fuego-fg); }
+.ag-unidad--salud .ag-unidad__icono { background: var(--unidad-salud-bg); color: var(--unidad-salud-fg); }
+.ag-unidad--policia .ag-unidad__icono { background: var(--unidad-policia-bg); color: var(--unidad-policia-fg); }
+
+.ag-unidad__datos { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ag-unidad__fila { display: flex; align-items: center; gap: var(--space-2); }
+.ag-unidad__codigo { font-family: var(--font-mono); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ag-unidad__timer { flex: none; }
+.ag-unidad__chip { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; height: 18px; padding: 0 6px; border-radius: var(--radio-chip); font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; text-transform: uppercase; }
+.ag-unidad__chip .ag-glyph { width: 6px; height: 6px; }
+.ag-unidad__chip .ag-glyph--triangle { width: 7px; }
+.ag-unidad__detalle { font-variant-numeric: tabular-nums; text-transform: none; }
+.ag-unidad[data-estado='disponible'] .ag-unidad__chip { background: var(--chip-ok-bg); color: var(--chip-ok-fg); }
+.ag-unidad[data-estado='despachado'] .ag-unidad__chip { background: var(--chip-aviso-bg); color: var(--chip-aviso-fg); }
+.ag-unidad[data-estado='enruta'] .ag-unidad__chip { background: var(--chip-fuego-bg); color: var(--chip-fuego-fg); }
+.ag-unidad[data-estado='escena'] .ag-unidad__chip { background: var(--chip-info-bg); color: var(--chip-info-fg); }
+.ag-unidad[data-estado='inoperativo'] .ag-unidad__chip { background: var(--chip-neutro-bg); color: var(--chip-neutro-fg); }
+/* Cambio de estado: el chip da media vuelta vertical. */
+.ag-unidad__chip[data-cambio] { animation: ag-chip-giro 300ms var(--curva-isla); }
+@keyframes ag-chip-giro { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+
+/* En ruta: borde naranja al 60 % y barra de ETA de 3 px que avanza con el progreso real. */
+.ag-unidad[data-estado='enruta'] { border-color: var(--unidad-borde-ruta); }
+.ag-unidad__eta { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--acento-naranja); transition: width 400ms linear; }
+
+/* ── Bomberos: la llama titila, el cuadro brilla en naranja y suben dos chispas ── */
+.ag-unidad__llama { transform-origin: 50% 90%; }
+.ag-unidad__chispa { position: absolute; left: 18px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: var(--acento-naranja); opacity: 0; }
+.ag-unidad__chispa--2 { left: 24px; }
+.ag-unidad--fuego:hover .ag-unidad__llama, .ag-unidad--fuego[data-animando] .ag-unidad__llama { animation: ag-llama 0.5s ease-in-out infinite alternate; }
+.ag-unidad--fuego:hover .ag-unidad__icono, .ag-unidad--fuego[data-animando] .ag-unidad__icono { box-shadow: var(--unidad-brillo-fuego); }
+.ag-unidad--fuego:hover .ag-unidad__chispa, .ag-unidad--fuego[data-animando] .ag-unidad__chispa { animation: ag-chispa 900ms ease-out infinite; }
+.ag-unidad--fuego:hover .ag-unidad__chispa--2, .ag-unidad--fuego[data-animando] .ag-unidad__chispa--2 { animation-delay: 300ms; }
+@keyframes ag-llama { 0% { transform: scale(1, 1) rotate(-3deg); } 100% { transform: scale(1.08, 1.15) rotate(3deg); } }
+@keyframes ag-chispa { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-16px); } }
+
+/* ── Ambulancia: la cruz late dos veces por ciclo y un electrocardiograma se dibuja en el borde inferior ── */
+.ag-unidad__ecg { position: absolute; left: 0; right: 0; bottom: 6px; width: 100%; height: 20px; color: var(--acento-teal); pointer-events: none; }
+.ag-unidad__ecg path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.ag-unidad--salud:hover .ag-unidad__ecg path, .ag-unidad--salud[data-animando] .ag-unidad__ecg path { animation: ag-ecg 1.2s linear infinite; }
+.ag-unidad--salud:hover .ag-unidad__cruz, .ag-unidad--salud[data-animando] .ag-unidad__cruz { animation: ag-latido-cruz 1.2s infinite; }
+@keyframes ag-ecg { 0% { stroke-dashoffset: 1; opacity: 1; } 70% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ag-latido-cruz { 0%, 40%, 100% { transform: scale(1); } 10%, 30% { transform: scale(1.18); } }
+
+/* ── Policía: luces rojo / azul alternas en el cuadro y franja de sirena arriba ── */
+.ag-unidad__sirena { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--unidad-sirena-roja) 50%, var(--unidad-sirena-azul) 50%); background-size: 200% 100%; opacity: 0; }
+.ag-unidad--policia:hover .ag-unidad__icono, .ag-unidad--policia[data-animando] .ag-unidad__icono { animation: ag-sirena-luces 0.5s steps(2) infinite; }
+.ag-unidad--policia:hover .ag-unidad__sirena, .ag-unidad--policia[data-animando] .ag-unidad__sirena { opacity: 1; animation: ag-sirena-franja 0.6s linear infinite; }
+@keyframes ag-sirena-luces { 0% { box-shadow: var(--unidad-luz-roja); } 100% { box-shadow: var(--unidad-luz-azul); } }
+@keyframes ag-sirena-franja { 0% { background-position: 0 0; } 100% { background-position: -200% 0; } }
+
+/* Menos movimiento: nada se anima ni se desplaza; el estado sigue en color, glifo y palabra. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-unidad, .ag-unidad * { animation: none !important; transition: none !important; }
+  .ag-unidad:hover { transform: none; }
+}
+:root[data-reduced-motion='true'] .ag-unidad,
+:root[data-reduced-motion='true'] .ag-unidad * { animation: none !important; transition: none !important; }
+:root[data-reduced-motion='true'] .ag-unidad:hover { transform: none; }

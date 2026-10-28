@@ -17,6 +17,7 @@ import {
   moverSeleccion,
   ordenarCerrados,
   ordenarCola,
+  unidadesPorEstadoDeIncidente,
   unidadesPorIncidente,
 } from './cola';
 
@@ -215,5 +216,26 @@ describe('filtrarPorIds', () => {
 
   it('con null no filtra y devuelve la misma lista', () => {
     expect(filtrarPorIds(todos, null)).toBe(todos);
+  });
+});
+
+describe('unidadesPorEstadoDeIncidente', () => {
+  it('separa las unidades en camino (asignadas o en ruta) de las que ya están en la escena', () => {
+    const r = (id: string, estado: Recurso['estado_actual'], incidenteId: string | null): Recurso => ({
+      id,
+      tipo: 'Bomberos',
+      estado_actual: estado,
+      incidente_asignado_id: incidenteId,
+    });
+    const mapa = unidadesPorEstadoDeIncidente([
+      r('a', 'ASIGNADO', 'i1'),
+      r('b', 'EN_RUTA', 'i1'),
+      r('c', 'EN_ESCENA', 'i1'),
+      r('d', 'EN_ESCENA', 'i2'),
+      r('e', 'DISPONIBLE', null),
+    ]);
+    expect(mapa.get('i1')).toEqual({ total: 3, enRuta: 2, enEscena: 1 });
+    expect(mapa.get('i2')).toEqual({ total: 1, enRuta: 0, enEscena: 1 });
+    expect(mapa.has('i3')).toBe(false);
   });
 });

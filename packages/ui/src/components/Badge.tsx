@@ -53,8 +53,8 @@ export function Badge({ severity, status, tone, emphasis, glyph, className, chil
   const t = tone ?? preset?.tone ?? 'neutral';
   const e = emphasis ?? preset?.emphasis ?? 'tint';
   const forma = glyph === false ? null : (glyph ?? preset?.shape ?? FORMA_POR_TONO[t]);
-  // Un valor nuevo (otro tono, otro glifo u otra palabra) entra con un fundido breve.
-  const cambiando = useCambio(`${t}|${e}|${forma ?? ''}|${typeof children === 'string' ? children : (preset?.label ?? '')}`);
+  // Un valor nuevo (otro tono, otro glifo u otra palabra) da media vuelta vertical (300 ms, dentro de `slow`).
+  const cambiando = useCambio(`${t}|${e}|${forma ?? ''}|${typeof children === 'string' ? children : (preset?.label ?? '')}`, 'slow');
   return (
     <span className={cx('ag-badge', `ag-badge--${t}`, `ag-badge--${e}`, className)} data-cambio={cambiando || undefined}>
       {forma ? <Glyph shape={forma} /> : null}

@@ -2,6 +2,7 @@
 @import '@argos/ui/tokens.css';
 @import '@argos/ui/theme.css';
 @import 'maplibre-gl/dist/maplibre-gl.css';
+@import './islas.css';
 
 /* El código fuente de @argos/ui también se escanea para las utilidades. */
 @source '../../../packages/ui/src';
@@ -29,102 +30,6 @@ body {
 .ag-kbd[data-destello='true'],
 kbd[data-destello='true'] {
   animation: ag-kbd-destello var(--dur-fast, 150ms) var(--ease-salida, ease-out);
-}
-
-/* ── Filas y pestañas de la cola ───────────────────────────────────────── */
-/* Hover: fondo (clase de la fila) y un paso corto a la derecha. Pulsado: se hunde 1px. El foco no cambia. */
-.ag-fila {
-  --ag-fila-paso: 2px;
-  --ag-fila-hundido: 1px;
-  transition:
-    background-color var(--dur-instant) var(--ease-salida),
-    transform var(--dur-instant) var(--ease-mecanico);
-}
-
-.ag-fila:hover {
-  transform: translateX(var(--ag-fila-paso));
-}
-
-.ag-fila:active {
-  transform: translate(var(--ag-fila-paso), var(--ag-fila-hundido));
-}
-
-.ag-pestana {
-  --ag-fila-hundido: 1px;
-  transition:
-    background-color var(--dur-instant) var(--ease-salida),
-    color var(--dur-fast) var(--ease-salida),
-    transform var(--dur-instant) var(--ease-mecanico);
-}
-
-.ag-pestana:active {
-  transform: translateY(var(--ag-fila-hundido));
-}
-
-/* Sin movimiento no hay desplazamiento: quedan el cambio de fondo y de color, al instante. */
-@media (prefers-reduced-motion: reduce) {
-  .ag-fila,
-  .ag-pestana {
-    --ag-fila-paso: 0px;
-    --ag-fila-hundido: 0px;
-  }
-}
-
-:root[data-reduced-motion] .ag-fila,
-:root[data-reduced-motion] .ag-pestana {
-  --ag-fila-paso: 0px;
-  --ag-fila-hundido: 0px;
-}
-
-/* ── Coreografía de llegada de llamada ─────────────────────────────────── */
-@keyframes ag-deslizar-abajo {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* La franja es una línea sólida que cruza la fila una vez. En reposo es invisible: al terminar no queda nada encima del texto. */
-@keyframes ag-barrido-franja {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-.ag-fila-entrante[data-nueva='true'] {
-  position: relative;
-  overflow: hidden;
-  animation: ag-deslizar-abajo var(--dur-base, 240ms) var(--ease-salida, ease-out);
-}
-
-.ag-fila-entrante[data-nueva='true']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  box-shadow: inset var(--space-1) 0 0 var(--status-warning);
-  opacity: 0;
-  animation: ag-barrido-franja var(--dur-slow, 400ms) var(--ease-salida, ease-out) var(--dur-base, 240ms);
-  pointer-events: none;
-}
-
-/* Sin animación la franja no barre: se quedaría quieta encima del texto de la fila. */
-@media (prefers-reduced-motion: reduce) {
-  .ag-fila-entrante[data-nueva='true']::after {
-    display: none;
-  }
-}
-
-:root[data-reduced-motion] .ag-fila-entrante[data-nueva='true']::after {
-  display: none;
 }
 
 @keyframes ag-contador-golpe {
@@ -301,4 +206,203 @@ kbd[data-destello='true'] {
 
 .ag-arranque-linea {
   animation: ag-arranque-linea var(--dur-fast, 150ms) var(--ease-salida, ease-out);
+}
+
+/* ── Pantalla de acceso ────────────────────────────────────────────────── */
+/* Una sola pasada de 12 s: el mapa se traza, cae el incidente con sus anillos, el mapa se aparta y entran el panel
+   y la tarjeta (todo listo a los ~6,8 s). El estilo base de cada pieza es su estado FINAL; los keyframes solo
+   describen el camino. Así, sin animación (reduced motion, `theme.css` las apaga) u omitiendo la intro, se ve la
+   pantalla terminada sin depender de `animation-fill-mode`. */
+.ag-login {
+  --ag-login-ciclo: 12s;
+  --ag-login-curva: cubic-bezier(0.22, 1, 0.36, 1);
+  --ag-login-trazo: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.ag-login-anim {
+  animation-duration: var(--ag-login-ciclo);
+  animation-timing-function: var(--ag-login-curva);
+  animation-fill-mode: both;
+}
+
+.ag-login[data-intro='omitida'] .ag-login-anim,
+.ag-login[data-intro='omitida'] .ag-login-trazos path {
+  animation: none;
+}
+
+/* Calles y curvas de nivel: se dibujan en tres capas desfasadas. */
+.ag-login-trazos path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: var(--ag-login-ciclo) var(--ag-login-trazo) both;
+}
+.ag-login-trazos--a path { animation-name: ag-login-trazo-a; }
+.ag-login-trazos--b path { animation-name: ag-login-trazo-b; }
+.ag-login-trazos--c path { animation-name: ag-login-trazo-c; }
+
+@keyframes ag-login-trazo-a {
+  0% { stroke-dashoffset: 1; }
+  12%, 100% { stroke-dashoffset: 0; }
+}
+@keyframes ag-login-trazo-b {
+  0%, 6% { stroke-dashoffset: 1; }
+  22%, 100% { stroke-dashoffset: 0; }
+}
+@keyframes ag-login-trazo-c {
+  0%, 12% { stroke-dashoffset: 1; }
+  28%, 100% { stroke-dashoffset: 0; }
+}
+
+/* Unidades: caen desde arriba con un pequeño rebote; el incidente aparece escalando. */
+.ag-login-caida {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.ag-login-caida--1 { animation-name: ag-login-caida-1; }
+.ag-login-caida--2 { animation-name: ag-login-caida-2; }
+.ag-login-caida--3 { animation-name: ag-login-caida-3; }
+.ag-login-caida--incidente { animation-name: ag-login-caida-incidente; }
+
+@keyframes ag-login-caida-1 {
+  0%, 22% { opacity: 0; transform: translateY(-36px); }
+  26% { opacity: 1; transform: translateY(4px); }
+  28%, 100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes ag-login-caida-2 {
+  0%, 24% { opacity: 0; transform: translateY(-36px); }
+  28% { opacity: 1; transform: translateY(4px); }
+  30%, 100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes ag-login-caida-3 {
+  0%, 26% { opacity: 0; transform: translateY(-36px); }
+  30% { opacity: 1; transform: translateY(4px); }
+  32%, 100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes ag-login-caida-incidente {
+  0%, 20% { opacity: 0; transform: scale(0); }
+  24% { opacity: 1; transform: scale(1.25); }
+  27%, 100% { opacity: 1; transform: scale(1); }
+}
+
+/* Anillos de riesgo: se abren desde el incidente, de dentro hacia fuera. */
+.ag-login-anillo {
+  transform-box: view-box;
+  transform-origin: 683px 384px;
+}
+.ag-login-anillo--1 { animation-name: ag-login-anillo-1; }
+.ag-login-anillo--2 { animation-name: ag-login-anillo-2; }
+.ag-login-anillo--3 { animation-name: ag-login-anillo-3; }
+
+@keyframes ag-login-anillo-1 {
+  0%, 28% { opacity: 0; transform: scale(0); }
+  32%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ag-login-anillo-2 {
+  0%, 30% { opacity: 0; transform: scale(0); }
+  34%, 100% { opacity: 1; transform: scale(1); }
+}
+@keyframes ag-login-anillo-3 {
+  0%, 32% { opacity: 0; transform: scale(0); }
+  36%, 100% { opacity: 1; transform: scale(1); }
+}
+
+/* El mapa se aleja y se aparta a la derecha, atenuado, para dejar sitio al panel. */
+.ag-login-mapa {
+  transform-origin: 50% 50%;
+  transform: translateX(220px) scale(1.18);
+  opacity: 0.32;
+  animation-name: ag-login-mapa;
+}
+@keyframes ag-login-mapa {
+  0% { transform: scale(1.1); opacity: 1; }
+  37% { transform: scale(1); opacity: 1; }
+  47%, 100% { transform: translateX(220px) scale(1.18); opacity: 0.32; }
+}
+
+/* Rótulo «Trazando cartografía» con su barra de progreso: visible solo mientras se dibuja el mapa. */
+.ag-login-intro {
+  opacity: 0;
+  visibility: hidden;
+  animation-name: ag-login-intro;
+}
+@keyframes ag-login-intro {
+  0% { opacity: 0; visibility: visible; }
+  4%, 34% { opacity: 1; visibility: visible; }
+  40%, 100% { opacity: 0; visibility: hidden; }
+}
+.ag-login-progreso {
+  transform-origin: left;
+  animation-name: ag-login-progreso;
+}
+@keyframes ag-login-progreso {
+  0% { transform: scaleX(0); }
+  36%, 100% { transform: scaleX(1); }
+}
+
+.ag-login-panel { animation-name: ag-login-panel; }
+@keyframes ag-login-panel {
+  0%, 37% { transform: translateX(-100%); }
+  46%, 100% { transform: translateX(0); }
+}
+
+.ag-login-marca { animation-name: ag-login-marca; }
+@keyframes ag-login-marca {
+  0%, 44% { clip-path: inset(0 100% 0 0); transform: translateY(12px); }
+  52%, 100% { clip-path: inset(0 0 0 0); transform: translateY(0); }
+}
+
+.ag-login-filete {
+  transform-origin: left;
+  animation-name: ag-login-filete;
+}
+@keyframes ag-login-filete {
+  0%, 49% { transform: scaleX(0); }
+  55%, 100% { transform: scaleX(1); }
+}
+
+.ag-login-tarde { animation-name: ag-login-tarde; }
+@keyframes ag-login-tarde {
+  0%, 50% { opacity: 0; transform: translateY(8px); }
+  57%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+.ag-login-tarjeta { animation-name: ag-login-tarjeta; }
+@keyframes ag-login-tarjeta {
+  0%, 46% { opacity: 0; transform: translateY(48px) scale(0.97); }
+  55%, 100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Velo del color de fondo que se levanta al entrar, para que el primer cuadro no sea un mapa a medias. */
+.ag-login-velo {
+  opacity: 0;
+  animation-name: ag-login-velo;
+  animation-timing-function: linear;
+}
+@keyframes ag-login-velo {
+  0% { opacity: 1; }
+  3%, 100% { opacity: 0; }
+}
+
+/* Punto «en línea»: late de forma continua, como los demás indicadores en vivo. */
+.ag-login-latido {
+  animation: ag-login-latido 1.6s ease-out infinite;
+}
+@keyframes ag-login-latido {
+  0% { box-shadow: 0 0 0 0 rgba(31, 92, 92, 0.45); }
+  100% { box-shadow: 0 0 0 8px rgba(31, 92, 92, 0); }
+}
+
+/* Botón INGRESAR: sube al pasar el cursor y se hunde al pulsar. */
+.ag-login-cta {
+  transition:
+    transform 160ms var(--ag-login-curva),
+    box-shadow 160ms;
+}
+.ag-login-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(243, 112, 33, 0.35);
+}
+.ag-login-cta:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
 }

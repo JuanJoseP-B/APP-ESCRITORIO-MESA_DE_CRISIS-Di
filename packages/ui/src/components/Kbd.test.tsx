@@ -30,8 +30,8 @@ describe('Kbd', () => {
     expect(screen.getByText('F1')).toBeTruthy();
   });
 
-  it('es sutil: contorno fino, sin relleno, sin opacidad ni colores sueltos', () => {
-    expect(css).toContain('background: transparent');
+  it('lleva el fondo del token y el color del texto que la rodea, sin colores sueltos', () => {
+    expect(css).toContain('background: var(--kbd-bg)');
     expect(css).toContain('color: inherit');
     expect(css).not.toMatch(/opacity/);
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);

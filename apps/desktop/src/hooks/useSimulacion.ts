@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { agregarEvento } from '@argos/shared';
 import { DURACION_ESCENARIO_SEG, ESCENARIOS, eventosEntre, type Escenario } from '../domain/escenario';
 import type { RelojSimulado, Velocidad } from '../domain/relojSimulado';
+import { vientoSimulado, type Viento } from '../domain/viento';
 import type { ServicioMesa } from '../services/supabaseClient';
 import { AUTOR_SISTEMA } from './useLlegadaUnidades';
 
@@ -11,6 +12,8 @@ export interface EstadoSimulacion {
   /** Segundos del escenario transcurridos, acotados a la duración. */
   readonly tSeg: number;
   readonly duracionSeg: number;
+  /** Viento del escenario. TODO: dato real; hoy es un mock (`vientoSimulado`). */
+  readonly viento: Viento;
   alternar(): void;
   fijarVelocidad(velocidad: Velocidad): void;
 }
@@ -80,11 +83,13 @@ export function useSimulacion(
   );
 
   if (!reloj) return null;
+  const tSeg = Math.min(reloj.transcurridoSeg(), DURACION_ESCENARIO_SEG);
   return {
     reproduciendo: reloj.reproduciendo,
     velocidad: reloj.velocidad,
-    tSeg: Math.min(reloj.transcurridoSeg(), DURACION_ESCENARIO_SEG),
+    tSeg,
     duracionSeg: DURACION_ESCENARIO_SEG,
+    viento: vientoSimulado(tSeg),
     alternar,
     fijarVelocidad,
   };

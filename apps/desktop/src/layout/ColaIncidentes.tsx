@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Incidente, Llamada, Recurso } from '@argos/shared';
-import { Badge, Button, curva, duracion, duracionSegundos } from '@argos/ui';
-import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorIncidente } from '../domain/cola';
+import { Badge, curva, duracion, duracionSegundos } from '@argos/ui';
+import { codigoIncidente, dividirCola, filtrarPorIds, minutosAbierto, unidadesPorEstadoDeIncidente, type UnidadesDeIncidente } from '../domain/cola';
 import { llamadasPorIncidente } from '../domain/entrantes';
 import { textoEstadoIncidente } from '../i18n/etiquetas';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { BandejaEntrantes } from './BandejaEntrantes';
 import { PRIORIDAD_UI } from './presentacion';
+import './ColaIncidentes.css';
 
 export interface ColaIncidentesProps {
   incidentes: readonly Incidente[];
@@ -34,6 +35,8 @@ export function formatearDuracion(minutos: number | null): string {
 
 type Pestana = 'activos' | 'cerrados';
 
+const SIN_UNIDADES: UnidadesDeIncidente = { total: 0, enRuta: 0, enEscena: 0 };
+
 function FilaIncidente({
   incidente,
   unidades,
@@ -44,7 +47,7 @@ function FilaIncidente({
   onSeleccionar,
 }: {
   incidente: Incidente;
-  unidades: number;
+  unidades: UnidadesDeIncidente;
   /** Llamadas vinculadas al incidente. */
   llamadas: number;
   ahora: number;
@@ -79,21 +82,23 @@ function FilaIncidente({
       ref={fila}
       type="button"
       aria-pressed={seleccionado}
-      aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades, llamadas })}
+      aria-label={t('cola.fila.aria', { titulo: incidente.titulo, prioridad: incidente.prioridad, estado, unidades: unidades.total, llamadas })}
       onClick={onSeleccionar}
-      className="ag-fila relative isolate grid w-full min-h-row grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border-subtle px-4 py-2 text-left hover:bg-surface-hover"
+      data-seleccionado={seleccionado || undefined}
+      data-cerrado={cerrado || undefined}
+      className="ag-incidente"
     >
-      {/* El fondo de selección (con su contorno) es un solo elemento que viaja de una fila a otra. */}
+      {/* La tarjeta oscura del incidente activo es un solo elemento que viaja de una fila a otra. */}
       {seleccionado && (
         <motion.span
           layoutId="cola-seleccion"
           aria-hidden="true"
           data-seleccion
-          className="absolute inset-0 -z-10 bg-surface-selected outline outline-1 -outline-offset-1 outline-border-strong"
-          transition={{ duration: duracionSegundos('fast'), ease: curva('mecanico') }}
+          className="ag-incidente__fondo"
+          transition={{ duration: duracionSegundos('base'), ease: curva('salida') }}
         />
       )}
-      <span>
+      <span className="flex items-center gap-2">
         {cerrado ? (
           <Badge tone="neutral" emphasis="outline">
             {incidente.prioridad}
@@ -103,26 +108,35 @@ function FilaIncidente({
             {incidente.prioridad}
           </Badge>
         )}
+        <span className="font-mono text-[13px] font-bold tabular">#{codigo}</span>
+        <span className="ag-incidente__tenue ml-auto font-mono text-[11px] tabular">{formatearDuracion(minutosAbierto(incidente, ahora))}</span>
       </span>
-      <span className="font-mono text-data-sm font-semibold tabular text-text-primary">#{codigo}</span>
-      <span className="font-mono text-data-sm tabular text-text-secondary">
-        {formatearDuracion(minutosAbierto(incidente, ahora))}
-      </span>
-      <span className={`col-span-2 line-clamp-2 font-ui text-body-sm ${cerrado ? 'text-text-muted' : 'text-text-primary'}`}>
-        {incidente.titulo}
-      </span>
-      <span className="font-mono text-data-sm tabular text-text-secondary">
-        {unidades} U{cerrado ? ` · ${estado}` : ''}
-      </span>
-      {llamadas > 0 && (
-        <span className={`justify-self-end ${saltoLlamadas ? 'ag-badge-salto' : ''}`} data-salto={saltoLlamadas || undefined}>
-          <Badge tone="neutral" emphasis="outline" glyph={false}>
+      <span className={`line-clamp-2 text-[14px] font-medium leading-[1.35] ${cerrado ? 'text-text-muted' : ''}`}>{incidente.titulo}</span>
+      <span className="flex flex-wrap items-center gap-2">
+        {unidades.enRuta > 0 && (
+          <span className="ag-mini-chip ag-mini-chip--ruta">
+            <span aria-hidden="true">▲</span> {t('cola.chip.enRuta', { n: unidades.enRuta })}
+          </span>
+        )}
+        {unidades.enEscena > 0 && (
+          <span className="ag-mini-chip ag-mini-chip--escena">
+            <span aria-hidden="true">◆</span> {t('cola.chip.enEscena', { n: unidades.enEscena })}
+          </span>
+        )}
+        {unidades.total === 0 && (
+          <span className="ag-mini-chip ag-mini-chip--neutro">
+            <span aria-hidden="true">○</span> {t('cola.chip.sinUnidades')}
+          </span>
+        )}
+        {cerrado && <span className="ag-mini-chip ag-mini-chip--neutro">{estado}</span>}
+        {llamadas > 0 && (
+          <span className={`ag-mini-chip ag-mini-chip--neutro ${saltoLlamadas ? 'ag-badge-salto' : ''}`} data-salto={saltoLlamadas || undefined}>
             <span role="img" aria-label={llamadas === 1 ? t('cola.llamadas.una') : t('cola.llamadas.varias', { n: llamadas })} className="font-mono tabular">
               <span aria-hidden="true">☎</span> {llamadas}
             </span>
-          </Badge>
-        </span>
-      )}
+          </span>
+        )}
+      </span>
     </button>
   );
 }
@@ -146,7 +160,7 @@ export function ColaIncidentes({
   const ids = filtroSla?.incidentes ?? null;
   const activos = filtrarPorIds(dividida.activos, ids);
   const cerrados = filtrarPorIds(dividida.cerrados, ids);
-  const unidades = unidadesPorIncidente(recursos);
+  const unidades = unidadesPorEstadoDeIncidente(recursos);
   const vinculadas = llamadasPorIncidente(llamadas);
   const visibles = pestana === 'activos' ? activos : cerrados;
 
@@ -161,15 +175,15 @@ export function ColaIncidentes({
       />
 
       {filtroSla && (
-        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border-strong px-4 py-1">
-          <span className="font-mono text-overline uppercase text-text-primary">{t('cola.filtro.sla')}</span>
-          <Button size="sm" variant="ghost" aria-label={t('cola.filtro.sla.quitar')} title={t('cola.filtro.sla.quitar')} onClick={filtroSla.onQuitar}>
+        <div className="ag-filtro-sla mx-4 mb-1 mt-1 flex shrink-0 items-center justify-between gap-2">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[.04em]">{t('cola.filtro.sla')}</span>
+          <button type="button" className="ag-btn-mini" aria-label={t('cola.filtro.sla.quitar')} title={t('cola.filtro.sla.quitar')} onClick={filtroSla.onQuitar}>
             <span aria-hidden="true">✕</span>
-          </Button>
+          </button>
         </div>
       )}
 
-      <div role="tablist" aria-label={t('cola.tabs.aria')} className="flex shrink-0 border-y border-border-strong">
+      <div role="tablist" aria-label={t('cola.tabs.aria')} className="ag-pestanas mx-4 mt-2 shrink-0">
         {(
           [
             ['activos', t('cola.activos'), activos.length],
@@ -184,29 +198,31 @@ export function ColaIncidentes({
             aria-selected={pestana === id}
             aria-controls="lista-incidentes"
             onClick={() => setPestana(id)}
-            className={`ag-pestana relative isolate flex-1 px-4 py-2 font-mono text-overline uppercase ${pestana === id ? 'text-text-primary' : 'text-text-secondary hover:bg-surface-hover'}`}
+            className="ag-pestanas__opt"
           >
-            {/* El fondo de la pestaña activa es un solo elemento que se desliza de una a otra. */}
+            {/* El thumb de la pestaña activa es un solo elemento que se desliza de una a otra. */}
             {pestana === id && (
               <motion.span
                 layoutId="cola-pestana-activa"
                 aria-hidden="true"
-                className="absolute inset-0 -z-10 bg-surface-selected"
-                transition={{ duration: duracionSegundos('fast'), ease: curva('mecanico') }}
+                className="ag-pestanas__thumb"
+                transition={{ duration: duracionSegundos('base'), ease: curva('salida') }}
               />
             )}
-            {nombre} <span className="tabular">({cuenta})</span>
+            <span className="relative">
+              {nombre} <span className="tabular">({cuenta})</span>
+            </span>
           </button>
         ))}
       </div>
 
-      <div id="lista-incidentes" role="tabpanel" aria-labelledby={`pestana-${pestana}`} className="min-h-0 flex-1 overflow-y-auto">
+      <div id="lista-incidentes" role="tabpanel" aria-labelledby={`pestana-${pestana}`} className="ag-scroll-fino min-h-0 flex-1 overflow-y-auto px-4 pb-3 pt-3">
         {visibles.length === 0 ? (
-          <p className="px-4 py-3 font-mono text-data-sm text-text-muted">
+          <p className="py-1 font-mono text-data-sm text-[var(--isla-texto-2)]">
             {filtroSla ? t('cola.filtro.vacio') : pestana === 'activos' ? t('cola.activos.vacio') : t('cola.cerrados.vacio')}
           </p>
         ) : (
-          <ul key={pestana} aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')}>
+          <ul key={pestana} aria-label={pestana === 'activos' ? t('cola.activos.lista') : t('cola.cerrados.lista')} className="flex flex-col gap-2">
             <AnimatePresence initial={false}>
               {visibles.map((i) => (
                 <motion.li
@@ -220,7 +236,7 @@ export function ColaIncidentes({
                 >
                   <FilaIncidente
                     incidente={i}
-                    unidades={unidades.get(i.id) ?? 0}
+                    unidades={unidades.get(i.id) ?? SIN_UNIDADES}
                     llamadas={vinculadas.get(i.id) ?? 0}
                     ahora={ahora}
                     seleccionado={i.id === seleccionadoId}
@@ -233,6 +249,10 @@ export function ColaIncidentes({
           </ul>
         )}
       </div>
+
+      {seleccionadoId === null && pestana === 'activos' && activos.length > 0 && (
+        <p className="shrink-0 px-4 pb-4 text-[12px] leading-[1.5] text-[var(--isla-texto-2)]">{t('cola.ayuda')}</p>
+      )}
     </div>
   );
 }

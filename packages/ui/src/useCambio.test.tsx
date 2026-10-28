@@ -43,14 +43,14 @@ describe('cambio de estado en los componentes', () => {
     expect(screen.getByRole('group').className).not.toContain('ag-unit--cambio');
   });
 
-  it('Badge: un valor nuevo se funde; el mismo valor no', () => {
+  it('Badge: un valor nuevo da media vuelta; el mismo valor no', () => {
     const { container, rerender } = render(<Badge status="abierto" />);
     const badge = () => container.querySelector('.ag-badge');
     rerender(<Badge status="abierto" />);
     expect(badge()?.hasAttribute('data-cambio')).toBe(false);
     rerender(<Badge status="contenido" />);
     expect(badge()?.hasAttribute('data-cambio')).toBe(true);
-    avanzar(240);
+    avanzar(400);
     expect(badge()?.hasAttribute('data-cambio')).toBe(false);
   });
 

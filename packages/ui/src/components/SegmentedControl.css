@@ -1,12 +1,11 @@
-/* ── SegmentedControl ───────────────────────────────────────────────────── */
-.ag-seg { position: relative; display: inline-flex; max-width: 100%; border: var(--border-hairline) solid var(--border-strong); border-radius: var(--radius-xs); background: var(--input-bg); }
-.ag-seg__opt { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); flex: 1 1 auto; height: var(--control-md); padding: 0 var(--space-3); margin: 0; background: transparent; color: var(--text-primary); border: 0; border-right: var(--border-hairline) solid var(--border-control); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background-color var(--dur-instant, 80ms) linear, color var(--dur-fast, 150ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); -webkit-tap-highlight-color: transparent; }
-.ag-seg__opt:last-child { border-right: 0; }
-.ag-seg__opt:hover { background: var(--surface-hover); }
-.ag-seg__opt[aria-checked="true"] { background: var(--button-secondary-bg); color: var(--button-secondary-fg); }
-.ag-seg__opt[aria-checked="true"]:hover { background: var(--button-secondary-bg-hover); }
-/* Indicador deslizante: lleva el fondo de la opción elegida; ella pasa a transparente solo si hay indicador. */
-.ag-seg__ind { position: absolute; top: 0; bottom: 0; left: 0; background: var(--button-secondary-bg); pointer-events: none; transition: transform var(--dur-fast, 150ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)), width var(--dur-fast, 150ms) var(--ease-mecanico, cubic-bezier(0.2, 0, 0, 1)); }
-.ag-seg[data-indicador] .ag-seg__opt[aria-checked="true"], .ag-seg[data-indicador] .ag-seg__opt[aria-checked="true"]:hover { background: transparent; }
+/* ── SegmentedControl: pista gris con un "thumb" claro que se desliza a la opción activa ───────────────────────── */
+.ag-seg { position: relative; display: inline-flex; max-width: 100%; padding: 3px; border-radius: var(--radio-control); background: var(--isla-pista); }
+.ag-seg__opt { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1 1 auto; height: 30px; padding: 0 var(--space-3); margin: 0; background: transparent; color: var(--isla-texto-2); border: 0; border-radius: var(--radio-campo); font-family: var(--font-mono); font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: color var(--t-isla) var(--curva-isla), background-color var(--t-isla) var(--curva-isla); -webkit-tap-highlight-color: transparent; }
+.ag-seg__opt:hover { color: var(--isla-texto); }
+.ag-seg__opt .ag-glyph { width: 6px; height: 6px; }
+.ag-seg__opt[aria-checked="true"] { background: var(--tarjeta-bg); color: var(--isla-texto); }
+/* Thumb: lleva el fondo de la opción elegida; ella pasa a transparente solo si hay thumb medido. */
+.ag-seg__ind { position: absolute; top: 3px; bottom: 3px; left: 0; z-index: 0; border-radius: var(--radio-campo); background: var(--tarjeta-bg); box-shadow: var(--sombra-thumb); pointer-events: none; transition: transform var(--t-isla-lenta) var(--curva-isla), width var(--t-isla-lenta) var(--curva-isla); }
+.ag-seg[data-indicador] .ag-seg__opt[aria-checked="true"] { background: transparent; }
 .ag-seg__opt:focus { outline: none; }
-.ag-seg__opt:focus-visible { z-index: 1; box-shadow: var(--focus-ring); }
+.ag-seg__opt:focus-visible { z-index: 2; box-shadow: var(--focus-ring); }

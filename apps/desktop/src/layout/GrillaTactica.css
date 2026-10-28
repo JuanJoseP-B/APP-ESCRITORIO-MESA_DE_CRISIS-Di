@@ -1,59 +1,77 @@
-/* ── GrillaTactica ──────────────────────────────────────────────────────── */
-/* Medidas del ROADMAP_CAD §2.1: barra 40 px, tablero 96 px, cola 320 px, detalle 380 px, rail 40 px. */
+/* ── GrillaTactica · islas flotantes ────────────────────────────────────────────────────────────────────────────── */
+/* Barra (56) arriba, tablero de unidades (84) abajo, cola (300) a la izquierda y detalle (368) a la derecha, todo
+   separado 12 px de los bordes y entre sí. El mapa ocupa el hueco central como otra isla: los paneles lo enmarcan y
+   nunca tapan sus controles (Trazar zona arriba a la izquierda, Leyenda abajo a la derecha). Al plegar un panel queda
+   un riel de 56 px y el mapa crece; su ResizeObserver llama a `map.resize()`. */
 .ag-grilla {
-  --grilla-barra: var(--space-10);
-  --grilla-tablero: 96px;
-  --grilla-cola: 320px;
-  --grilla-detalle: 380px;
-  --grilla-rail: var(--space-10);
+  --g-hueco: var(--hueco-isla, 12px);
+  --g-barra: 56px;
+  --g-tablero: 84px;
+  --g-cola: 300px;
+  --g-detalle: 368px;
+  --g-rail: 56px;
+  --g-cola-ahora: var(--g-cola);
+  --g-detalle-ahora: var(--g-detalle);
+  --g-arriba: calc(var(--g-hueco) * 2 + var(--g-barra));
+  --g-abajo: calc(var(--g-hueco) * 2 + var(--g-tablero));
+  --g-t: var(--t-isla-lenta, 220ms) var(--curva-isla, cubic-bezier(0.22, 1, 0.36, 1));
 
   box-sizing: border-box;
   position: relative;
-  display: grid;
-  grid-template-areas:
-    'barra barra barra'
-    'cola mapa detalle'
-    'tablero tablero tablero';
-  grid-template-rows: var(--grilla-barra) minmax(0, 1fr) var(--grilla-tablero);
-  grid-template-columns: var(--grilla-cola) minmax(0, 1fr) var(--grilla-detalle);
   width: 100%;
   height: 100dvh;
   overflow: hidden;
-  background: var(--surface-canvas);
-  color: var(--text-primary);
-  transition: grid-template-columns var(--dur-base, 240ms) var(--ease-salida, cubic-bezier(0, 0, 0.2, 1));
+  background: var(--isla-fondo-app);
+  color: var(--isla-texto);
 }
-.ag-grilla[data-cola="colapsada"] { grid-template-columns: var(--grilla-rail) minmax(0, 1fr) var(--grilla-detalle); }
-.ag-grilla[data-detalle="colapsado"] { grid-template-columns: var(--grilla-cola) minmax(0, 1fr) var(--grilla-rail); }
-.ag-grilla[data-cola="colapsada"][data-detalle="colapsado"] { grid-template-columns: var(--grilla-rail) minmax(0, 1fr) var(--grilla-rail); }
+.ag-grilla[data-cola='colapsada'] { --g-cola-ahora: var(--g-rail); }
+.ag-grilla[data-detalle='colapsado'] { --g-detalle-ahora: var(--g-rail); }
 
-.ag-grilla__barra, .ag-grilla__tablero, .ag-grilla__mapa, .ag-grilla__cola, .ag-grilla__detalle { min-width: 0; min-height: 0; overflow: hidden; }
-.ag-grilla__barra { grid-area: barra; border-bottom: var(--border-hairline) solid var(--border-strong); background: var(--surface-panel); }
-.ag-grilla__cola { grid-area: cola; }
-.ag-grilla__mapa { grid-area: mapa; position: relative; background: var(--surface-canvas); }
-.ag-grilla__detalle { grid-area: detalle; transition: width var(--dur-base, 240ms) var(--ease-salida, cubic-bezier(0, 0, 0.2, 1)); }
-.ag-grilla__tablero { grid-area: tablero; border-top: var(--border-hairline) solid var(--border-strong); background: var(--surface-panel); }
+.ag-grilla__barra,
+.ag-grilla__cola,
+.ag-grilla__detalle,
+.ag-grilla__tablero,
+.ag-grilla__mapa { position: absolute; box-sizing: border-box; min-width: 0; min-height: 0; }
+
+.ag-grilla__barra { top: var(--g-hueco); left: var(--g-hueco); right: var(--g-hueco); height: var(--g-barra); z-index: var(--z-toolbar); }
+
+.ag-grilla__cola,
+.ag-grilla__detalle { top: var(--g-arriba); bottom: var(--g-abajo); z-index: var(--z-panel); overflow: hidden; transition: width var(--g-t); }
+/* El riel trae height: 100%; aquí la altura la fijan top y bottom. */
+.ag-grilla .ag-grilla__cola,
+.ag-grilla .ag-grilla__detalle { height: auto; }
+.ag-grilla__cola { left: var(--g-hueco); width: var(--g-cola-ahora); }
+.ag-grilla__detalle { right: var(--g-hueco); width: var(--g-detalle-ahora); }
+
+.ag-grilla__tablero { left: var(--g-hueco); right: var(--g-hueco); bottom: var(--g-hueco); height: var(--g-tablero); z-index: var(--z-panel); }
+
+.ag-grilla__mapa {
+  top: var(--g-arriba);
+  bottom: var(--g-abajo);
+  left: calc(var(--g-hueco) * 2 + var(--g-cola-ahora));
+  right: calc(var(--g-hueco) * 2 + var(--g-detalle-ahora));
+  z-index: var(--z-map);
+  overflow: hidden;
+  border: 1px solid var(--isla-borde);
+  border-radius: var(--radio-isla);
+  box-shadow: var(--isla-sombra);
+  background: var(--surface-canvas);
+  transition: left var(--g-t), right var(--g-t);
+}
+
 .ag-grilla__contenido { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
-/* Por debajo de 1280 px el detalle se superpone al mapa como drawer, sin quitarle columna. */
+/* Por debajo de 1280 px el detalle flota sobre el mapa (sin quitarle ancho) y el mapa solo reserva su riel. */
 @media (max-width: 1279px) {
-  .ag-grilla, .ag-grilla[data-detalle="colapsado"] {
-    grid-template-areas: 'barra barra' 'cola mapa' 'tablero tablero';
-    grid-template-columns: var(--grilla-cola) minmax(0, 1fr);
-  }
-  .ag-grilla[data-cola="colapsada"], .ag-grilla[data-cola="colapsada"][data-detalle="colapsado"] { grid-template-columns: var(--grilla-rail) minmax(0, 1fr); }
-  .ag-grilla__detalle { grid-area: auto; position: absolute; height: auto; top: var(--grilla-barra); right: 0; bottom: var(--grilla-tablero); z-index: var(--z-panel); width: var(--grilla-detalle); box-shadow: var(--elev-panel); }
-  .ag-grilla[data-detalle="colapsado"] .ag-grilla__detalle { width: var(--grilla-rail); box-shadow: none; }
+  .ag-grilla__mapa { right: calc(var(--g-hueco) * 2 + var(--g-rail)); }
+  .ag-grilla[data-detalle='expandido'] .ag-grilla__detalle { box-shadow: var(--isla-sombra-elevada); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ag-grilla,
-  .ag-grilla__detalle {
-    transition: none !important;
-  }
+  .ag-grilla__cola,
+  .ag-grilla__detalle,
+  .ag-grilla__mapa { transition: none !important; }
 }
-
-:root[data-reduced-motion] .ag-grilla,
-:root[data-reduced-motion] .ag-grilla__detalle {
-  transition: none !important;
-}
+:root[data-reduced-motion] .ag-grilla__cola,
+:root[data-reduced-motion] .ag-grilla__detalle,
+:root[data-reduced-motion] .ag-grilla__mapa { transition: none !important; }

@@ -22,6 +22,7 @@ import { useAvisosSla } from './hooks/useAvisosSla';
 import { useSla } from './hooks/useSla';
 import { useSonidosConsola } from './hooks/useSonidosConsola';
 import { useSimulacion } from './hooks/useSimulacion';
+import { useDescarteDiferido } from './hooks/useDescarteDiferido';
 import type { CandidatoDuplicado, Coordenadas, Llamada, NuevaLlamada } from '@argos/shared';
 import { dividirCola, estaCerrado, filtrarPorIds, moverSeleccion } from './domain/cola';
 import { estadoEnlace } from './domain/conexion';
@@ -32,14 +33,16 @@ import { crearMotorReglas } from './domain/motorReglas';
 import { unidadesParaMapa } from './domain/unidadesMapa';
 import { indicativosDe, resumirUnidades } from './domain/unidades';
 import type { EstadoMapa, SubsistemasArranque } from './domain/arranque';
-import { PASOS_SIN_ANIMACION, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
+import { PASOS_SIN_ANIMACION, etasDe, movimientosEnRuta, posicionesDe, type MovimientoUnidad } from './domain/movimiento';
 import { rutasAFeatureCollection } from './domain/geojson';
 import { analizarPerimetro, type ObjetivoResaltado } from './domain/analisisEspacial';
 import { perimetroDeIncidente } from './domain/perimetro';
+import { ubicacionDeIncidente } from './domain/geo';
 import { useLlegadaUnidades } from './hooks/useLlegadaUnidades';
 import type { RelojSimulado } from './domain/relojSimulado';
 import { ESCENARIO_INICIAL, type Escenario, type IdEscenario } from './domain/escenario';
 import { MODOS_TRAZADO, type ModoTrazado } from './domain/trazado';
+import { AvisoDeshacer } from './layout/AvisoDeshacer';
 import { AvisosSla } from './layout/AvisosSla';
 import { ConfirmacionPlan } from './layout/ConfirmacionPlan';
 import { DialogoDespacho } from './layout/DialogoDespacho';
@@ -52,6 +55,7 @@ import { PanelDetalle } from './layout/PanelDetalle';
 import { TableroUnidades } from './layout/TableroUnidades';
 import { InvitacionTutorial } from './layout/InvitacionTutorial';
 import { TutorialProvider } from './layout/TutorialProvider';
+import { WindCard } from './layout/WindCard';
 import { useTexto } from './i18n/IdiomaProvider';
 import { crearServicioDesdeEntorno, type ServicioMesa, type SesionOperador } from './services/supabaseClient';
 import { crearEntornoDemo, type EntornoDemo } from './services/entornoDemo';
@@ -238,12 +242,21 @@ function Mesa({
     [abrirFormulario],
   );
   const { descartarReporte } = acciones;
+  // «Descartar» saca la llamada de la vista al momento y solo la descarta de verdad pasados 5 s, salvo que se deshaga.
+  const confirmarDescarte = useCallback((l: Llamada) => descartarReporte(reporteDeLlamada(l)), [descartarReporte]);
+  const descarte = useDescarteDiferido(confirmarDescarte);
+  const { descartar: descartarDiferido } = descarte;
   const alDescartarLlamada = useCallback(
     (l: Llamada) => {
       setFormulario((actual) => (actual?.llamadaId === l.id ? null : actual));
-      descartarReporte(reporteDeLlamada(l));
+      descartarDiferido(l);
     },
-    [descartarReporte],
+    [descartarDiferido],
+  );
+  const descartadaId = descarte.pendiente?.id ?? null;
+  const llamadasVista = useMemo(
+    () => (descartadaId ? llamadas.datos.filter((l) => l.id !== descartadaId) : llamadas.datos),
+    [llamadas.datos, descartadaId],
   );
   const alCrearIncidenteDesdeLlamada = useCallback(
     (datos: NuevaLlamada, descartados: readonly CandidatoDuplicado[]) =>
@@ -262,8 +275,8 @@ function Mesa({
     },
     [accionesLlamada, formulario?.llamadaId, incidentes.datos],
   );
-  const reportes = useMemo(() => llamadas.datos.map(reporteDeLlamada), [llamadas.datos]);
-  const llamadasEntrantes = useMemo(() => entrantes(llamadas.datos), [llamadas.datos]);
+  const reportes = useMemo(() => llamadasVista.map(reporteDeLlamada), [llamadasVista]);
+  const llamadasEntrantes = useMemo(() => entrantes(llamadasVista), [llamadasVista]);
   const totalEntrantes = llamadasEntrantes.length;
   useSonidosConsola({
     listo: !incidentes.cargando && !llamadas.cargando && !recursos.cargando,
@@ -284,6 +297,10 @@ function Mesa({
     return m.length === 0 ? SIN_MOVIMIENTOS : m;
   }, [reloj, recursos.datos, eventosRecurso.datos, incidentes.datos, ahora, reducirMovimiento, retraso]);
   const unidadesMapa = useMemo(() => unidadesParaMapa(recursos.datos, posicionesDe(movimientos)), [recursos.datos, movimientos]);
+  // Avance y tiempo restante de cada unidad en ruta: la línea de tiempo y el tablero pintan su barra de ETA.
+  const etas = useMemo(() => etasDe(movimientos, recursos.datos, retraso), [movimientos, recursos.datos, retraso]);
+  // Cada despacho confirmado desde el diálogo hace que el botón muestre «✓ Despachada» un segundo.
+  const [despachosConfirmados, setDespachosConfirmados] = useState(0);
   // Los anillos se generan al crear o seleccionar un incidente; solo cambian si cambia su tipo, su lugar o su perímetro.
   // Un incidente resuelto ya no tiene perímetro de riesgo: no se dibuja ni se analiza.
   const { tipo: tipoSel, geometria: geometriaSel, perimetro: perimetroSel } = incidenteSeleccionado && !estaCerrado(incidenteSeleccionado) ? incidenteSeleccionado : {};
@@ -319,6 +336,13 @@ function Mesa({
   }, [faseAsesor]);
   const unidadesEnAlerta = useMemo(() => new Set(perimetro?.analisis.unidadesEnZonaCaliente ?? []), [perimetro]);
   const rutasMapa = useMemo(() => rutasAFeatureCollection(movimientos), [movimientos]);
+  // Las unidades libres del tablero dicen a qué distancia están del incidente elegido (si sigue abierto).
+  const destinoSeleccionado = useMemo(
+    () => (incidenteSeleccionado && !estaCerrado(incidenteSeleccionado) ? ubicacionDeIncidente(incidenteSeleccionado) : null),
+    [incidenteSeleccionado],
+  );
+  // Pasar el cursor por una tarjeta de unidad la resalta en el mapa con el mismo resaltado del análisis del perímetro.
+  const resaltarUnidad = useCallback((id: string | null) => setResaltado(id ? { tipo: 'unidad', id } : null), []);
   // Elegir la misma unidad otra vez la suelta. Una unidad asignada lleva también al incidente al que va.
   const alSeleccionarUnidad = useCallback(
     (id: string) => {
@@ -395,7 +419,7 @@ function Mesa({
         incidentes={incidentes.datos}
         zonas={zonas.datos}
         reportes={reportes}
-        llamadas={llamadas.datos}
+        llamadas={llamadasVista}
         ahora={ahora}
         seleccionadoId={seleccionadoId}
         reporteSeleccionadoId={llamadaAbiertaId}
@@ -453,6 +477,7 @@ function Mesa({
           </div>
         )}
       </div>
+      {simulacion && <WindCard viento={simulacion.viento} plegarForzado={dibujando} />}
       <InvitacionTutorial />
       <AvisosSla
         avisos={avisosSla.avisos}
@@ -511,7 +536,7 @@ function Mesa({
           <ColaIncidentes
             incidentes={incidentes.datos}
             recursos={recursos.datos}
-            llamadas={llamadas.datos}
+            llamadas={llamadasVista}
             ahora={ahora}
             seleccionadoId={seleccionadoId}
             onSeleccionar={setSeleccionadoId}
@@ -544,6 +569,10 @@ function Mesa({
               }}
               sla={sla.porRecurso}
               reducirMovimiento={reducirMovimiento}
+              llamadas={llamadas.datos}
+              eventos={eventosRecurso.datos}
+              etas={etas}
+              despachosConfirmados={despachosConfirmados}
             />
             {despachoAbierto && incidenteSeleccionado && !formulario && (
               <div className="absolute inset-0 z-panel">
@@ -553,6 +582,7 @@ function Mesa({
                   onConfirmar={(recurso) => {
                     acciones.cambiarEstadoRecurso(recurso, 'ASIGNADO', incidenteSeleccionado.id);
                     setDespachoAbierto(false);
+                    setDespachosConfirmados((n) => n + 1);
                   }}
                   onCancelar={() => setDespachoAbierto(false)}
                 />
@@ -596,9 +626,15 @@ function Mesa({
             onSeleccionarUnidad={(unidad) => alSeleccionarUnidad(unidad.id)}
             sla={sla.porRecurso}
             reducirMovimiento={reducirMovimiento}
+            destino={destinoSeleccionado}
+            etas={etas}
+            onResaltarUnidad={resaltarUnidad}
           />
         }
       />
+      {descarte.pendiente && (
+        <AvisoDeshacer clave={descarte.pendiente.id} mensaje={t('deshacer.llamada')} onDeshacer={descarte.deshacer} />
+      )}
       {ajustesAbiertos && <PanelAjustes onCerrar={cerrarAjustes} onAbrirAtajos={abrirAtajosDesdeAjustes} />}
       {atajosAbiertos && <HojaAtajos onCerrar={cerrarAtajos} />}
       {enArranque && <BootSequence subsistemas={subsistemas} reducirMovimiento={reducirMovimiento} onCompletar={completarArranque} />}

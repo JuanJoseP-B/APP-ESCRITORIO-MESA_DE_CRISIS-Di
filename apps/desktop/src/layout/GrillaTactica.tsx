@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { FileText, Inbox } from 'lucide-react';
 import { RailColapsable } from '@argos/ui';
 import { useTexto } from '../i18n/IdiomaProvider';
 import { useAtajos } from '../hooks/useAtajos';
@@ -22,8 +23,8 @@ export interface GrillaTacticaProps {
 }
 
 /**
- * Zero-Scroll Tactical Grid (ROADMAP_CAD §2.1): cinco áreas fijas sobre `100dvh`. La página nunca
- * desplaza; solo las listas internas de B y D llevan `overflow-y: auto`.
+ * Zero-Scroll Tactical Grid (ROADMAP_CAD §2.1) en islas flotantes: cinco áreas fijas sobre `100dvh`. La página nunca
+ * desplaza; solo las listas internas de B y D llevan `overflow-y: auto`. El mapa es la isla central.
  */
 export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, panelDetalle, className }: GrillaTacticaProps) {
   const { t } = useTexto();
@@ -39,10 +40,11 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
         {barra}
       </div>
       <RailColapsable
-        className="ag-grilla__cola"
+        className="ag-grilla__cola ag-isla"
         label={t('cola.rail')}
         side="left"
         shortcut="["
+        icon={<Inbox aria-hidden="true" size={18} />}
         collapsed={panelCola.colapsado}
         onToggle={panelCola.alternar}
       >
@@ -54,10 +56,11 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
         {mapa}
       </main>
       <RailColapsable
-        className="ag-grilla__detalle"
+        className="ag-grilla__detalle ag-isla"
         label={t('detalle.rail')}
         side="right"
         shortcut="]"
+        icon={<FileText aria-hidden="true" size={18} />}
         collapsed={panelDetalle.colapsado}
         onToggle={panelDetalle.alternar}
       >
@@ -65,7 +68,7 @@ export function GrillaTactica({ barra, cola, mapa, detalle, tablero, panelCola, 
           {detalle}
         </div>
       </RailColapsable>
-      <div className="ag-grilla__tablero" role="region" aria-label={t('tablero.aria')} data-area="tablero" data-tutorial="tablero">
+      <div className="ag-grilla__tablero ag-isla" role="region" aria-label={t('tablero.aria')} data-area="tablero" data-tutorial="tablero">
         {tablero}
       </div>
     </div>

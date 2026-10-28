@@ -1,0 +1,82 @@
+/* ── Islas flotantes (rediseño del panel, Parte 2) ─────────────────────────────────────────────────────────────── */
+/* Base reutilizable: fondo casi opaco, borde fino, radio 14 y sombra suave. Los tokens viven en @argos/ui/tokens.css
+   y cambian con el tema (en Carbón las islas son #222 con texto crema). */
+.ag-isla {
+  box-sizing: border-box;
+  background: var(--isla-bg);
+  border: 1px solid var(--isla-borde);
+  border-radius: var(--radio-isla);
+  box-shadow: var(--isla-sombra);
+  color: var(--isla-texto);
+}
+
+/* Scroll interno con barra fina, para los paneles laterales. */
+.ag-scroll-fino {
+  scrollbar-width: thin;
+  scrollbar-color: var(--isla-filete) transparent;
+}
+.ag-scroll-fino::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ag-scroll-fino::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: var(--isla-filete);
+}
+
+/* Punto «en vivo»: late con un anillo que se expande y se apaga. */
+.ag-punto-vivo {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acento-vivo);
+  animation: ag-latido-vivo 1.6s ease-out infinite;
+}
+@keyframes ag-latido-vivo {
+  0% { box-shadow: 0 0 0 0 rgba(46, 140, 131, 0.5); }
+  100% { box-shadow: 0 0 0 8px rgba(46, 140, 131, 0); }
+}
+
+/* Aviso «Deshacer»: flota sobre el tablero, centrado, con una barra que se vacía en 5 s. */
+.ag-aviso-deshacer {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--hueco-isla) * 2 + 84px);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  overflow: hidden;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  transform: translateX(-50%);
+  animation: ag-aviso-entra var(--t-isla-lenta) var(--curva-isla);
+}
+.ag-aviso-deshacer__boton {
+  height: 30px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--boton-ghost-borde);
+  border-radius: var(--radio-campo);
+  background: var(--tarjeta-bg);
+  color: var(--isla-texto);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ag-aviso-deshacer__boton:hover { background: var(--tarjeta-bg-hover); }
+.ag-aviso-deshacer__boton:focus { outline: none; }
+.ag-aviso-deshacer__boton:focus-visible { box-shadow: var(--focus-ring); }
+.ag-aviso-deshacer__barra {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--acento-naranja);
+  transform-origin: left;
+  animation: ag-aviso-vacia linear forwards;
+}
+@keyframes ag-aviso-entra { from { opacity: 0; transform: translate(-50%, 8px); } }
+@keyframes ag-aviso-vacia { from { transform: scaleX(1); } to { transform: scaleX(0); } }

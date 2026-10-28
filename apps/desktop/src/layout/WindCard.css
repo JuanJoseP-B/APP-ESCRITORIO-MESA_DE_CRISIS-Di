@@ -1,0 +1,32 @@
+/* ── WindCard: overlay HTML sobre el mapa (no es una capa de MapLibre) ──────────────────────────────────────────── */
+/* Va bajo «Trazar zona» y por debajo de su panel (z del overlay del mapa < z de la barra de herramientas). Solo ella
+   recibe el puntero: el resto del mapa sigue respondiendo. */
+.ag-viento,
+.ag-viento-boton { position: absolute; top: 56px; left: var(--space-4); z-index: var(--z-map-overlay); pointer-events: auto; }
+.ag-viento { display: flex; align-items: center; gap: var(--space-3); width: 232px; padding: 14px; animation: ag-viento-entra var(--t-isla-lenta) var(--curva-isla); }
+.ag-viento__brujula { display: block; flex: none; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.ag-viento__brujula:focus { outline: none; }
+.ag-viento__brujula:focus-visible { box-shadow: var(--focus-ring); }
+.ag-viento__brujula svg { display: block; }
+.ag-viento__esfera { fill: var(--tarjeta-bg); stroke: var(--isla-filete); }
+.ag-viento__letras { fill: var(--isla-texto-2); }
+.ag-viento__punta { fill: var(--acento-naranja); stroke: #1a1a1a; }
+.ag-viento__cola { fill: var(--isla-pista-barra); }
+.ag-viento__eje { fill: var(--isla-texto); }
+/* La aguja apunta hacia donde sopla y oscila ±6° (4 s, ida y vuelta). */
+.ag-viento__aguja { transform-origin: 50px 50px; transform: rotate(var(--ag-rumbo, 0deg)); animation: ag-viento-oscila 4s ease-in-out infinite; }
+@keyframes ag-viento-oscila {
+  0%, 100% { transform: rotate(calc(var(--ag-rumbo, 0deg) - 6deg)); }
+  50% { transform: rotate(calc(var(--ag-rumbo, 0deg) + 6deg)); }
+}
+
+/* Plegada: botón circular con la flecha hacia donde sopla. */
+.ag-viento-boton { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--isla-borde); border-radius: 50%; background: var(--isla-bg); box-shadow: var(--isla-sombra); color: var(--acento-naranja); cursor: pointer; transition: transform var(--t-isla) var(--curva-isla); }
+.ag-viento-boton:hover { transform: translateY(-1px); }
+.ag-viento-boton:focus { outline: none; }
+.ag-viento-boton:focus-visible { box-shadow: var(--focus-ring); }
+.ag-viento-boton__flecha { transform: rotate(var(--ag-rumbo, 0deg)); }
+
+@keyframes ag-viento-entra { from { opacity: 0; transform: translateY(-6px); } }
+
+[data-theme='carbon'] .ag-viento__punta { stroke: var(--isla-texto); }

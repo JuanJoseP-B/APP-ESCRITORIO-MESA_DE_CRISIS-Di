@@ -1,0 +1,35 @@
+/* ── IncidentTimeline ──────────────────────────────────────────────────────────────────────────────────────────── */
+/* Tres columnas: hora (mono 11) · nodo y línea de 2 px · texto (13). */
+.ag-linea { display: flex; flex-direction: column; margin: 0; padding: 0 var(--space-4) var(--space-2); list-style: none; }
+.ag-linea__hito { display: grid; grid-template-columns: 44px 16px 1fr; gap: 10px; align-items: start; }
+.ag-linea__hora { padding-top: 1px; font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--isla-texto-2); }
+.ag-linea__eje { display: flex; flex-direction: column; align-items: center; height: 100%; }
+.ag-linea__nodo { flex: none; width: 10px; height: 10px; margin-top: 3px; border-radius: 50%; background: var(--isla-texto); }
+.ag-linea__tramo { flex: 1; width: 2px; min-height: 22px; background: var(--isla-texto); transform-origin: top; }
+.ag-linea__tramo[data-hacia='actual'] { background: linear-gradient(var(--isla-texto), var(--acento-naranja)); }
+.ag-linea__tramo[data-hacia='pendiente'], .ag-linea__tramo[data-hacia='omitido'] { background: var(--isla-filete); }
+.ag-linea__texto { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; font-size: 13px; line-height: 18px; }
+.ag-linea__nota { color: var(--isla-texto-3); }
+
+/* Actual: AHORA en naranja oscuro, nodo naranja con borde carbón que late, texto en negrita. */
+.ag-linea__hito[data-estado='actual'] .ag-linea__hora { font-weight: 700; color: var(--texto-ahora); }
+.ag-linea__hito[data-estado='actual'] .ag-linea__nodo { width: 12px; height: 12px; margin-top: 2px; border: 2px solid #1a1a1a; background: var(--acento-naranja); box-sizing: border-box; animation: ag-latido-ahora 1.6s ease-out infinite; }
+.ag-linea__hito[data-estado='actual'] .ag-linea__texto { font-weight: 600; }
+@keyframes ag-latido-ahora { 0% { box-shadow: 0 0 0 0 rgba(243, 112, 33, 0.5); } 100% { box-shadow: 0 0 0 8px rgba(243, 112, 33, 0); } }
+
+/* Barra de ETA bajo «en ruta»: avanza con el progreso real de la unidad. */
+.ag-linea__eta { display: block; height: 6px; overflow: hidden; border-radius: 3px; background: var(--isla-pista-barra); }
+.ag-linea__eta > span { display: block; height: 100%; border-radius: 3px; background: var(--acento-naranja); transition: width 400ms linear; }
+
+/* Omitidos y pendientes: nodo hueco gris y opacidad .5. */
+.ag-linea__hito[data-estado='omitido'], .ag-linea__hito[data-estado='pendiente'] { opacity: 0.5; }
+.ag-linea__hito[data-estado='omitido'] .ag-linea__nodo, .ag-linea__hito[data-estado='pendiente'] .ag-linea__nodo { box-sizing: border-box; border: 2px solid var(--isla-texto-3); background: transparent; }
+
+/* Un hito que llega: el nodo aparece escalando y su tramo se rellena hacia abajo (200 ms). */
+.ag-linea__hito[data-nuevo] .ag-linea__nodo { animation: ag-nodo-entra 200ms var(--curva-isla) both; }
+.ag-linea__hito[data-nuevo][data-estado='actual'] .ag-linea__nodo { animation: ag-nodo-entra 200ms var(--curva-isla) both, ag-latido-ahora 1.6s ease-out 200ms infinite; }
+.ag-linea__hito:has(+ .ag-linea__hito[data-nuevo]) .ag-linea__tramo { animation: ag-tramo-rellena 200ms var(--curva-isla) both; }
+@keyframes ag-nodo-entra { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes ag-tramo-rellena { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+[data-theme='carbon'] .ag-linea__hito[data-estado='actual'] .ag-linea__nodo { border-color: var(--isla-texto); }

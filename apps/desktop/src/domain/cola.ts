@@ -80,6 +80,29 @@ export function unidadesPorIncidente(recursos: readonly Recurso[]): ReadonlyMap<
   return cuenta;
 }
 
+/** Unidades de un incidente según su momento: en camino (asignadas o en ruta) y ya en la escena. */
+export interface UnidadesDeIncidente {
+  readonly total: number;
+  readonly enRuta: number;
+  readonly enEscena: number;
+}
+
+/** Desglose por incidente de las unidades que tiene asignadas. */
+export function unidadesPorEstadoDeIncidente(recursos: readonly Recurso[]): ReadonlyMap<string, UnidadesDeIncidente> {
+  const mapa = new Map<string, UnidadesDeIncidente>();
+  for (const r of recursos) {
+    const id = r.incidente_asignado_id;
+    if (!id) continue;
+    const previo = mapa.get(id) ?? { total: 0, enRuta: 0, enEscena: 0 };
+    mapa.set(id, {
+      total: previo.total + 1,
+      enRuta: previo.enRuta + (r.estado_actual === 'ASIGNADO' || r.estado_actual === 'EN_RUTA' ? 1 : 0),
+      enEscena: previo.enEscena + (r.estado_actual === 'EN_ESCENA' ? 1 : 0),
+    });
+  }
+  return mapa;
+}
+
 /** Código corto y dictable del incidente: las 3 últimas letras o dígitos de su id, en mayúsculas. */
 export const codigoIncidente = (id: string): string => id.replace(/[^a-z0-9]/gi, '').slice(-3).toUpperCase();
 

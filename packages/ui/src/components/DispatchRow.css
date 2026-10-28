@@ -1,11 +1,11 @@
 /* ── DispatchRow ────────────────────────────────────────────────────────── */
-.ag-row { box-sizing: border-box; display: grid; grid-template-columns: var(--glyph) 1fr auto; align-items: center; gap: var(--space-3); min-height: var(--row-height); padding: var(--space-2) var(--space-4); background: var(--dispatch-row-bg); border-bottom: var(--border-hairline) solid var(--dispatch-row-divider); transition: background-color var(--dur-instant) var(--ease-salida); }
-.ag-row:hover, .ag-row.is-hover { background: var(--dispatch-row-bg-hover); }
+.ag-row { box-sizing: border-box; display: grid; grid-template-columns: var(--glyph) 1fr auto; align-items: center; gap: var(--space-3); min-height: var(--row-height); margin: 0 var(--space-2) var(--space-1); padding: var(--space-2) var(--space-3); background: var(--tarjeta-bg); border: var(--border-hairline) solid var(--tarjeta-borde); border-radius: var(--radio-control); transition: background-color var(--t-isla) var(--curva-isla), box-shadow var(--t-isla) var(--curva-isla); }
+.ag-row:hover, .ag-row.is-hover { background: var(--tarjeta-bg-hover); box-shadow: var(--boton-ghost-sombra); }
 @keyframes ag-row-cambio { from { background: var(--surface-selected); } }
 .ag-row[data-cambio] { animation: ag-row-cambio var(--dur-slow) var(--ease-salida); }
 .ag-row__glyph.ag-status--disponible, .ag-row__glyph.ag-status--despachado, .ag-row__glyph.ag-status--enruta, .ag-row__glyph.ag-status--escena, .ag-row__glyph.ag-status--inoperativo { display: flex; }
 .ag-row__id { display: flex; flex-direction: column; min-width: 96px; }
-.ag-row__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); font-family: var(--font-display); font-size: calc(16px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; color: var(--text-primary); }
+.ag-row__name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); font-family: var(--font-body); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; color: var(--isla-texto); }
 .ag-row__code { white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 500; color: var(--dispatch-code-fg); }
 .ag-row__detail { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; font-weight: 500; letter-spacing: .02em; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ag-row__timer { display: flex; }

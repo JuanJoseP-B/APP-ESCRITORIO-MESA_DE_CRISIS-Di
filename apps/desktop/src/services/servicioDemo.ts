@@ -163,10 +163,18 @@ export interface OpcionesDemo {
   readonly ahora?: () => number;
   /** Escenario del demo: parte limpio (unidades libres, sin incidentes). Sin él, la semilla fija de las pruebas. */
   readonly escenario?: Escenario;
+  /** Sesión del demo compartida entre servicios; sin ella el demo arranca con la sesión abierta y no pide login. */
+  readonly sesion?: SesionDemo;
+}
+
+/** Interruptor de la sesión del demo: cualquier correo y contraseña la abren. */
+export interface SesionDemo {
+  activa: boolean;
 }
 
 /** Datos locales de ejemplo para desarrollar la UI sin backend; no hace consultas de red. */
-export function crearServicioDemo({ ahora = Date.now, escenario }: OpcionesDemo = {}): ServicioMesa {
+export function crearServicioDemo(opciones: OpcionesDemo = {}): ServicioMesa {
+  const { ahora = Date.now, escenario } = opciones;
   const tIncidentes = crearTabla<Incidente>(escenario ? [] : incidentesIniciales(ahora()));
   const tLlamadas = crearTabla<Llamada>(escenario ? [] : llamadasIniciales(ahora()));
   const tRecursos = crearTabla<Recurso>(escenario ? recursosEnBase : recursosIniciales);
@@ -175,6 +183,7 @@ export function crearServicioDemo({ ahora = Date.now, escenario }: OpcionesDemo 
   let contador = 0;
   let eventos = 0;
   const sesion = { email: 'demo@local', esOperador: true };
+  const estadoSesion: SesionDemo = opciones.sesion ?? { activa: true };
   const iso = (): string => new Date(ahora()).toISOString();
   const envolver = <R>(f: () => R): Promise<R> => {
     try {
@@ -262,9 +271,15 @@ export function crearServicioDemo({ ahora = Date.now, escenario }: OpcionesDemo 
     },
     ajustarOcupacionZona: (id, delta) =>
       envolver(() => tZonas.actualizar(id, (z) => ({ capacidad_actual: ajustarOcupacion(z, delta) }))),
-    iniciarSesion: () => Promise.resolve(sesion),
-    cerrarSesion: () => Promise.resolve(),
-    sesionActual: () => Promise.resolve(sesion),
+    iniciarSesion: () => {
+      estadoSesion.activa = true;
+      return Promise.resolve(sesion);
+    },
+    cerrarSesion: () => {
+      estadoSesion.activa = false;
+      return Promise.resolve();
+    },
+    sesionActual: () => Promise.resolve(estadoSesion.activa ? sesion : null),
     desfaseHoraServidorMs: () => Promise.resolve(0),
   };
 }

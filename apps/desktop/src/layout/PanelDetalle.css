@@ -1,0 +1,24 @@
+/* ── Panel derecho: acciones del incidente ─────────────────────────────────────────────────────────────────────── */
+
+/* Despachar: la flecha avanza 5 px al pasar el cursor; tras confirmar muestra «✓ Despachada» en verde. */
+.ag-btn-despachar .ag-flecha { transition: transform var(--t-isla-lenta) var(--curva-isla); }
+.ag-btn-despachar:hover .ag-flecha { transform: translateX(5px); }
+.ag-btn-despachar[data-confirmado] { background: var(--chip-ok-bg); color: var(--chip-ok-fg); border-color: var(--chip-ok-fg); }
+
+/* Pulsación sostenida: un relleno verde crece de izquierda a derecha mientras se mantiene (700 ms). */
+.ag-sostenido { position: relative; display: inline-flex; align-items: center; height: var(--control-md); padding: 0 14px; overflow: hidden; border: 1px solid var(--boton-ghost-borde); border-radius: var(--radio-boton); background: var(--tarjeta-bg); color: var(--isla-texto); font-family: var(--font-body); font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; user-select: none; touch-action: none; transition: box-shadow var(--t-isla) var(--curva-isla), transform var(--t-isla) var(--curva-isla); }
+.ag-sostenido:hover { box-shadow: var(--boton-ghost-sombra); }
+.ag-sostenido:active, .ag-sostenido[data-cargando] { transform: translateY(1px); }
+.ag-sostenido:focus { outline: none; }
+.ag-sostenido:focus-visible { box-shadow: var(--focus-ring); }
+.ag-sostenido__relleno { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(46, 140, 131, 0.22); transition: width 150ms ease-out; }
+.ag-sostenido[data-cargando] .ag-sostenido__relleno { width: 100%; transition: width var(--ag-sostener, 700ms) linear; }
+@media (prefers-reduced-motion: reduce) { .ag-sostenido[data-cargando] .ag-sostenido__relleno { transition: none; } }
+:root[data-reduced-motion='true'] .ag-sostenido[data-cargando] .ag-sostenido__relleno { transition: none; }
+
+/* Refugio dentro del perímetro: nombre + chip APTO / NO APTO, medidor de aforo de 6 px y cifra 045/200. */
+.ag-refugio-perimetro { display: flex; flex-direction: column; gap: 5px; padding: var(--space-1) var(--space-4) var(--space-2); border-radius: var(--radio-campo); }
+.ag-refugio-perimetro:hover, .ag-refugio-perimetro:focus-visible { background: var(--isla-hover); outline: none; }
+.ag-refugio-perimetro:focus-visible { box-shadow: var(--focus-ring); }
+.ag-medidor { height: 6px; overflow: hidden; border-radius: 3px; background: var(--isla-pista-barra); }
+.ag-medidor > span { display: block; height: 100%; border-radius: 3px; background: var(--acento-teal); transition: width 400ms var(--curva-isla); }

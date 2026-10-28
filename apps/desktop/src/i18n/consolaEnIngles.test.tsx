@@ -46,7 +46,7 @@ const llamada: Llamada = {
 };
 
 describe('la consola en inglés', () => {
-  it('la barra de estado', () => {
+  it('la barra de estado', async () => {
     enIngles(
       <BarraEstado hora={AHORA} zona="UTC" turno="carbon" operador="op@argos.test" enlace="EN_VIVO" entrantes={2} onCerrarSesion={vi.fn()} onAbrirAjustes={vi.fn()} />,
     );
@@ -54,7 +54,8 @@ describe('la consola en inglés', () => {
     expect(screen.getByText(/Night shift/)).toBeTruthy();
     expect(screen.getByRole('status', { name: 'Link: Live' })).toBeTruthy();
     expect(screen.getByRole('status', { name: '2 incoming calls' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'op@argos.test account' }));
+    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeTruthy();
   });
 
@@ -93,7 +94,7 @@ describe('la consola en inglés', () => {
   it('el tablero traduce el estado completo y su abreviatura', () => {
     enIngles(<TableroUnidades recursos={[recurso]} incidenteSeleccionadoId={null} onSeleccionarUnidad={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'M10, Ambulance, Available' }).textContent).toContain('AVAIL');
-    expect(screen.getByText('1/1 avail.')).toBeTruthy();
+    expect(screen.getByLabelText('1 of 1 units available')).toBeTruthy();
   });
 
   it('el formulario de llamada: etiquetas, opciones y errores', async () => {

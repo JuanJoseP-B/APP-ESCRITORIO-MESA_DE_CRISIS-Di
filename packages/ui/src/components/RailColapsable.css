@@ -1,18 +1,17 @@
 /* ── RailColapsable ─────────────────────────────────────────────────────── */
-.ag-rail { box-sizing: border-box; position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; background: var(--surface-panel); color: var(--text-primary); }
-.ag-rail[data-lado="left"] { border-right: var(--border-hairline) solid var(--border-strong); }
-.ag-rail[data-lado="right"] { border-left: var(--border-hairline) solid var(--border-strong); }
+/* Panel lateral flotante: expandido muestra su contenido con la flecha en la esquina superior; plegado queda en un
+   riel de iconos con el rótulo en vertical (no desaparece). El fondo, el borde y el radio los pone la isla. */
+.ag-rail { box-sizing: border-box; position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; color: var(--isla-texto); }
 .ag-rail__body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .ag-rail__body[hidden] { display: none; }
-.ag-rail__toggle { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); background: transparent; color: var(--text-secondary); border: 0; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; cursor: pointer; }
-.ag-rail__toggle:hover { background: var(--surface-hover); color: var(--text-primary); }
+.ag-rail__toggle { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); background: var(--tarjeta-bg); color: var(--isla-texto-2); border: 1px solid var(--isla-filete); border-radius: var(--radio-campo); font-family: var(--font-mono); font-size: calc(14px * var(--escala-texto, 1)); line-height: 20px; font-weight: 600; cursor: pointer; transition: background-color var(--t-isla) var(--curva-isla), color var(--t-isla) var(--curva-isla); }
+.ag-rail__toggle:hover { background: var(--tarjeta-bg-hover); color: var(--isla-texto); }
 .ag-rail__toggle:focus { outline: none; }
 .ag-rail__toggle:focus-visible { box-shadow: var(--focus-ring); }
-/* Expandido: la flecha ocupa su propia franja (no se solapa con el contenido) en el borde exterior del panel. */
-.ag-rail[data-colapsado="false"] .ag-rail__toggle { flex: none; width: var(--control-sm); height: var(--control-sm); margin: var(--space-1) var(--space-2) 0; }
-.ag-rail[data-colapsado="false"][data-lado="left"] .ag-rail__toggle { align-self: flex-end; }
-.ag-rail[data-colapsado="false"][data-lado="right"] .ag-rail__toggle { align-self: flex-start; }
-/* Plegado: rail completo de 40 px con icono y rótulo vertical. */
-.ag-rail[data-colapsado="true"] .ag-rail__toggle { flex: 1; flex-direction: column; justify-content: flex-start; width: 100%; padding: var(--space-3) 0; }
-.ag-rail__icon { display: inline-flex; }
-.ag-rail__label { writing-mode: vertical-rl; letter-spacing: .08em; text-transform: uppercase; font-size: calc(12px * var(--escala-texto, 1)); line-height: 16px; }
+/* Expandido: la flecha flota en la esquina superior derecha, sobre el final del filete del primer encabezado. */
+.ag-rail[data-colapsado="false"] .ag-rail__toggle { position: absolute; top: 10px; right: 10px; z-index: 2; width: 26px; height: 26px; }
+/* Plegado: riel completo con icono y rótulo vertical. */
+.ag-rail[data-colapsado="true"] .ag-rail__toggle { flex: 1; flex-direction: column; justify-content: flex-start; gap: var(--space-3); width: 100%; padding: var(--space-4) 0; border: 0; border-radius: inherit; background: transparent; }
+.ag-rail[data-colapsado="true"] .ag-rail__toggle:hover { background: var(--isla-hover); }
+.ag-rail__icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radio-control); background: var(--tarjeta-bg); border: 1px solid var(--isla-filete); color: var(--isla-texto); }
+.ag-rail__label { writing-mode: vertical-rl; letter-spacing: .1em; text-transform: uppercase; font-size: calc(11px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; }

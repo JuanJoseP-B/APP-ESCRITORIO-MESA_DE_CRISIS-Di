@@ -117,3 +117,25 @@ export function movimientosEnRuta(
 /** Posición mostrada de cada unidad en movimiento, por id de recurso. */
 export const posicionesDe = (movimientos: readonly MovimientoUnidad[]): ReadonlyMap<string, Coordenadas> =>
   new Map(movimientos.map((m) => [m.recursoId, m.posicion]));
+
+/** Avance (0–1) y segundos que le faltan a una unidad en ruta para llegar. */
+export interface EtaUnidad {
+  readonly progreso: number;
+  readonly restanteSeg: number;
+}
+
+/** ETA de cada unidad en movimiento, por id de recurso: lo que falta a la velocidad de su tipo y con su retraso. */
+export function etasDe(
+  movimientos: readonly MovimientoUnidad[],
+  recursos: readonly Recurso[],
+  retraso: RetrasoUnidad | null = TRAFICO_ESCENARIO,
+): ReadonlyMap<string, EtaUnidad> {
+  const etas = new Map<string, EtaUnidad>();
+  for (const m of movimientos) {
+    const recurso = recursos.find((r) => r.id === m.recursoId);
+    if (!recurso) continue;
+    const velocidad = VELOCIDAD_MS[recurso.tipo] * factorVelocidadDe(recurso, retraso);
+    etas.set(m.recursoId, { progreso: m.progreso, restanteSeg: m.llego || velocidad <= 0 ? 0 : m.restanteM / velocidad });
+  }
+  return etas;
+}

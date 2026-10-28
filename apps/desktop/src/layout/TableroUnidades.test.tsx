@@ -42,16 +42,18 @@ describe('TableroUnidades', () => {
     ]);
   });
 
-  it('cada chip comunica el estado con glifo y palabra', () => {
+  it('cada tarjeta comunica el estado con glifo y palabra', () => {
     const { container } = render(<TableroUnidades {...base} />);
-    const estados = [...container.querySelectorAll('.ag-unit__state')].map((e) => e.textContent);
+    const estados = [...container.querySelectorAll('.ag-unidad__palabra')].map((e) => e.textContent);
     expect(estados).toEqual(['DISP', 'INOP', 'ASIG', 'ESC']);
-    expect(container.querySelectorAll('.ag-unit .ag-glyph').length).toBe(4);
+    expect(container.querySelectorAll('.ag-unidad__chip .ag-glyph').length).toBe(4);
   });
 
   it('resume cuántas unidades están disponibles', () => {
     render(<TableroUnidades {...base} />);
-    expect(screen.getByText('1/4 disp.')).toBeTruthy();
+    const resumen = screen.getByLabelText('1 de 4 unidades disponibles');
+    expect(resumen.querySelector('.ag-tablero__conteo')?.textContent).toBe('1/4');
+    expect(resumen.textContent).toContain('disponibles');
   });
 
   it('un clic entrega la unidad pulsada', async () => {
@@ -72,7 +74,7 @@ describe('TableroUnidades', () => {
     render(<TableroUnidades {...base} unidadSeleccionadaId="r1" />);
     const chip = screen.getByRole('button', { name: /^U01/ });
     expect(chip.getAttribute('aria-pressed')).toBe('true');
-    expect(chip.classList.contains('ag-unit--foco')).toBe(true);
+    expect(chip.hasAttribute('data-foco')).toBe(true);
     expect(screen.getByRole('button', { name: /^M10/ }).getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -82,7 +84,7 @@ describe('TableroUnidades', () => {
     it('solo las unidades con SLA llevan cronómetro, con el nivel en glifo y palabra', () => {
       const sla = new Map([['r2', estado('r2', 'VENCIDO', 612)]]);
       const { container } = render(<TableroUnidades {...base} sla={sla} />);
-      const cronometros = container.querySelectorAll('.ag-unit__timer');
+      const cronometros = container.querySelectorAll('.ag-unidad__timer');
       expect(cronometros).toHaveLength(1);
       expect(cronometros[0]?.getAttribute('data-nivel')).toBe('vencido');
       expect(cronometros[0]?.textContent).toBe('10:12vencido');
@@ -92,18 +94,18 @@ describe('TableroUnidades', () => {
 
     it('en tiempo es neutro: solo mm:ss', () => {
       const { container } = render(<TableroUnidades {...base} sla={new Map([['r2', estado('r2', 'EN_TIEMPO', 65)]])} />);
-      expect(container.querySelector('.ag-unit__timer')?.textContent).toBe('01:05');
+      expect(container.querySelector('.ag-unidad__timer')?.textContent).toBe('01:05');
       expect(container.querySelector('.ag-unit__timer .ag-glyph')).toBeNull();
     });
 
     it('reducirMovimiento cambia el parpadeo por el patrón estático', () => {
       const { container } = render(<TableroUnidades {...base} sla={new Map([['r2', estado('r2', 'VENCIDO', 700)]])} reducirMovimiento />);
-      expect(container.querySelector('.ag-unit__timer')?.getAttribute('data-movimiento')).toBe('reducido');
+      expect(container.querySelector('.ag-unidad__timer')?.getAttribute('data-movimiento')).toBe('reducido');
     });
 
     it('sin SLA ninguna unidad lleva cronómetro', () => {
       const { container } = render(<TableroUnidades {...base} />);
-      expect(container.querySelector('.ag-unit__timer')).toBeNull();
+      expect(container.querySelector('.ag-unidad__timer')).toBeNull();
     });
   });
 
@@ -121,6 +123,7 @@ describe('TableroUnidades', () => {
 
   it('la fila de chips solo desplaza en horizontal y no usa colores sueltos', () => {
     expect(css).toContain('.ag-tablero__chips');
+    expect(css).toContain('.ag-unidad');
     expect(css).toMatch(/\.ag-tablero__chips \{[^}]*overflow-x: auto;[^}]*overflow-y: hidden;/);
     expect(css).not.toMatch(/overflow-y: (auto|scroll)/);
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i);

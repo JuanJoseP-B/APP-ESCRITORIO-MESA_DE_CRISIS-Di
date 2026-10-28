@@ -1,0 +1,73 @@
+/* ── Barra superior en tres islas ──────────────────────────────────────────────────────────────────────────────── */
+.ag-barra { display: flex; align-items: stretch; gap: var(--hueco-isla); height: 100%; white-space: nowrap; color: var(--isla-texto); }
+.ag-barra__isla { display: flex; align-items: center; height: 100%; }
+
+/* 1 · Marca. */
+.ag-barra__marca { flex: none; gap: var(--space-4); padding: 0 18px; }
+.ag-barra__logo { font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.ag-barra__separador { width: 1px; height: 24px; background: var(--isla-filete); }
+.ag-barra__reloj { font-family: var(--font-mono); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ag-barra__segundos { color: var(--isla-texto-3); }
+.ag-barra__turno { display: flex; flex-direction: column; line-height: 1.2; }
+.ag-barra__turno-linea { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--isla-texto-2); }
+.ag-barra__operador { max-width: 160px; overflow: hidden; text-overflow: ellipsis; font-size: 12px; font-weight: 500; }
+
+/* 2 · Operación. */
+.ag-barra__operacion { flex: 1 1 auto; min-width: 360px; gap: var(--space-4); padding: 0 18px; overflow: hidden; }
+.ag-chip-barra { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 22px; padding: 0 var(--space-2); border-radius: var(--radio-chip); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.ag-chip-barra .ag-glyph { width: 6px; height: 6px; }
+.ag-chip-barra .ag-glyph.ag-punto-vivo { width: 8px; height: 8px; background: var(--acento-vivo); }
+.ag-chip-barra--ok { background: var(--chip-ok-bg); color: var(--chip-ok-fg); }
+.ag-chip-barra--info { background: var(--chip-info-bg); color: var(--chip-info-fg); }
+.ag-chip-barra--critico { background: var(--chip-alto-bg); color: var(--chip-alto-fg); }
+.ag-chip-barra--aviso { background: var(--chip-aviso-bg); color: var(--chip-aviso-fg); }
+.ag-chip-barra--neutro { background: var(--chip-neutro-bg); color: var(--chip-neutro-fg); }
+
+.ag-barra__sim { display: flex; flex: 1 1 auto; align-items: center; gap: var(--space-3); min-width: 0; }
+.ag-barra__progreso { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 120px; }
+.ag-barra__etiqueta { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--isla-texto-2); }
+.ag-barra__pista { flex: 1 1 auto; min-width: 40px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--isla-pista-barra); }
+.ag-barra__relleno { display: block; height: 100%; border-radius: 3px; background: var(--acento-pizarra); transition: width var(--t-isla-lenta) linear; }
+.ag-barra__tiempo { font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
+
+/* Velocidad: control segmentado con thumb deslizante (left, 220 ms). */
+.ag-velocidades { --ag-vel-ancho: 44px; position: relative; display: inline-grid; flex: none; grid-auto-flow: column; grid-auto-columns: var(--ag-vel-ancho); padding: 3px; border-radius: var(--radio-control); background: var(--isla-pista); }
+.ag-velocidades__thumb { position: absolute; top: 3px; bottom: 3px; left: calc(3px + var(--ag-vel-ancho) * var(--ag-vel-i, 0)); width: var(--ag-vel-ancho); border-radius: var(--radio-campo); background: var(--tarjeta-bg); box-shadow: var(--sombra-thumb); transition: left var(--t-isla-lenta) var(--curva-isla); }
+.ag-velocidades__opt { position: relative; height: 30px; padding: 0; border: 0; border-radius: var(--radio-campo); background: transparent; color: var(--isla-texto-2); font-family: var(--font-mono); font-size: 12px; font-weight: 700; cursor: pointer; transition: color var(--t-isla) var(--curva-isla); }
+.ag-velocidades__opt:hover, .ag-velocidades__opt[aria-pressed='true'] { color: var(--isla-texto); }
+.ag-velocidades__opt:focus { outline: none; }
+.ag-velocidades__opt:focus-visible { box-shadow: var(--focus-ring); }
+
+/* 3 · Sistema. */
+.ag-barra__sistema { flex: none; gap: var(--space-2); padding: 0 10px; }
+
+/* Botón de icono 36×36 (pausa, reiniciar, sonido, ajustes). */
+.ag-btn-icono { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--isla-filete); border-radius: var(--radio-control); background: var(--tarjeta-bg); color: var(--isla-texto); cursor: pointer; transition: transform var(--t-isla) var(--curva-isla), background-color var(--t-isla) var(--curva-isla); }
+.ag-btn-icono:hover { background: var(--tarjeta-bg-hover); transform: translateY(-1px); }
+.ag-btn-icono:active { transform: translateY(1px); }
+.ag-btn-icono:focus { outline: none; }
+.ag-btn-icono:focus-visible { box-shadow: var(--focus-ring); }
+.ag-btn-icono[aria-pressed='true'] { background: var(--chip-aviso-bg); color: var(--chip-aviso-fg); }
+/* El engranaje gira 60° al pasar el cursor. */
+.ag-btn-icono--engranaje svg { transition: transform 320ms var(--curva-isla); }
+.ag-btn-icono--engranaje:hover svg { transform: rotate(60deg); }
+
+/* Avatar y su menú. */
+.ag-avatar { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: #1a1a1a; color: var(--acento-naranja); font-family: var(--font-display); font-size: 14px; font-weight: 700; cursor: pointer; transition: transform var(--t-isla) var(--curva-isla); }
+.ag-avatar:hover { transform: translateY(-1px); }
+.ag-avatar:focus { outline: none; }
+.ag-avatar:focus-visible { box-shadow: var(--focus-ring); }
+.ag-menu-cuenta { position: absolute; top: calc(100% + 14px); right: -10px; z-index: var(--z-popover); display: flex; flex-direction: column; gap: var(--space-1); min-width: 200px; padding: var(--space-2); background: var(--tarjeta-bg); animation: ag-menu-entra var(--t-isla) var(--curva-isla); }
+.ag-menu-cuenta__quien { margin: 0; padding: var(--space-1) var(--space-2) var(--space-2); border-bottom: 1px solid var(--isla-filete); font-size: 12px; color: var(--isla-texto-2); }
+.ag-menu-cuenta__item { height: 32px; padding: 0 var(--space-2); border: 0; border-radius: var(--radio-campo); background: transparent; color: var(--isla-texto); font-family: var(--font-body); font-size: 13px; text-align: left; cursor: pointer; }
+.ag-menu-cuenta__item:hover { background: var(--isla-hover); }
+.ag-menu-cuenta__item:focus { outline: none; }
+.ag-menu-cuenta__item:focus-visible { box-shadow: var(--focus-ring); }
+@keyframes ag-menu-entra { from { opacity: 0; transform: translateY(-4px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-btn-icono--engranaje:hover svg, .ag-btn-icono:hover, .ag-avatar:hover { transform: none; }
+}
+:root[data-reduced-motion='true'] .ag-btn-icono--engranaje:hover svg,
+:root[data-reduced-motion='true'] .ag-btn-icono:hover,
+:root[data-reduced-motion='true'] .ag-avatar:hover { transform: none; }

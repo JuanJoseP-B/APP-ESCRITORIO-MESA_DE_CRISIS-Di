@@ -24,7 +24,7 @@ async function abrirConsola() {
     </IdiomaProvider>,
   );
   await screen.findByRole('banner', { name: 'Barra de estado' });
-  await screen.findByText('6/6 disp.'); // llegaron las unidades del demo
+  await screen.findByLabelText('6 de 6 unidades disponibles'); // llegaron las unidades del demo
 }
 
 describe('App: escenarios del demo', () => {
@@ -43,7 +43,7 @@ describe('App: escenarios del demo', () => {
     expect(await screen.findByText('Salón Comunal Lorenzo')).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'B' }).getAttribute('aria-checked')).toBe('true');
     await userEvent.click(screen.getByRole('radio', { name: 'C' }));
-    await screen.findByText('6/6 disp.');
+    await screen.findByLabelText('6 de 6 unidades disponibles');
     expect(screen.queryByText('Salón Comunal Lorenzo')).toBeNull();
   });
 
@@ -56,6 +56,6 @@ describe('App: escenarios del demo', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reiniciar' }));
     expect(await screen.findByRole('radio', { name: 'B' })).toBeTruthy(); // vuelve el selector, con el escenario B
     expect(screen.getByRole('radio', { name: 'B' }).getAttribute('aria-checked')).toBe('true');
-    expect(await screen.findByText('6/6 disp.')).toBeTruthy();
+    expect(await screen.findByLabelText('6 de 6 unidades disponibles')).toBeTruthy();
   });
 });

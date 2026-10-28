@@ -1,0 +1,73 @@
+/* ── Panel izquierdo: entrantes, pestañas y tarjetas de incidente ─────────────────────────────────────────────── */
+
+/* El primer encabezado de un panel deja sitio a la flecha de plegar, que flota en la esquina. */
+.ag-grilla__contenido .ag-section.ag-reserva-toggle { padding-right: 44px; }
+
+/* Botón mínimo (24×24) para acciones secundarias dentro de un encabezado o un chip. */
+.ag-btn-mini { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 1px solid var(--isla-filete); border-radius: 6px; background: var(--tarjeta-bg); color: var(--isla-texto-2); font-size: 11px; cursor: pointer; transition: background-color var(--t-isla) var(--curva-isla), color var(--t-isla) var(--curva-isla); }
+.ag-btn-mini:hover { background: var(--tarjeta-bg-hover); color: var(--isla-texto); }
+.ag-btn-mini:focus { outline: none; }
+.ag-btn-mini:focus-visible { box-shadow: var(--focus-ring); }
+
+/* ── Tarjeta de llamada entrante ── */
+.ag-entrante { position: relative; flex: none; border: 1px solid var(--tarjeta-borde); border-radius: var(--radio-control); background: var(--tarjeta-bg); transition: background-color var(--t-isla) var(--curva-isla), border-color var(--t-isla) var(--curva-isla); }
+.ag-entrante:hover { background: var(--tarjeta-bg-hover); }
+.ag-entrante[data-abierta] { border-color: var(--acento-pizarra); box-shadow: inset 0 0 0 1px var(--acento-pizarra); }
+.ag-entrante__abrir { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 10px; border: 0; border-radius: inherit; background: transparent; color: var(--isla-texto); font: inherit; text-align: left; cursor: pointer; }
+.ag-entrante__abrir:focus { outline: none; }
+.ag-entrante__abrir:focus-visible { box-shadow: var(--focus-ring); }
+.ag-entrante__descartar { position: absolute; right: 10px; bottom: 8px; }
+.ag-entrante .ag-entrante__descartar { height: 28px; padding: 0 10px; font-size: 12px; }
+
+/* Temporizador por umbral: normal < 2 min; aviso desde 2 min; crítico desde 4 min, parpadeando, y borde rojo al 35 %. */
+.ag-entrante[data-espera='aviso'] .ag-entrante__espera { color: var(--texto-aviso); }
+.ag-entrante[data-espera='critico'] { border-color: rgba(168, 38, 30, 0.35); }
+.ag-entrante[data-espera='critico'] .ag-entrante__espera { color: var(--texto-critico); animation: ag-parpadeo-espera 1s steps(2) infinite; }
+@keyframes ag-parpadeo-espera { 50% { opacity: 0.55; } }
+
+/* Entrada nueva: además de bajar desde arriba, el borde late una vez. */
+.ag-entrante[data-nueva] { animation: ag-pulso-borde 900ms var(--curva-isla) 1; }
+@keyframes ag-pulso-borde {
+  0% { box-shadow: 0 0 0 0 rgba(243, 112, 33, 0.55); }
+  100% { box-shadow: 0 0 0 8px rgba(243, 112, 33, 0); }
+}
+
+/* ── Pestañas Activos / Cerrados: control segmentado de ancho completo con thumb deslizante ── */
+.ag-pestanas { position: relative; display: flex; padding: 3px; border-radius: var(--radio-control); background: var(--isla-pista); }
+.ag-pestanas__opt { position: relative; flex: 1 1 0; height: 30px; padding: 0 var(--space-3); border: 0; border-radius: var(--radio-campo); background: transparent; color: var(--isla-texto-2); font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: color var(--t-isla) var(--curva-isla); }
+.ag-pestanas__opt:hover, .ag-pestanas__opt[aria-selected='true'] { color: var(--isla-texto); }
+.ag-pestanas__opt:focus { outline: none; }
+.ag-pestanas__opt:focus-visible { box-shadow: var(--focus-ring); }
+.ag-pestanas__thumb { position: absolute; inset: 0; border-radius: var(--radio-campo); background: var(--tarjeta-bg); box-shadow: var(--sombra-thumb); }
+
+/* ── Tarjeta de incidente ── */
+.ag-incidente { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: var(--space-2); width: 100%; padding: 12px 14px; border: 1px solid var(--tarjeta-borde); border-radius: var(--radio-tarjeta); background: transparent; color: var(--isla-texto); font: inherit; text-align: left; cursor: pointer; transition: background-color var(--t-isla) var(--curva-isla), color var(--t-isla) var(--curva-isla), border-color var(--t-isla) var(--curva-isla); }
+.ag-incidente:hover { background: var(--isla-hover); }
+.ag-incidente:focus { outline: none; }
+.ag-incidente:focus-visible { box-shadow: var(--focus-ring); }
+.ag-incidente__tenue { color: var(--isla-texto-2); }
+/* Seleccionado: tarjeta oscura (el fondo viaja con layoutId) con texto crema. */
+.ag-incidente[data-seleccionado] { border-color: transparent; background: transparent; color: var(--tarjeta-activa-fg); }
+.ag-incidente[data-seleccionado] .ag-incidente__tenue { color: var(--tarjeta-activa-fg-2); }
+.ag-incidente__fondo { position: absolute; inset: -1px; z-index: -1; border-radius: var(--radio-tarjeta); background: var(--tarjeta-activa-bg); box-shadow: var(--tarjeta-activa-sombra); }
+
+/* Chips pequeños de la tarjeta: unidades en ruta o en escena y llamadas vinculadas. */
+.ag-mini-chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 var(--space-2); border-radius: var(--radio-chip); font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; }
+.ag-mini-chip--ruta { background: var(--chip-fuego-bg); color: var(--chip-fuego-fg); }
+.ag-mini-chip--escena { background: var(--chip-info-bg); color: var(--chip-info-fg); }
+.ag-mini-chip--neutro { background: var(--chip-neutro-bg); color: var(--chip-neutro-fg); }
+.ag-incidente[data-seleccionado] .ag-mini-chip--ruta { background: rgba(243, 112, 33, 0.18); color: #f7a46b; }
+.ag-incidente[data-seleccionado] .ag-mini-chip--escena { background: rgba(169, 182, 202, 0.18); color: #c3cede; }
+.ag-incidente[data-seleccionado] .ag-mini-chip--neutro { background: rgba(255, 255, 255, 0.08); color: #d9ccbf; }
+[data-theme='carbon'] .ag-incidente[data-seleccionado] .ag-mini-chip--ruta { background: #fce3d3; color: #9a3412; }
+[data-theme='carbon'] .ag-incidente[data-seleccionado] .ag-mini-chip--escena { background: #dde3ee; color: #33425a; }
+[data-theme='carbon'] .ag-incidente[data-seleccionado] .ag-mini-chip--neutro { background: rgba(26, 26, 26, 0.08); color: #5c554e; }
+
+/* Chip del filtro SLA activo. */
+.ag-filtro-sla { padding: 3px 3px 3px var(--space-3); border-radius: var(--radio-campo); background: var(--chip-aviso-bg); color: var(--chip-aviso-fg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-entrante[data-nueva], .ag-entrante[data-espera='critico'] .ag-entrante__espera { animation: none; }
+}
+:root[data-reduced-motion='true'] .ag-entrante[data-nueva],
+:root[data-reduced-motion='true'] .ag-entrante[data-espera='critico'] .ag-entrante__espera { animation: none; }

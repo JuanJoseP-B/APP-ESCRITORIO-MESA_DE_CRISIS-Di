@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BarraEstado, type BarraEstadoProps, type SimulacionBarra } from './BarraEstado';
+import { BarraEstado, inicialesDe, type BarraEstadoProps, type SimulacionBarra } from './BarraEstado';
 
 afterEach(cleanup);
 
@@ -16,13 +16,15 @@ const base: BarraEstadoProps = {
 };
 
 describe('BarraEstado', () => {
-  it('muestra el reloj con segundos, la zona, el turno y el operador', () => {
-    render(<BarraEstado {...base} />);
-    const reloj = screen.getByText('17:15:07');
-    expect(reloj.tagName).toBe('TIME');
-    expect(reloj.getAttribute('datetime')).toBe('2026-10-07T22:15:07.000Z');
+  it('muestra el reloj con segundos (en gris), la zona, el turno y el operador', () => {
+    const { container } = render(<BarraEstado {...base} />);
+    const reloj = container.querySelector('time');
+    expect(reloj?.textContent).toBe('17:15:07');
+    expect(reloj?.getAttribute('datetime')).toBe('2026-10-07T22:15:07.000Z');
+    expect(reloj?.querySelector('.ag-barra__segundos')?.textContent).toBe(':07');
     expect(screen.getByText('UTC-5')).toBeTruthy();
-    expect(screen.getByText(/Turno Noche/).textContent).toContain('operador@argos.test');
+    expect(screen.getByText(/Turno Noche/).textContent).toContain('UTC-5');
+    expect(screen.getByText('operador@argos.test')).toBeTruthy();
   });
 
   it('el turno de día aparece con el tema crema', () => {
@@ -62,16 +64,41 @@ describe('BarraEstado', () => {
     expect(container.querySelector(`.ag-glyph--${forma}`)).not.toBeNull();
   });
 
-  it('cierra sesión', async () => {
+  it('cierra sesión desde el menú del avatar', async () => {
     const salir = vi.fn();
     render(<BarraEstado {...base} onCerrarSesion={salir} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Salir' }));
+    const avatar = screen.getByRole('button', { name: 'Cuenta de operador@argos.test' });
+    expect(avatar.textContent).toBe('OP');
+    expect(screen.queryByRole('menuitem', { name: 'Salir' })).toBeNull();
+    await userEvent.click(avatar);
+    expect(avatar.getAttribute('aria-expanded')).toBe('true');
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Salir' }));
     expect(salir).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('sin onCerrarSesion no hay botón Salir', () => {
+  it('Esc cierra el menú del avatar sin cerrar sesión', async () => {
+    const salir = vi.fn();
+    render(<BarraEstado {...base} onCerrarSesion={salir} />);
+    await userEvent.click(screen.getByRole('button', { name: /Cuenta de/ }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(salir).not.toHaveBeenCalled();
+  });
+
+  it('sin onCerrarSesion no hay avatar ni Salir', () => {
     render(<BarraEstado {...base} />);
-    expect(screen.queryByRole('button', { name: 'Salir' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Cuenta de/ })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Salir' })).toBeNull();
+  });
+
+  it.each([
+    ['ana.ruiz@argos.gov', 'AR'],
+    ['demo@local', 'DE'],
+    ['j_perez@x.com', 'JP'],
+  ])('las iniciales de %s son %s', (operador, iniciales) => {
+    expect(inicialesDe(operador)).toBe(iniciales);
   });
 
   it('el contador de entrantes aparece si se informa y cambia de glifo cuando hay llamadas', () => {

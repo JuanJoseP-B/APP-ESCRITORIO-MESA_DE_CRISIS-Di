@@ -1,17 +1,20 @@
-/* ── Badge ──────────────────────────────────────────────────────────────── */
-.ag-badge { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 var(--space-2); border: var(--border-hairline) solid transparent; border-radius: var(--radius-xs); font-family: var(--font-mono); font-size: calc(11px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; box-sizing: border-box; }
+/* ── Badge: chip en píldora ────────────────────────────────────────────── */
+/* Todo estado = color + glifo + palabra. */
+.ag-badge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 var(--space-2); border: 0; border-radius: var(--radio-chip); font-family: var(--font-mono); font-size: calc(11px * var(--escala-texto, 1)); line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; box-sizing: border-box; }
 .ag-badge .ag-glyph { width: 6px; height: 6px; }
 .ag-badge .ag-glyph--triangle { width: 8px; height: 7px; }
-.ag-badge--critical.ag-badge--solid { background: var(--badge-critical-bg); color: var(--badge-critical-fg); border-color: var(--badge-critical-bg); }
-.ag-badge--critical.ag-badge--tint { background: var(--badge-high-bg); color: var(--badge-high-fg); border-color: var(--badge-high-fg); }
-.ag-badge--warning.ag-badge--tint { background: var(--badge-medium-bg); color: var(--badge-medium-fg); border-color: var(--badge-medium-bg); }
-.ag-badge--success.ag-badge--tint { background: var(--status-success-bg); color: var(--status-success); border-color: var(--status-success-bg); }
-.ag-badge--info.ag-badge--tint { background: var(--status-info-bg); color: var(--status-info); border-color: var(--status-info-bg); }
-.ag-badge--neutral.ag-badge--tint { background: var(--status-offline-bg); color: var(--status-offline); border-color: var(--status-offline-bg); }
-.ag-badge--outline { background: var(--badge-low-bg); color: var(--badge-low-fg); border-color: var(--border-control); }
+.ag-badge--critical.ag-badge--solid { background: var(--chip-critico-bg); color: var(--chip-critico-fg); }
+.ag-badge--critical.ag-badge--tint { background: var(--chip-alto-bg); color: var(--chip-alto-fg); }
+.ag-badge--warning.ag-badge--tint { background: var(--chip-aviso-bg); color: var(--chip-aviso-fg); }
+.ag-badge--success.ag-badge--tint { background: var(--chip-ok-bg); color: var(--chip-ok-fg); }
+.ag-badge--info.ag-badge--tint { background: var(--chip-info-bg); color: var(--chip-info-fg); }
+.ag-badge--neutral.ag-badge--tint { background: var(--chip-neutro-bg); color: var(--chip-neutro-fg); }
+.ag-badge--outline { background: transparent; color: var(--isla-texto-2); box-shadow: inset 0 0 0 1px var(--isla-filete); }
 .ag-badge--warning.ag-badge--solid { background: var(--status-warning); color: var(--on-warning); }
 .ag-badge--success.ag-badge--solid { background: var(--status-success); color: var(--on-success); }
 .ag-badge--info.ag-badge--solid { background: var(--status-info); color: var(--on-info); }
-/* Valor nuevo: fundido breve. */
-@keyframes ag-badge-cambio { from { opacity: 0; } }
-.ag-badge[data-cambio] { animation: ag-badge-cambio var(--dur-base) var(--ease-salida); }
+/* Valor nuevo: la palabra da media vuelta vertical (0 → 90° → 0) y aparece la nueva. */
+@keyframes ag-badge-cambio { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+.ag-badge[data-cambio] { animation: ag-badge-cambio 300ms var(--curva-isla); }
+@media (prefers-reduced-motion: reduce) { .ag-badge[data-cambio] { animation: none; } }
+:root[data-reduced-motion='true'] .ag-badge[data-cambio] { animation: none; }

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EstadoSla, Incidente, Recurso, ZonaPublica } from '@argos/shared';
 import { RADIOS_POR_DEFECTO } from '@argos/shared';
 import { analizarPerimetro } from '../domain/analisisEspacial';
 import { generarAnillos } from '../domain/perimetro';
+import { SOSTENER_MS } from './BotonSostenido';
 import { PanelDetalle, type PanelDetalleProps } from './PanelDetalle';
 
 afterEach(cleanup);
@@ -132,18 +133,23 @@ describe('PanelDetalle: ficha, bitácora y refugios', () => {
     expect(screen.getByText(/Abierto hace 30 min/)).toBeTruthy();
   });
 
-  it('cambia el estado del incidente con los otros dos estados posibles', async () => {
+  it('cambia el estado del incidente con los otros dos estados posibles, manteniendo pulsado 700 ms', async () => {
     const cambiar = vi.fn();
     render(<PanelDetalle {...base({ onCambiarEstadoIncidente: cambiar })} />);
     expect(screen.queryByRole('button', { name: 'Marcar Abierto' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'Marcar Resuelto' }));
+    const resolver = screen.getByRole('button', { name: 'Marcar Resuelto' });
+    await userEvent.click(resolver);
+    expect(cambiar).not.toHaveBeenCalled();
+    fireEvent.pointerDown(resolver, { button: 0 });
+    await act(() => new Promise((r) => setTimeout(r, SOSTENER_MS + 50)));
+    fireEvent.pointerUp(resolver);
     expect(cambiar).toHaveBeenCalledWith(incidente, 'Resuelto');
     expect(screen.getByRole('button', { name: 'Marcar Contenido' })).toBeTruthy();
   });
 
   it('la línea de tiempo va en orden cronológico, con separador de fecha y autor de cada evento', () => {
     render(<PanelDetalle {...base()} />);
-    const bitacora = screen.getByRole('region', { name: 'Línea de tiempo' });
+    const bitacora = screen.getByRole('region', { name: 'Bitácora' });
     const items = within(bitacora).getAllByRole('listitem');
     expect(items).toHaveLength(3); // fecha + 2 eventos
     expect(items[0]?.querySelector('time')?.getAttribute('datetime')).toMatch(/^2026-10-0[78]$/);
@@ -209,12 +215,12 @@ describe('PanelDetalle: análisis del perímetro', () => {
     expect(screen.queryByRole('region', { name: 'Análisis del perímetro' })).toBeNull();
   });
 
-  it('con perímetro muestra el análisis justo después de la ficha y pasa el resaltado al mapa', async () => {
+  it('con perímetro muestra el análisis tras la ficha y la línea de tiempo, y pasa el resaltado al mapa', async () => {
     const onResaltar = vi.fn();
     const analisis = analizarPerimetro(anillos, [refugio], []);
     render(<PanelDetalle {...base({ perimetro: { anillos, analisis }, onResaltar })} />);
     const secciones = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'));
-    expect(secciones.slice(0, 2)).toEqual(['Ficha del incidente', 'Análisis del perímetro']);
+    expect(secciones.slice(0, 3)).toEqual(['Ficha del incidente', 'Línea de tiempo', 'Análisis del perímetro']);
     await userEvent.hover(screen.getByText(/^Coliseo Municipal · /));
     expect(onResaltar).toHaveBeenLastCalledWith({ tipo: 'zona', id: 'z1' });
   });
@@ -242,7 +248,7 @@ describe('PanelDetalle: asesor táctico', () => {
     const boton = screen.getByRole('button', { name: 'Pedir una recomendación al asesor táctico' });
     expect(boton.getAttribute('aria-keyshortcuts')).toBe('A');
     expect(boton.getAttribute('aria-pressed')).toBe('false');
-    expect(boton.textContent).toContain('ASESOR');
+    expect(boton.textContent).toContain('Asesor');
     await userEvent.click(boton);
     expect(onAlternar).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('region', { name: 'Asesor táctico · motor de reglas' })).toBeNull();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Llamada, Prioridad } from '@argos/shared';
-import { VENTANA_NUEVA_MS, entrantes, esLlamadaNueva, llamadasPorIncidente, reporteDeLlamada, segundosDesde } from './entrantes';
+import { VENTANA_NUEVA_MS, entrantes, esLlamadaNueva, llamadasPorIncidente, nivelEspera, reporteDeLlamada, segundosDesde } from './entrantes';
 
 const AHORA = Date.parse('2026-10-08T12:00:00Z');
 const hace = (seg: number): string => new Date(AHORA - seg * 1000).toISOString();
@@ -83,5 +83,18 @@ describe('llamadasPorIncidente', () => {
     expect(cuenta.get('i1')).toBe(2);
     expect(cuenta.get('i2')).toBe(1);
     expect(cuenta.size).toBe(2);
+  });
+});
+
+describe('nivelEspera', () => {
+  it.each([
+    [0, 'normal'],
+    [119, 'normal'],
+    [120, 'aviso'],
+    [239, 'aviso'],
+    [240, 'critico'],
+    [900, 'critico'],
+  ] as const)('%i s de espera es %s', (segundos, nivel) => {
+    expect(nivelEspera(segundos)).toBe(nivel);
   });
 });
